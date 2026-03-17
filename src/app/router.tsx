@@ -1,6 +1,6 @@
 
 import { useMemo } from 'react';
-import { createBrowserRouter } from 'react-router';
+import { createBrowserRouter, Navigate } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
 
 import { paths } from '@/config/paths';
@@ -11,18 +11,6 @@ import {
 
 export const createAppRouter = () =>
   createBrowserRouter([
-    // {
-    //   path: paths.home.path,
-    //   lazy: () => import('./routes/landing').then(convert(queryClient)),
-    // },
-    // {
-    //   path: paths.auth.register.path,
-    //   lazy: () => import('./routes/auth/register').then(convert(queryClient)),
-    // },
-    // {
-    //   path: paths.auth.login.path,
-    //   lazy: () => import('./routes/auth/login').then(convert(queryClient)),
-    // },
     {
       path: paths.app.root.path,
       element: (
@@ -37,10 +25,14 @@ export const createAppRouter = () =>
       ],
     },
     {
+      path: '/',
+          element: <Navigate to="/app/test" replace />,
+    },
+    {
       path: '*',
       lazy: () => import('./routes/not-found').then(),
     },
-  ]);
+  ], {basename: '/glo-rx/'});
 
 export const AppRouter = () => {
   // const queryClient = useQueryClient();

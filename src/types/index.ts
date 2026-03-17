@@ -16,3 +16,6 @@ export interface TestData {
 
 export type AnswerState = Record<number, string[]>;
 export type RevealState = Record<number, boolean>;
+
+export type SelectionHistory = Record<number, string[][]>;
+export type TimingData = Record<number, { started: number; submitted: number}>;

@@ -1,121 +1,156 @@
-import { cn, getTypeColor, getTypeLabel } from "@/lib/utils";
-import { useCallback, useState } from "react";
+import { getTypeColor, getTypeLabel, isCorrect } from "@/lib/utils";
+import { useCallback, useRef, useState } from "react";
 import { QuestionCard } from "../ui/QuestionCard";
-import { ScoreSummary } from "@/features/score/components/ScoreSummary";
 import { UploadScreen } from "@/features/upload/components/ui/UploadScreen";
-import { AnswerState, Question, RevealState, TestData } from "@/types";
+import { AnswerState, RevealState, SelectionHistory, TestData, TimingData } from "@/types";
+import { Test } from "@/app/routes/app/test";
+import { TestSidebar } from "../ui/TestSidebar";
+import { TestResult } from "./TestResults";
 
 interface TestLayoutProps {
     initialData: TestData | null;
+    initialCompleted?: boolean;
 }
 
-export const TestLayout: React.FC<TestLayoutProps> = ({ initialData }) => {
+export const TestLayout: React.FC<TestLayoutProps> = ({ initialData, initialCompleted }) => {
   const [testData, setTestData] = useState<TestData | null>(initialData);
   const [answers, setAnswers] = useState<AnswerState>({});
   const [revealed, setRevealed] = useState<RevealState>({});
-  const [filter, setFilter] = useState<"all" | Question["type"]>("all");
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isCompleted, setIsCompleted] = useState(initialCompleted);
+  const [selectionHistory, setSelectionHistory] = useState<SelectionHistory>({});
+  const [timingData, setTimingData] = useState<TimingData>({});
+  const questionStartTime = useRef<number>(Date.now());
 
   const handleLoad = useCallback((data: TestData) => {
     setTestData(data);
     setAnswers({});
     setRevealed({});
-    setFilter("all");
+    setCurrentIndex(0);
   }, []);
 
   const handleSelect = useCallback((id: number, option: string) => {
     setAnswers((prev) => {
       const q = testData?.questions.find((q) => q.id === id);
       if (!q) return prev;
-      const isSata = q.type === "sata";
       const current = prev[id] ?? [];
-      if (isSata) {
-        return {
-          ...prev,
-          [id]: current.includes(option)
-            ? current.filter((o) => o !== option)
-            : [...current, option],
-        };
+
+      if (q.type === "sata") {
+        const next = current.includes(option)
+          ? current.filter((o) => o !== option)
+          : [...current, option];
+        setSelectionHistory((h) => ({ ...h, [id]: [...(h[id] ?? []), next] }));
+        return { ...prev, [id]: next };
       }
-      return { ...prev, [id]: [option] };
+
+      if (q.type === "ordered") {
+        // toggle — if already in sequence remove it, otherwise append
+        const next = current.includes(option)
+          ? current.filter((o) => o !== option)
+          : [...current, option];
+        setSelectionHistory((h) => ({ ...h, [id]: [...(h[id] ?? []), next] }));
+        return { ...prev, [id]: next };
+      }
+
+      // MCQ — single selection
+      const next = [option];
+      setSelectionHistory((h) => ({ ...h, [id]: [...(h[id] ?? []), next] }));
+      return { ...prev, [id]: next };
     });
   }, [testData]);
 
-  const handleReveal = useCallback((id: number) => {
+  const handleSubmit = useCallback((id: number) => {
     setRevealed((prev) => ({ ...prev, [id]: true }));
+
+    const q = testData?.questions.find((q) => q.id === id);
+    if (!q) return;
+    const finalAnswer = answers[id] ?? [];
+    const incorrect = !isCorrect(q, finalAnswer);
+
+    if (incorrect) {
+      setTimingData((prev) => ({
+        ...prev,
+        [id]: { started: questionStartTime.current, submitted: Date.now() },
+      }));
+    }
+  }, [testData, answers]);
+
+  const handleNext = useCallback(() => {
+    if (testData && currentIndex < testData.questions.length - 1) {
+      setCurrentIndex((prev) => prev + 1);
+      questionStartTime.current = Date.now();
+    }
+  }, [testData, currentIndex]);
+
+  const handleComplete = useCallback(() => {
+    setIsCompleted(true);
   }, []);
 
   const handleReset = useCallback(() => {
     setTestData(null);
     setAnswers({});
     setRevealed({});
+    setCurrentIndex(0);
+  }, []);
+
+  const handleRetake = useCallback(() => {
+    setAnswers({});
+    setRevealed({});
+    setCurrentIndex(0);
+    setIsCompleted(false);
+  }, []);
+
+  const handleLoadNew = useCallback(() => {
+    setTestData(null);
+    setAnswers({});
+    setRevealed({});
+    setCurrentIndex(0);
+    setIsCompleted(false);
   }, []);
 
   if (!testData) return <UploadScreen onLoad={handleLoad} />;
 
-  const types = Array.from(new Set(testData.questions.map((q) => q.type)));
-  const filtered =
-    filter === "all"
-      ? testData.questions
-      : testData.questions.filter((q) => q.type === filter);
+  const currentQuestion = testData.questions[currentIndex];
+  const isAnswered = (answers[currentQuestion.id] ?? []).length > 0;
+  const isRevealed = !!revealed[currentQuestion.id];
+  const isLastQuestion = currentIndex === testData.questions.length - 1;
+
+  if (isCompleted) return (
+    <TestResult
+      testData={testData}
+      answers={answers}
+      selectionHistory={selectionHistory}
+      timingData={timingData}
+      onRetake={handleRetake}
+      onLoadNew={handleLoadNew}
+    />
+  );
 
   return (
     <div className="flex min-h-screen bg-[#0d0d14] text-[#e8e6f0]">
-      {/* Sidebar */}
-      <aside className="w-[240px] min-w-[240px] bg-[#0f0f1a] border-r border-[#1e1e2e] px-5 py-7 flex flex-col gap-1.5 sticky top-0 h-screen overflow-y-auto">
-        <div className="text-[30px] font-bold text-[#4f8ef7] mb-2 tracking-tight">Rx</div>
-        <div className="text-[13px] text-[#bbb] font-semibold leading-snug mb-1">{testData.title}</div>
-        <div className="text-[11px] text-[#555] font-mono overflow-hidden text-ellipsis whitespace-nowrap">
-          {testData.question_count} questions
-        </div>
-        <div className="text-[11px] text-[#555] font-mono overflow-hidden text-ellipsis whitespace-nowrap" title={testData.sources.join(", ")}>
-          {testData.sources.slice(0, 2).join(", ")}
-          {testData.sources.length > 2 && ` +${testData.sources.length - 2}`}
-        </div>
-
-        <div className="mt-6 flex flex-col gap-[3px]">
-          <div className="text-[10px] text-[#444] tracking-widest uppercase mb-1.5 font-mono">Filter by type</div>
-          {(["all", ...types] as Array<"all" | Question["type"]>).map((t) => (
-            <button
-                key={t}
-                className={cn(
-                "bg-transparent border-none text-[#666] text-[13px] px-2.5 py-1.5 rounded-md cursor-pointer text-left flex items-center justify-between transition-[background,color] duration-150",
-                filter === t && "bg-[#1e1e2e] text-[#e8e6f0]"
-                )}
-                onClick={() => setFilter(t)}
-            >
-                {t === "all" ? "All types" : getTypeLabel(t as Question["type"])}
-                {t !== "all" && (
-                <span
-                    className="w-1.5 h-1.5 rounded-full"
-                    style={{ backgroundColor: getTypeColor(t as Question["type"]) }}
-                />
-                )}
-            </button>
-            ))}
-        </div>
-
-        <ScoreSummary
-          data={testData}
-          answers={answers}
-          revealed={revealed}
-          onReset={handleReset}
-        />
-      </aside>
+      
+      <TestSidebar
+        testData={testData}
+        currentIndex={currentIndex}
+        handleReset={handleReset}
+        currentQuestion={currentQuestion}
+      />
 
       {/* Main content */}
-      <main className="flex-1 px-10 py-8 overflow-y-auto">
-        <div className="max-w-[760px] flex flex-col gap-5">
-          {filtered.map((q, i) => (
-            <QuestionCard
-              key={q.id}
-              question={q}
-              index={i}
-              selected={answers[q.id] ?? []}
-              revealed={!!revealed[q.id]}
-              onSelect={handleSelect}
-              onReveal={handleReveal}
-            />
-          ))}
+      <main className="flex-1 px-10 py-8 overflow-y-auto flex flex-col items-center justify-center">
+        <div className="w-full max-w-[800px]">
+          <QuestionCard
+            question={currentQuestion}
+            index={currentIndex + 1}
+            selected={answers[currentQuestion.id] ?? []}
+            revealed={isRevealed}
+            onSelect={handleSelect}
+            onSubmit={handleSubmit}
+            onNext={handleNext}
+            onComplete={handleComplete}
+            isNextDisabled={!isRevealed}
+            isLastQuestion={isLastQuestion}
+          />
         </div>
       </main>
     </div>

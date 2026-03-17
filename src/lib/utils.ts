@@ -9,9 +9,21 @@ export function cn(...inputs: ClassValue[]) {
 
 export function isCorrect(question: Question, selected: string[]): boolean {
   if (!selected.length) return false;
+  
+  if (question.type === "ordered") {
+    console.log("answer:", JSON.stringify(question.answer))
+  console.log("selected:", JSON.stringify(selected))
+    return (
+      question.answer.length === selected.length &&
+      question.answer.every((v, i) => v === selected[i])
+    );
+  }
+
+  // MCQ, SATA, calculation, exhibit — order doesn't matter
   const a = [...question.answer].sort();
   const b = [...selected].sort();
   return a.length === b.length && a.every((v, i) => v === b[i]);
+  
 }
 
 export function getTypeLabel(type: Question["type"]): string {
