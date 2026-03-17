@@ -1,4 +1,5 @@
 // src/lib/utils.ts
+import { Question } from "@/types";
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 

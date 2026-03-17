@@ -1,4 +1,5 @@
 import { cn, getTypeColor, getTypeLabel, isCorrect } from "@/lib/utils"
+import { Question } from "@/types";
 
 interface QuestionCardProps {
     question: Question;

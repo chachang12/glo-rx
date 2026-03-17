@@ -1,3 +1,6 @@
+import { isCorrect } from "@/lib/utils";
+import { AnswerState, RevealState, TestData } from "@/types";
+
 interface ScoreSummaryProps {
     data: TestData;
   answers: AnswerState;

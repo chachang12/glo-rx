@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from "react";
 import { DropZone } from "./DropZone";
+import { TestData } from "@/types";
 
 export const UploadScreen = ({ onLoad }: { onLoad: (data: TestData) => void }) => {
   const [dragging, setDragging] = useState(false);

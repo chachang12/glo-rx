@@ -1,11 +1,16 @@
-import { cn } from "@/lib/utils";
+import { cn, getTypeColor, getTypeLabel } from "@/lib/utils";
 import { useCallback, useState } from "react";
 import { QuestionCard } from "../ui/QuestionCard";
 import { ScoreSummary } from "@/features/score/components/ScoreSummary";
 import { UploadScreen } from "@/features/upload/components/ui/UploadScreen";
+import { AnswerState, Question, RevealState, TestData } from "@/types";
 
-export default function Tester() {
-  const [testData, setTestData] = useState<TestData | null>(null);
+interface TestLayoutProps {
+    initialData: TestData | null;
+}
+
+export const TestLayout: React.FC<TestLayoutProps> = ({ initialData }) => {
+  const [testData, setTestData] = useState<TestData | null>(initialData);
   const [answers, setAnswers] = useState<AnswerState>({});
   const [revealed, setRevealed] = useState<RevealState>({});
   const [filter, setFilter] = useState<"all" | Question["type"]>("all");

@@ -1,0 +1,75 @@
+{
+  "title": "Mock NCLEX Practice Test",
+  "generated_at": "2026-03-12T00:00:00Z",
+  "question_count": 5,
+  "sources": ["Pharmacology Lecture 3", "Med-Surg Unit 2"],
+  "questions": [
+    {
+      "id": 1,
+      "type": "mcq",
+      "stem": "A 58-year-old male with heart failure is prescribed furosemide 40 mg IV. Before administering the medication, which assessment is the nurse's priority?",
+      "options": {
+        "A": "Auscultate lung sounds",
+        "B": "Check the patient's serum potassium level",
+        "C": "Weigh the patient",
+        "D": "Assess urine output from the previous shift"
+      },
+      "answer": ["B"],
+      "rationale": "Furosemide is a loop diuretic that causes significant potassium wasting. Hypokalemia can precipitate life-threatening dysrhythmias, making electrolyte status the priority assessment before administration."
+    },
+    {
+      "id": 2,
+      "type": "sata",
+      "stem": "A nurse is caring for a patient receiving a blood transfusion who develops flushing, urticaria, and pruritus 10 minutes into the infusion. Which actions should the nurse take? Select all that apply.",
+      "options": {
+        "A": "Stop the transfusion immediately",
+        "B": "Administer diphenhydramine as prescribed",
+        "C": "Restart the transfusion at a slower rate after symptoms resolve",
+        "D": "Notify the blood bank and the healthcare provider",
+        "E": "Hang a new IV bag of 0.9% sodium chloride at the IV site"
+      },
+      "answer": ["A", "B", "D", "E"],
+      "rationale": "Flushing, urticaria, and pruritus indicate a mild allergic transfusion reaction. The transfusion is stopped, antihistamine administered, provider and blood bank notified, and IV access maintained with normal saline. The transfusion should not be restarted without explicit provider order."
+    },
+    {
+      "id": 3,
+      "type": "ordered",
+      "stem": "A nurse arrives to find a postoperative patient who is unresponsive and not breathing. Place the following nursing actions in the correct order of priority from first to last.",
+      "options": {
+        "A": "Call for the rapid response team",
+        "B": "Check for a pulse",
+        "C": "Begin chest compressions if no pulse detected",
+        "D": "Apply supplemental oxygen via bag-valve mask",
+        "E": "Establish IV access"
+      },
+      "answer": ["A", "B", "D", "C", "E"],
+      "rationale": "Per ABCs: activate the response team immediately (A), assess circulation (B), support airway/breathing (D), initiate compressions if pulseless (C), then establish IV access for medication delivery (E)."
+    },
+    {
+      "id": 4,
+      "type": "calculation",
+      "stem": "A provider orders amoxicillin 500 mg PO for a patient with a respiratory infection. The medication is available as 250 mg/5 mL suspension. How many mL should the nurse administer? Round to the nearest whole number.",
+      "options": {
+        "A": "5 mL",
+        "B": "7 mL",
+        "C": "10 mL",
+        "D": "15 mL"
+      },
+      "answer": ["C"],
+      "rationale": "Desired/Have × Volume = (500 mg / 250 mg) × 5 mL = 2 × 5 = 10 mL."
+    },
+    {
+      "id": 5,
+      "type": "exhibit",
+      "stem": "The nurse reviews the following morning laboratory results for a 68-year-old patient admitted with acute kidney injury:\n\n- Serum potassium: 6.8 mEq/L (normal: 3.5–5.0)\n- Serum sodium: 138 mEq/L (normal: 136–145)\n- BUN: 42 mg/dL (normal: 7–20)\n- Creatinine: 3.1 mg/dL (normal: 0.6–1.2)\n- pH: 7.31 (normal: 7.35–7.45)\n\nWhich finding requires the nurse's immediate action?",
+      "options": {
+        "A": "Serum sodium of 138 mEq/L",
+        "B": "BUN of 42 mg/dL",
+        "C": "Serum potassium of 6.8 mEq/L",
+        "D": "pH of 7.31"
+      },
+      "answer": ["C"],
+      "rationale": "A serum potassium of 6.8 mEq/L is severely elevated and poses an immediate risk of fatal cardiac dysrhythmias. This requires urgent provider notification and intervention. While acidosis and elevated BUN/creatinine are concerning, hyperkalemia carries the most immediate life-threatening risk."
+    }
+  ]
+}

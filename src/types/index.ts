@@ -1,4 +1,4 @@
-interface Question {
+export interface Question {
   id: number;
   type: "mcq" | "sata" | "ordered" | "calculation" | "exhibit";
   stem: string;
@@ -6,7 +6,7 @@ interface Question {
   answer: string[];
 }
 
-interface TestData {
+export interface TestData {
   title: string;
   generated_at: string;
   question_count: number;
@@ -14,5 +14,5 @@ interface TestData {
   questions: Question[];
 }
 
-type AnswerState = Record<number, string[]>;
-type RevealState = Record<number, boolean>;
+export type AnswerState = Record<number, string[]>;
+export type RevealState = Record<number, boolean>;
