@@ -20,6 +20,7 @@ export const TestResult: React.FC<TestResultProps> = ({
   onRetake,
   onLoadNew,
 }) => {
+
   const { correct, missed, skipped, byType, pct, secondGuessed, avgTime } = useMemo(() => {
     const missed: Question[] = [];
     const skipped: Question[] = [];
@@ -69,6 +70,43 @@ export const TestResult: React.FC<TestResultProps> = ({
 
   const passed = pct >= 67;
   const scoreColor = pct >= 80 ? '#10b981' : pct >= 67 ? '#f59e0b' : '#ef4444';
+
+  const handleDownloadMissedQuestions = () => {
+    const exportData = {
+      testTitle: testData.title,
+      exportDate: new Date().toISOString(),
+      missedCount: missed.length,
+      questions: missed.map((q) => {
+        const selected = answers[q.id] ?? [];
+        const timing = timingData[q.id];
+        const timeSpent = timing ? Math.round((timing.submitted - timing.started) / 1000) : null;
+        const wasSecondGuessed = secondGuessed.some((sg) => sg.id === q.id);
+
+        return {
+          id: q.id,
+          type: q.type,
+          stem: q.stem,
+          options: q.options,
+          yourAnswer: selected.map((k) => ({ key: k, value: q.options[k] })),
+          correctAnswer: q.answer.map((k) => ({ key: k, value: q.options[k] })),
+          rationale: 'rationale' in q ? (q as Question & { rationale: string }).rationale : undefined,
+          timeSpentSeconds: timeSpent,
+          secondGuessed: wasSecondGuessed,
+        };
+      }),
+    };
+
+    const jsonString = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `missed-questions-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="min-h-screen bg-[#0d0d14] text-[#e8e6f0] px-6 py-12 flex flex-col items-center">
@@ -320,6 +358,14 @@ export const TestResult: React.FC<TestResultProps> = ({
         >
           Load New Test
         </button>
+        {missed.length > 0 && (
+          <button
+            onClick={handleDownloadMissedQuestions}
+            className="flex-1 bg-transparent border border-[#2a2a3a] text-[#888] font-semibold text-[14px] py-3 rounded-xl transition-colors hover:border-[#10b981] hover:text-[#e8e6f0]"
+          >
+            Download Missed
+          </button>
+        )}
       </div>
     </div>
   );

@@ -12,7 +12,7 @@ export function isCorrect(question: Question, selected: string[]): boolean {
   
   if (question.type === "ordered") {
     console.log("answer:", JSON.stringify(question.answer))
-  console.log("selected:", JSON.stringify(selected))
+    console.log("selected:", JSON.stringify(selected))
     return (
       question.answer.length === selected.length &&
       question.answer.every((v, i) => v === selected[i])
