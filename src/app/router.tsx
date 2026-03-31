@@ -20,7 +20,12 @@ export const createAppRouter = () =>
         {
           path: paths.app.test.path,
           lazy: () =>
-            import('./routes/app/test').then(),
+            import('./routes/app/test').then(m => ({ Component: m.Test })),
+        },
+        {
+          path: paths.app.abg.path,
+          lazy: () =>
+            import('./routes/app/abg').then(m => ({ Component: m.abg })),
         },
       ],
     },

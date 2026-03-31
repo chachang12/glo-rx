@@ -1,3 +1,5 @@
+import path from "path";
+
 export const paths = {
   home: {
     path: '/',
@@ -26,6 +28,10 @@ export const paths = {
       path: 'test',
       getHref: () => '/app/test',
     },
+    abg: {
+      path: 'abg',
+      getHref: () => '/app/abg',
+    }
 
   },
 } as const;
