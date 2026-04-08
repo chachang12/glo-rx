@@ -15,6 +15,12 @@ export const auth = betterAuth({
     },
   },
   trustedOrigins: [process.env.CLIENT_URL ?? 'http://localhost:5173'],
+  account: {
+    // Skip state cookie verification — rely on PKCE (code_challenge) for
+    // OAuth security instead. Required because .onrender.com is on the
+    // Public Suffix List, preventing cross-subdomain cookie sharing.
+    skipStateCookieCheck: true,
+  },
   advanced: {
     defaultCookieAttributes: {
       secure: isProduction,
