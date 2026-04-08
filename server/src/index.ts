@@ -15,6 +15,10 @@ import { friendshipRoutes } from './features/friendship/index.js'
 
 const app = new Hono()
 
+// Auth routes FIRST — Better Auth handles its own CORS and cookies
+app.all('/api/auth/*', (c) => auth.handler(c.req.raw))
+
+// CORS for all other API routes
 app.use(
   '/api/*',
   cors({
@@ -24,9 +28,6 @@ app.use(
     credentials: true,
   })
 )
-
-// Auth routes — Better Auth handles all /api/auth/* automatically
-app.all('/api/auth/*', (c) => auth.handler(c.req.raw))
 
 // Feature routes
 app.route('/api/abg', abgRoutes)
