@@ -4,6 +4,7 @@ import type { AuthEnv } from '../../types.js'
 import { UserModel } from './user.model.js'
 import { SessionModel } from '../session/session.model.js'
 import { FriendshipModel } from '../friendship/friendship.model.js'
+import { mongoClient } from '../../config/db.js'
 
 const userRoutes = new Hono<AuthEnv>()
 
@@ -138,20 +139,55 @@ userRoutes.get('/search', async (c) => {
     return c.json({ error: 'Query must be at least 3 characters' }, 400)
   }
 
-  // Search by email (via Better Auth's user collection) or username
-  const users = await UserModel.find({
-    authId: { $ne: me },
+  const regex = new RegExp(q, 'i')
+
+  // Search Better Auth's user collection (all signed-in users exist here)
+  const authUsers = await mongoClient.db().collection('user').find({
+    _id: { $ne: me } as any,
     $or: [
-      { username: { $regex: q, $options: 'i' } },
-      { firstName: { $regex: q, $options: 'i' } },
-      { lastName: { $regex: q, $options: 'i' } },
+      { name: regex },
+      { email: regex },
     ],
   })
-    .select('authId username firstName lastName')
+    .limit(10)
+    .toArray()
+
+  // Also check Mongoose users collection for username matches
+  const appUsers = await UserModel.find({
+    authId: { $ne: me },
+    username: regex,
+  })
+    .select('authId username')
     .limit(10)
     .lean()
 
-  return c.json(users)
+  // Merge results — Better Auth users are the primary source
+  const results = authUsers.map((au) => {
+    const appUser = appUsers.find((u) => u.authId === String(au._id))
+    const [firstName = '', lastName = ''] = (au.name ?? '').split(' ', 2)
+    return {
+      authId: String(au._id),
+      username: appUser?.username ?? null,
+      firstName,
+      lastName,
+      email: au.email,
+    }
+  })
+
+  // Add any username-only matches not already in results
+  for (const u of appUsers) {
+    if (!results.some((r) => r.authId === u.authId)) {
+      results.push({
+        authId: u.authId,
+        username: u.username ?? null,
+        firstName: '',
+        lastName: '',
+        email: '',
+      })
+    }
+  }
+
+  return c.json(results)
 })
 
 // GET /api/user/leaderboard — friends leaderboard with streaks
