@@ -18,16 +18,62 @@ interface SearchResult {
   lastName: string
 }
 
+interface FriendRequest {
+  friendshipId: string
+  from: string
+  sentAt: string
+}
+
+// Exported so the navbar can fetch the count
+export async function fetchIncomingRequestCount(): Promise<number> {
+  try {
+    const res = await apiFetch('/api/friends/requests/incoming')
+    if (!res.ok) return 0
+    const data = await res.json()
+    return data.length
+  } catch {
+    return 0
+  }
+}
+
 export const Leaderboard = () => {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
+  const [requests, setRequests] = useState<FriendRequest[]>([])
   const [showAddDialog, setShowAddDialog] = useState(false)
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
     apiFetch('/api/user/leaderboard')
       .then((res) => res.json())
       .then(setEntries)
       .catch(() => {})
+
+    apiFetch('/api/friends/requests/incoming')
+      .then((res) => res.json())
+      .then(setRequests)
+      .catch(() => {})
   }, [])
+
+  useEffect(() => { loadData() }, [loadData])
+
+  const handleAccept = async (requesterId: string) => {
+    const res = await apiFetch('/api/friends/accept', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requesterId }),
+    })
+    if (res.ok) loadData()
+  }
+
+  const handleDecline = async (requesterId: string) => {
+    const res = await apiFetch('/api/friends/decline', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requesterId }),
+    })
+    if (res.ok) {
+      setRequests((prev) => prev.filter((r) => r.from !== requesterId))
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#0f0f1a] p-8">
@@ -50,6 +96,50 @@ export const Leaderboard = () => {
             Add friend
           </button>
         </div>
+
+        {/* Pending requests */}
+        {requests.length > 0 && (
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold text-[#bbb]">
+              Friend Requests
+              <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#4f8ef7] text-[10px] font-bold text-[#0f0f1a]">
+                {requests.length}
+              </span>
+            </h2>
+            {requests.map((req) => (
+              <div
+                key={req.friendshipId}
+                className="flex items-center gap-3 rounded-xl border border-[#4f8ef7]/20 bg-[#4f8ef7]/5 p-4"
+              >
+                <div className="w-9 h-9 rounded-full bg-[#4f8ef7]/15 border border-[#4f8ef7]/30 flex items-center justify-center text-xs font-bold text-[#4f8ef7] select-none">
+                  ?
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-[#ddd] truncate">
+                    {req.from}
+                  </p>
+                  <p className="text-xs text-[#888]">
+                    wants to be your friend
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleAccept(req.from)}
+                    className="px-3 py-1.5 rounded-lg bg-[#4f8ef7] text-xs font-semibold text-[#0f0f1a] hover:bg-[#4f8ef7]/90 transition-all"
+                  >
+                    Accept
+                  </button>
+                  <button
+                    onClick={() => handleDecline(req.from)}
+                    className="px-3 py-1.5 rounded-lg border border-[#1e1e2e] bg-[#0d0d14] text-xs font-semibold text-[#888] hover:text-[#ddd] transition-all"
+                  >
+                    Decline
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Leaderboard */}
         <div className="space-y-2">
@@ -183,7 +273,7 @@ const AddFriendDialog = ({ onClose }: { onClose: () => void }) => {
             type="text"
             value={query}
             onChange={(e) => handleSearch(e.target.value)}
-            placeholder="Search by username or name..."
+            placeholder="Search by name or email..."
             autoFocus
             className="w-full px-4 py-3 rounded-xl border border-[#1e1e2e] bg-[#13131f] text-sm text-[#ddd] placeholder-[#555] focus:outline-none focus:ring-2 focus:ring-[#4f8ef7]/40"
           />

@@ -2,11 +2,12 @@ import { useRef, useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router'
 import { paths } from '@/config/paths'
 import { useUser, UserAvatar } from '@/features/auth'
+import { fetchIncomingRequestCount } from '@/app/routes/app/leaderboard'
 
 const NAV_ITEMS = [
   { label: 'Dashboard', href: paths.app.dashboard.getHref() },
   { label: 'Plans', href: paths.app.plans.getHref() },
-  { label: 'Leaderboard', href: paths.app.leaderboard.getHref() },
+  { label: 'Leaderboard', href: paths.app.leaderboard.getHref(), hasBadge: true },
   { label: 'Marketplace', href: paths.app.marketplace.getHref() },
 ] as const
 
@@ -16,6 +17,7 @@ export const Navbar = () => {
   const navRef = useRef<HTMLDivElement>(null)
   const [indicator, setIndicator] = useState({ left: 0, width: 0 })
   const [ready, setReady] = useState(false)
+  const [requestCount, setRequestCount] = useState(0)
 
   const activeIndex = NAV_ITEMS.findIndex((item) =>
     location.pathname.startsWith(item.href)
@@ -35,6 +37,15 @@ export const Navbar = () => {
       if (!ready) setReady(true)
     }
   }, [activeIndex, ready])
+
+  // Poll for incoming friend requests
+  useEffect(() => {
+    fetchIncomingRequestCount().then(setRequestCount)
+    const interval = setInterval(() => {
+      fetchIncomingRequestCount().then(setRequestCount)
+    }, 30_000)
+    return () => clearInterval(interval)
+  }, [])
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 pt-4">
@@ -62,6 +73,7 @@ export const Navbar = () => {
 
           {NAV_ITEMS.map((item) => {
             const isActive = location.pathname.startsWith(item.href)
+            const showBadge = 'hasBadge' in item && item.hasBadge && requestCount > 0
             return (
               <Link
                 key={item.href}
@@ -74,6 +86,11 @@ export const Navbar = () => {
                 }`}
               >
                 {item.label}
+                {showBadge && (
+                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-[#4f8ef7] text-[10px] font-bold text-[#0f0f1a] flex items-center justify-center">
+                    {requestCount}
+                  </span>
+                )}
               </Link>
             )
           })}
