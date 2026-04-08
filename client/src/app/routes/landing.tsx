@@ -3,63 +3,143 @@ import { paths } from '@/config/paths'
 
 export const Landing = () => {
   return (
-    <div className="min-h-screen bg-[#0f0f1a] flex flex-col">
-      {/* Nav */}
-      <nav className="flex items-center justify-between px-8 py-5 border-b border-[#1e1e2e]">
-        <span className="text-xl font-bold tracking-tight text-[#4f8ef7]">
+    <div className="relative min-h-screen bg-[#060611] overflow-hidden">
+      {/* ── Gradient blobs ──────────────────────────────────────────────── */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-[30%] -right-[20%] w-[70vw] h-[70vw] rounded-full bg-[#4f8ef7]/12 blur-[120px]" />
+        <div className="absolute top-[40%] left-[20%] w-[40vw] h-[40vw] rounded-full bg-[#7c3aed]/8 blur-[150px]" />
+        <div className="absolute -bottom-[20%] -left-[10%] w-[40vw] h-[40vw] rounded-full bg-[#06b6d4]/8 blur-[120px]" />
+        <NoiseOverlay />
+      </div>
+
+      {/* ── Nav ─────────────────────────────────────────────────────────── */}
+      <nav className="relative z-10 flex items-center justify-between px-8 py-5">
+        <span className="text-xl font-bold tracking-tight text-white">
           Axeous
         </span>
-        <Link
-          to={paths.auth.login.getHref()}
-          className="px-4 py-2 rounded-lg bg-[#4f8ef7] text-[#0f0f1a] text-sm font-semibold hover:bg-[#4f8ef7]/90 transition-all"
-        >
-          Sign in
-        </Link>
+        <div className="flex items-center gap-6">
+          <Link to={paths.learn.getHref()} className="text-sm text-[#aaa] hover:text-white transition-colors">
+            Learn
+          </Link>
+          <Link
+            to={paths.auth.login.getHref()}
+            className="px-4 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm text-sm font-semibold text-white hover:bg-white/10 transition-all"
+          >
+            Sign in
+          </Link>
+        </div>
       </nav>
 
-      {/* Hero */}
-      <main className="flex-1 flex items-center justify-center px-6">
-        <div className="max-w-2xl text-center space-y-6">
-          <h1 className="text-5xl font-bold tracking-tight text-[#e8e6f0] leading-tight">
-            Practice smarter.
-            <br />
-            <span className="text-[#4f8ef7]">Pass with confidence.</span>
-          </h1>
+      {/* ── Hero ────────────────────────────────────────────────────────── */}
+      <main className="relative z-10 flex flex-col items-center justify-center px-6 pt-32 pb-40">
+        <h1 className="max-w-4xl text-center text-5xl sm:text-7xl font-bold tracking-tight leading-[1.1]">
+          <span className="text-white">Tools that make</span>
+          <br />
+          <span className="bg-gradient-to-r from-[#4f8ef7] via-[#7c3aed] to-[#06b6d4] bg-clip-text text-transparent">
+            learning effortless.
+          </span>
+        </h1>
 
-          <p className="text-lg text-[#888] max-w-lg mx-auto leading-relaxed">
-            AI-powered practice tests for NCLEX, MCAT, LSAT, CPA, and more.
-            Drill on real exam patterns and track your progress.
-          </p>
+        <p className="mt-6 max-w-xl text-center text-lg text-[#888] leading-relaxed">
+          Axeous builds AI-powered software for students, professionals, and
+          lifelong learners. Study smarter, not harder.
+        </p>
 
-          <div className="flex items-center justify-center gap-4 pt-4">
-            <Link
-              to={paths.auth.login.getHref()}
-              className="px-6 py-3 rounded-lg bg-[#4f8ef7] text-[#0f0f1a] text-sm font-semibold hover:bg-[#4f8ef7]/90 transition-all"
-            >
-              Get started
-            </Link>
-          </div>
-
-          {/* Exam badges */}
-          <div className="flex items-center justify-center gap-3 pt-6">
-            {['NCLEX', 'MCAT', 'LSAT', 'CPA'].map((exam) => (
-              <span
-                key={exam}
-                className="px-3 py-1.5 rounded-full border border-[#1e1e2e] bg-[#0d0d14] text-xs font-mono font-semibold text-[#888]"
-              >
-                {exam}
-              </span>
-            ))}
-          </div>
+        <div className="mt-10 flex items-center gap-4">
+          <Link
+            to={paths.learn.getHref()}
+            className="group px-6 py-3 rounded-full bg-[#4f8ef7] text-sm font-semibold text-white hover:shadow-lg hover:shadow-[#4f8ef7]/25 transition-all"
+          >
+            Explore products
+            <span className="ml-2 inline-block transition-transform group-hover:translate-x-0.5">&rarr;</span>
+          </Link>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="px-8 py-5 border-t border-[#1e1e2e] text-center">
-        <p className="text-xs text-[#555]">
-          Axeous — Built for students who refuse to fail.
-        </p>
+      {/* ── Products ────────────────────────────────────────────────────── */}
+      <section className="relative z-10 px-6 pb-32">
+        <div className="max-w-5xl mx-auto space-y-8">
+          <div className="text-center space-y-2">
+            <p className="text-xs font-mono uppercase tracking-widest text-[#555]">Products</p>
+            <h2 className="text-3xl font-bold text-white">The Axeous suite</h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-10">
+            {/* Learn — active */}
+            <Link
+              to={paths.learn.getHref()}
+              className="group relative rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-8 space-y-4 hover:border-[#4f8ef7]/30 hover:bg-white/[0.04] transition-all overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#4f8ef7]/40 to-transparent" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#4f8ef7]/10 border border-[#4f8ef7]/20 flex items-center justify-center">
+                  <BookIcon />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white group-hover:text-[#4f8ef7] transition-colors">
+                    Axeous Learn
+                  </h3>
+                  <p className="text-xs text-[#888]">AI-powered exam prep</p>
+                </div>
+              </div>
+              <p className="text-sm text-[#888] leading-relaxed">
+                Practice tests, flashcard generation, study plans, and progress
+                tracking for professional licensure exams.
+              </p>
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#4f8ef7]">
+                Learn more <span className="transition-transform group-hover:translate-x-0.5">&rarr;</span>
+              </span>
+            </Link>
+
+            {/* Coming soon placeholder */}
+            <div className="relative rounded-2xl border border-dashed border-white/[0.06] bg-white/[0.01] p-8 space-y-4 opacity-50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center">
+                  <CodeIcon />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Coming Soon</h3>
+                  <p className="text-xs text-[#555]">More tools in development</p>
+                </div>
+              </div>
+              <p className="text-sm text-[#555] leading-relaxed">
+                We're building more products to help you learn, create, and grow.
+                Stay tuned.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Footer ──────────────────────────────────────────────────────── */}
+      <footer className="relative z-10 px-8 py-6 border-t border-white/[0.06]">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <span className="text-xs text-[#555]">&copy; {new Date().getFullYear()} Axeous</span>
+          <span className="text-xs text-[#555]">Building the future of learning.</span>
+        </div>
       </footer>
     </div>
   )
 }
+
+const NoiseOverlay = () => (
+  <div className="absolute inset-0 opacity-[0.03]" style={{
+    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+    backgroundRepeat: 'repeat',
+    backgroundSize: '128px 128px',
+  }} />
+)
+
+const BookIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4f8ef7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+  </svg>
+)
+
+const CodeIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="16 18 22 12 16 6" />
+    <polyline points="8 6 2 12 8 18" />
+  </svg>
+)

@@ -17,6 +17,11 @@ export const createAppRouter = () =>
           import('./routes/landing').then((m) => ({ Component: m.Landing })),
       },
       {
+        path: paths.learn.path,
+        lazy: () =>
+          import('./routes/learn').then((m) => ({ Component: m.Learn })),
+      },
+      {
         path: paths.auth.login.path,
         lazy: () =>
           import('./routes/auth/login').then((m) => ({ Component: m.LoginPage })),
