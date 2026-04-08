@@ -2,8 +2,7 @@ import { betterAuth } from 'better-auth'
 import { mongodbAdapter } from 'better-auth/adapters/mongodb'
 import { mongoClient } from '../config/db.js'
 
-const isProduction = process.env.NODE_ENV === 'production' ||
-  (process.env.BASE_URL?.startsWith('https://') ?? false)
+const isProduction = process.env.BASE_URL?.startsWith('https://') ?? false
 
 export const auth = betterAuth({
   baseURL: process.env.BASE_URL ?? 'http://localhost:3001',
@@ -17,13 +16,11 @@ export const auth = betterAuth({
   },
   trustedOrigins: [process.env.CLIENT_URL ?? 'http://localhost:5173'],
   advanced: {
-    crossSubDomainCookies: {
-      enabled: isProduction,
-      domain: isProduction ? '.onrender.com' : undefined,
-    },
     defaultCookieAttributes: {
       secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
+      sameSite: isProduction ? 'none' as const : 'lax' as const,
+      httpOnly: true,
+      path: '/',
     },
   },
 })
