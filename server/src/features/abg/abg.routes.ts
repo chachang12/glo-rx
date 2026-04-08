@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import Anthropic from '@anthropic-ai/sdk'
 import { requireAuth } from '../../middleware/auth.js'
+import { requireLicense } from '../../middleware/license.js'
 import type { AuthEnv } from '../../types.js'
 
 const abgRoutes = new Hono<AuthEnv>()
@@ -8,7 +9,7 @@ const abgRoutes = new Hono<AuthEnv>()
 abgRoutes.use(requireAuth)
 const anthropic = new Anthropic() // reads ANTHROPIC_API_KEY from env
 
-abgRoutes.post('/vignette', async (c) => {
+abgRoutes.post('/vignette', requireLicense('aiGeneration'), async (c) => {
   const { values, imbalance, compensation } = await c.req.json()
 
   const prompt = `Generate a 2-sentence clinical vignette for an NCLEX-style ABG interpretation question.

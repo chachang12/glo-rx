@@ -12,6 +12,15 @@ const userSchema = new Schema(
     },
 
     // ── Profile ──────────────────────────────────────────────────────────
+    username: {
+      type: String,
+      unique: true,
+      sparse: true,
+      lowercase: true,
+      trim: true,
+      match: /^[a-z0-9_]{3,20}$/,
+      default: null,
+    },
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
     displayName: { type: String, default: '' },
@@ -31,6 +40,14 @@ const userSchema = new Schema(
     // ── Preferences ──────────────────────────────────────────────────────
     dailyGoal: { type: Number, default: null },
     defaultSessionLength: { type: Number, default: 10 },
+
+    // ── Licenses ─────────────────────────────────────────────────────────
+    licenses: {
+      type: {
+        aiGeneration: { type: Boolean, default: false },
+      },
+      default: { aiGeneration: false },
+    },
 
     // ── Account ──────────────────────────────────────────────────────────
     role: {

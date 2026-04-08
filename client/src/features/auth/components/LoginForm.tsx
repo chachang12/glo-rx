@@ -10,11 +10,10 @@ export const LoginForm = () => {
   const handleGoogleSignIn = () => {
     setError(null)
     const clientOrigin = window.location.origin
-    const base = '/glo-rx'
 
     authClient.signIn.social({
       provider: 'google',
-      callbackURL: `${clientOrigin}${base}${redirectTo}`,
+      callbackURL: `${clientOrigin}${redirectTo}`,
     }).catch((err: Error) => {
       console.error('Sign-in error:', err)
       setError(err.message ?? 'Failed to start sign-in. Is the server running?')

@@ -6,6 +6,7 @@ import { useUser, UserAvatar } from '@/features/auth'
 const NAV_ITEMS = [
   { label: 'Dashboard', href: paths.app.dashboard.getHref() },
   { label: 'Plans', href: paths.app.plans.getHref() },
+  { label: 'Leaderboard', href: paths.app.leaderboard.getHref() },
   { label: 'Marketplace', href: paths.app.marketplace.getHref() },
 ] as const
 

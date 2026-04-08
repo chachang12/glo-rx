@@ -45,6 +45,10 @@ export const paths = {
       path: 'plans/:examCode/flashcards',
       getHref: (examCode: string) => `/app/plans/${examCode}/flashcards`,
     },
+    leaderboard: {
+      path: 'leaderboard',
+      getHref: () => '/app/leaderboard',
+    },
     marketplace: {
       path: 'marketplace',
       getHref: () => '/app/marketplace',

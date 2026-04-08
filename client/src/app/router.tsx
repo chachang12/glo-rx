@@ -84,6 +84,13 @@ export const createAppRouter = () =>
                   })),
               },
               {
+                path: paths.app.leaderboard.path,
+                lazy: () =>
+                  import('./routes/app/leaderboard').then((m) => ({
+                    Component: m.Leaderboard,
+                  })),
+              },
+              {
                 path: paths.app.marketplace.path,
                 lazy: () =>
                   import('./routes/app/marketplace').then((m) => ({
@@ -122,7 +129,7 @@ export const createAppRouter = () =>
         lazy: () => import('./routes/not-found').then(),
       },
     ],
-    { basename: '/glo-rx/' }
+    { basename: '/' }
   )
 
 export const AppRouter = () => {
