@@ -149,7 +149,7 @@ export const FlashcardGenerator = ({ examCode }: FlashcardGeneratorProps) => {
             onChange={(e) => setTextInput(e.target.value)}
             placeholder="Paste your notes, lecture text, or study material here..."
             rows={10}
-            className="w-full px-4 py-3 rounded-xl border border-[#1e1e2e] bg-[#13131f] text-sm text-[#ddd] placeholder-[#555] resize-y focus:outline-none focus:ring-2 focus:ring-[#4f8ef7]/40 font-mono"
+            className="w-full px-4 py-3 rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm text-[#ddd] placeholder-[#555] resize-y focus:outline-none focus:ring-2 focus:ring-[#4f8ef7]/40 font-mono"
           />
           <p className="text-xs text-[#555] font-mono">{textInput.length.toLocaleString()} chars</p>
         </div>
@@ -160,7 +160,7 @@ export const FlashcardGenerator = ({ examCode }: FlashcardGeneratorProps) => {
             className={`flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 cursor-pointer transition-all ${
               pdfFile
                 ? 'border-[#4f8ef7]/30 bg-[#4f8ef7]/5'
-                : 'border-[#1e1e2e] bg-[#13131f] hover:border-[#4f8ef7]/30'
+                : 'border-white/[0.08] bg-white/[0.03] hover:border-[#4f8ef7]/30'
             }`}
           >
             <input
@@ -202,11 +202,11 @@ export const FlashcardGenerator = ({ examCode }: FlashcardGeneratorProps) => {
 
           {/* Preview extracted text */}
           {pdfText && (
-            <details className="rounded-xl border border-[#1e1e2e] bg-[#13131f] overflow-hidden">
+            <details className="rounded-xl border border-white/[0.08] bg-white/[0.03] overflow-hidden">
               <summary className="px-4 py-3 text-xs font-semibold text-[#888] cursor-pointer hover:text-[#ddd] transition-colors">
                 Preview extracted text
               </summary>
-              <pre className="px-4 py-3 max-h-48 overflow-auto text-xs text-[#555] font-mono whitespace-pre-wrap border-t border-[#1e1e2e]">
+              <pre className="px-4 py-3 max-h-48 overflow-auto text-xs text-[#555] font-mono whitespace-pre-wrap border-t border-white/[0.06]">
                 {pdfText.slice(0, 3000)}{pdfText.length > 3000 ? '\n\n... (truncated)' : ''}
               </pre>
             </details>
@@ -234,7 +234,7 @@ export const FlashcardGenerator = ({ examCode }: FlashcardGeneratorProps) => {
 
       {/* Loading */}
       {loading && (
-        <div className="rounded-xl border border-[#1e1e2e] bg-[#0d0d14] p-6 flex items-center justify-center gap-3">
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-6 flex items-center justify-center gap-3">
           <div className="w-4 h-4 border-2 border-[#4f8ef7] border-t-transparent rounded-full animate-spin" />
           <p className="text-sm text-[#888]">Generating flashcards with AI...</p>
         </div>
@@ -250,7 +250,7 @@ export const FlashcardGenerator = ({ examCode }: FlashcardGeneratorProps) => {
             <div className="flex items-center gap-2">
               <button
                 onClick={handleCopy}
-                className="px-3 py-1.5 rounded-lg border border-[#1e1e2e] bg-[#13131f] text-xs font-semibold text-[#888] hover:text-[#ddd] transition-all"
+                className="px-3 py-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] text-xs font-semibold text-[#888] hover:text-[#ddd] transition-all"
               >
                 Copy
               </button>
@@ -262,7 +262,7 @@ export const FlashcardGenerator = ({ examCode }: FlashcardGeneratorProps) => {
               </button>
             </div>
           </div>
-          <pre className="w-full max-h-96 overflow-auto px-4 py-3 rounded-xl border border-[#1e1e2e] bg-[#13131f] text-xs text-[#bbb] font-mono whitespace-pre-wrap">
+          <pre className="w-full max-h-96 overflow-auto px-4 py-3 rounded-xl border border-white/[0.08] bg-white/[0.03] text-xs text-[#bbb] font-mono whitespace-pre-wrap">
             {output}
           </pre>
         </div>
@@ -289,8 +289,8 @@ const FormatButton = ({
       active
         ? 'bg-[#4f8ef7]/10 border border-[#4f8ef7]/30 text-[#4f8ef7]'
         : disabled
-          ? 'border border-[#1e1e2e] bg-[#0d0d14] text-[#555] cursor-not-allowed'
-          : 'border border-[#1e1e2e] bg-[#0d0d14] text-[#888] hover:text-[#ddd] hover:border-[#4f8ef7]/40'
+          ? 'border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm text-[#555] cursor-not-allowed'
+          : 'border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm text-[#888] hover:text-[#ddd] hover:border-[#4f8ef7]/40'
     }`}
   >
     {label}
@@ -312,7 +312,7 @@ const ModeButton = ({
     className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
       active
         ? 'border-[#4f8ef7]/30 bg-[#4f8ef7]/10 text-[#4f8ef7]'
-        : 'border-[#1e1e2e] bg-[#0d0d14] text-[#888] hover:text-[#ddd] hover:border-[#4f8ef7]/40'
+        : 'border-white/[0.06] bg-white/[0.02] backdrop-blur-sm text-[#888] hover:text-[#ddd] hover:border-[#4f8ef7]/40'
     }`}
   >
     {label}

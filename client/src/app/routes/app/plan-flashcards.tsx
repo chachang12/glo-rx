@@ -29,7 +29,7 @@ export const PlanFlashcards = () => {
 
   if (notFound) {
     return (
-      <div className="min-h-screen bg-[#0f0f1a] p-8">
+      <div className="p-8">
         <div className="max-w-3xl mx-auto space-y-4">
           <h1 className="text-2xl font-bold text-[#e8e6f0]">Exam not found</h1>
           <Link to={paths.app.plans.getHref()} className="text-sm text-[#4f8ef7] hover:underline">
@@ -42,14 +42,14 @@ export const PlanFlashcards = () => {
 
   if (!exam) {
     return (
-      <div className="min-h-screen bg-[#0f0f1a] flex items-center justify-center">
+      <div className="flex items-center justify-center">
         <div className="w-6 h-6 border-2 border-[#4f8ef7] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#0f0f1a] p-8">
+    <div className="p-8">
       <div className="max-w-3xl mx-auto space-y-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-xs text-[#555]">

@@ -16,7 +16,7 @@ export const MetricCard = ({
   accent = '#4f8ef7',
 }: MetricCardProps) => {
   return (
-    <div className="rounded-xl border border-[#1e1e2e] bg-[#0d0d14] p-5 space-y-3">
+    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-5 space-y-3 hover:border-white/[0.12] transition-all">
       <div className="flex items-center justify-between">
         <p className="text-xs font-mono uppercase tracking-widest text-[#555]">
           {label}

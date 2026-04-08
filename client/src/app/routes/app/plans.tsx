@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { paths } from '@/config/paths'
 import { apiFetch } from '@/lib/api'
+import { PageLoader } from '@/features/ui/PageLoader'
 
 interface Exam {
   code: string
@@ -25,24 +26,22 @@ const CATEGORY_COLORS: Record<string, string> = {
 export const Plans = () => {
   const [exams, setExams] = useState<Exam[]>([])
   const [plans, setPlans] = useState<Plan[]>([])
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    apiFetch('/api/exams')
-      .then((res) => res.json())
-      .then(setExams)
-      .catch(() => {})
-
-    apiFetch('/api/plans')
-      .then((res) => res.json())
-      .then(setPlans)
-      .catch(() => {})
+    Promise.all([
+      apiFetch('/api/exams').then((r) => r.json()).then(setExams).catch(() => {}),
+      apiFetch('/api/plans').then((r) => r.json()).then(setPlans).catch(() => {}),
+    ]).finally(() => setReady(true))
   }, [])
 
   const enrolledCodes = new Set(plans.map((p) => p.examCode))
   const enrolledExams = exams.filter((e) => enrolledCodes.has(e.code))
 
+  if (!ready) return <PageLoader />
+
   return (
-    <div className="min-h-screen bg-[#0f0f1a] p-8">
+    <div className="p-8">
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
@@ -67,7 +66,7 @@ export const Plans = () => {
               <Link
                 key={exam.code}
                 to={paths.app.plan.getHref(exam.code)}
-                className="group rounded-xl border border-[#1e1e2e] bg-[#0d0d14] p-5 space-y-3 hover:border-[#4f8ef7]/40 transition-all"
+                className="group rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-5 space-y-3 hover:border-[#4f8ef7]/30 transition-all"
               >
                 <div className="flex items-center gap-3">
                   <div
@@ -76,7 +75,7 @@ export const Plans = () => {
                       backgroundColor: CATEGORY_COLORS[exam.category] ?? '#888',
                     }}
                   />
-                  <p className="text-sm font-semibold text-[#ddd] group-hover:text-[#4f8ef7] transition-colors">
+                  <p className="text-sm font-semibold text-white group-hover:text-[#4f8ef7] transition-colors">
                     {exam.label}
                   </p>
                 </div>
@@ -90,7 +89,7 @@ export const Plans = () => {
         ) : (
           <Link
             to={paths.app.marketplace.getHref()}
-            className="block rounded-xl border border-dashed border-[#1e1e2e] bg-[#0d0d14] p-8 text-center hover:border-[#4f8ef7]/40 transition-all space-y-2"
+            className="block rounded-2xl border border-dashed border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-8 text-center hover:border-[#4f8ef7]/30 transition-all space-y-2"
           >
             <p className="text-sm text-[#888]">
               No plans yet

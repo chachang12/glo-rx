@@ -9,6 +9,11 @@ export const paths = {
     getHref: () => '/learn',
   },
 
+  collect: {
+    path: '/collect',
+    getHref: () => '/collect',
+  },
+
   auth: {
     login: {
       path: '/auth/login',

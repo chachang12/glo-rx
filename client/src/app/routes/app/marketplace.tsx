@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { paths } from '@/config/paths'
 import { apiFetch } from '@/lib/api'
 import { useNavigate } from 'react-router'
+import { PageLoader } from '@/features/ui/PageLoader'
 
 interface Exam {
   code: string
@@ -35,18 +36,14 @@ export const Marketplace = () => {
   const [plans, setPlans] = useState<Plan[]>([])
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null)
   const [enrolling, setEnrolling] = useState(false)
+  const [ready, setReady] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
-    apiFetch('/api/exams/all')
-      .then((res) => res.json())
-      .then(setExams)
-      .catch(() => {})
-
-    apiFetch('/api/plans')
-      .then((res) => res.json())
-      .then(setPlans)
-      .catch(() => {})
+    Promise.all([
+      apiFetch('/api/exams/all').then((r) => r.json()).then(setExams).catch(() => {}),
+      apiFetch('/api/plans').then((r) => r.json()).then(setPlans).catch(() => {}),
+    ]).finally(() => setReady(true))
   }, [])
 
   const enrolledCodes = new Set(plans.map((p) => p.examCode))
@@ -74,8 +71,10 @@ export const Marketplace = () => {
   // Group exams by category
   const categories = [...new Set(exams.map((e) => e.category))]
 
+  if (!ready) return <PageLoader />
+
   return (
-    <div className="min-h-screen bg-[#0f0f1a] p-8">
+    <div className="p-8">
       <div className="max-w-4xl mx-auto space-y-10">
         {/* Header */}
         <div className="space-y-1">
@@ -108,10 +107,10 @@ export const Marketplace = () => {
                     <button
                       key={exam.code}
                       onClick={() => setSelectedExam(exam)}
-                      className="group text-left rounded-xl border border-[#1e1e2e] bg-[#0d0d14] p-5 space-y-3 hover:border-[#4f8ef7]/40 transition-all"
+                      className="group text-left rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-5 space-y-3 hover:border-[#4f8ef7]/30 transition-all"
                     >
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold text-[#ddd] group-hover:text-[#4f8ef7] transition-colors">
+                        <p className="text-sm font-semibold text-white group-hover:text-[#4f8ef7] transition-colors">
                           {exam.label}
                         </p>
                         {isEnrolled && (
@@ -179,7 +178,7 @@ const ExamDialog = ({
       />
 
       {/* Dialog */}
-      <div className="relative w-full max-w-md rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] shadow-2xl shadow-black/40 overflow-hidden">
+      <div className="relative w-full max-w-md rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm shadow-2xl shadow-black/40 overflow-hidden">
         {/* Color accent bar */}
         <div className="h-1" style={{ backgroundColor: color }} />
 
@@ -213,7 +212,7 @@ const ExamDialog = ({
           </p>
 
           {/* Plan details */}
-          <div className="rounded-lg border border-[#1e1e2e] bg-[#13131f] p-4 space-y-2">
+          <div className="rounded-lg border border-white/[0.08] bg-white/[0.03] p-4 space-y-2">
             <p className="text-xs font-mono uppercase tracking-widest text-[#555]">
               Includes
             </p>
@@ -258,7 +257,7 @@ const ExamDialog = ({
             )}
             <button
               onClick={onClose}
-              className="px-4 py-2.5 rounded-lg border border-[#1e1e2e] bg-[#13131f] text-sm font-semibold text-[#888] hover:text-[#ddd] transition-all"
+              className="px-4 py-2.5 rounded-lg border border-white/[0.08] bg-white/[0.03] text-sm font-semibold text-[#888] hover:text-[#ddd] transition-all"
             >
               Cancel
             </button>

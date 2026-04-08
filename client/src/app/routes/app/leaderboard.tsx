@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { apiFetch } from '@/lib/api'
+import { PageLoader } from '@/features/ui/PageLoader'
 
 interface LeaderboardEntry {
   authId: string
@@ -40,20 +41,16 @@ export const Leaderboard = () => {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [requests, setRequests] = useState<FriendRequest[]>([])
   const [showAddDialog, setShowAddDialog] = useState(false)
+  const [ready, setReady] = useState(false)
 
   const loadData = useCallback(() => {
-    apiFetch('/api/user/leaderboard')
-      .then((res) => res.json())
-      .then(setEntries)
-      .catch(() => {})
-
-    apiFetch('/api/friends/requests/incoming')
-      .then((res) => res.json())
-      .then(setRequests)
-      .catch(() => {})
+    return Promise.all([
+      apiFetch('/api/user/leaderboard').then((r) => r.json()).then(setEntries).catch(() => {}),
+      apiFetch('/api/friends/requests/incoming').then((r) => r.json()).then(setRequests).catch(() => {}),
+    ])
   }, [])
 
-  useEffect(() => { loadData() }, [loadData])
+  useEffect(() => { loadData().finally(() => setReady(true)) }, [loadData])
 
   const handleAccept = async (requesterId: string) => {
     const res = await apiFetch('/api/friends/accept', {
@@ -75,8 +72,10 @@ export const Leaderboard = () => {
     }
   }
 
+  if (!ready) return <PageLoader />
+
   return (
-    <div className="min-h-screen bg-[#0f0f1a] p-8">
+    <div className="p-8">
       <div className="max-w-2xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -109,7 +108,7 @@ export const Leaderboard = () => {
             {requests.map((req) => (
               <div
                 key={req.friendshipId}
-                className="flex items-center gap-3 rounded-xl border border-[#4f8ef7]/20 bg-[#4f8ef7]/5 p-4"
+                className="flex items-center gap-3 rounded-2xl border border-[#4f8ef7]/20 bg-[#4f8ef7]/5 p-4"
               >
                 <div className="w-9 h-9 rounded-full bg-[#4f8ef7]/15 border border-[#4f8ef7]/30 flex items-center justify-center text-xs font-bold text-[#4f8ef7] select-none">
                   ?
@@ -131,7 +130,7 @@ export const Leaderboard = () => {
                   </button>
                   <button
                     onClick={() => handleDecline(req.from)}
-                    className="px-3 py-1.5 rounded-lg border border-[#1e1e2e] bg-[#0d0d14] text-xs font-semibold text-[#888] hover:text-[#ddd] transition-all"
+                    className="px-3 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm text-xs font-semibold text-[#888] hover:text-[#ddd] transition-all"
                   >
                     Decline
                   </button>
@@ -149,7 +148,7 @@ export const Leaderboard = () => {
               className={`flex items-center gap-4 rounded-xl border p-4 transition-all ${
                 entry.isMe
                   ? 'border-[#4f8ef7]/30 bg-[#4f8ef7]/5'
-                  : 'border-[#1e1e2e] bg-[#0d0d14]'
+                  : 'border-white/[0.06] bg-white/[0.02] backdrop-blur-sm'
               }`}
             >
               {/* Rank */}
@@ -190,7 +189,7 @@ export const Leaderboard = () => {
           ))}
 
           {entries.length === 0 && (
-            <div className="rounded-xl border border-dashed border-[#1e1e2e] bg-[#0d0d14] p-8 text-center space-y-2">
+            <div className="rounded-2xl border border-dashed border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-8 text-center space-y-2">
               <p className="text-sm text-[#888]">No data yet</p>
               <p className="text-xs text-[#555]">
                 Complete a practice session to appear on the leaderboard
@@ -255,7 +254,7 @@ const AddFriendDialog = ({ onClose }: { onClose: () => void }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative w-full max-w-md rounded-2xl border border-[#1e1e2e] bg-[#0d0d14] shadow-2xl shadow-black/40 overflow-hidden">
+      <div className="relative w-full max-w-md rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm shadow-2xl shadow-black/40 overflow-hidden">
         <div className="p-6 space-y-5">
           {/* Header */}
           <div className="flex items-center justify-between">
@@ -275,7 +274,7 @@ const AddFriendDialog = ({ onClose }: { onClose: () => void }) => {
             onChange={(e) => handleSearch(e.target.value)}
             placeholder="Search by name or email..."
             autoFocus
-            className="w-full px-4 py-3 rounded-xl border border-[#1e1e2e] bg-[#13131f] text-sm text-[#ddd] placeholder-[#555] focus:outline-none focus:ring-2 focus:ring-[#4f8ef7]/40"
+            className="w-full px-4 py-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] text-sm text-[#ddd] placeholder-[#555] focus:outline-none focus:ring-2 focus:ring-[#4f8ef7]/40"
           />
 
           {/* Error */}
@@ -300,7 +299,7 @@ const AddFriendDialog = ({ onClose }: { onClose: () => void }) => {
               return (
                 <div
                   key={user.authId}
-                  className="flex items-center gap-3 rounded-lg border border-[#1e1e2e] bg-[#13131f] p-3"
+                  className="flex items-center gap-3 rounded-lg border border-white/[0.08] bg-white/[0.03] p-3"
                 >
                   <div className="w-8 h-8 rounded-full bg-[#4f8ef7]/15 border border-[#4f8ef7]/30 flex items-center justify-center text-xs font-bold text-[#4f8ef7]">
                     {getInitials(user.firstName, user.lastName)}

@@ -73,7 +73,7 @@ export const PlanSettings = () => {
 
   if (notFound) {
     return (
-      <div className="min-h-screen bg-[#0f0f1a] p-8">
+      <div className="p-8">
         <div className="max-w-2xl mx-auto space-y-4">
           <h1 className="text-2xl font-bold text-[#e8e6f0]">Plan not found</h1>
           <Link
@@ -89,7 +89,7 @@ export const PlanSettings = () => {
 
   if (!exam || !plan) {
     return (
-      <div className="min-h-screen bg-[#0f0f1a] flex items-center justify-center">
+      <div className="flex items-center justify-center">
         <div className="w-6 h-6 border-2 border-[#4f8ef7] border-t-transparent rounded-full animate-spin" />
       </div>
     )
@@ -101,7 +101,7 @@ export const PlanSettings = () => {
     : ''
 
   return (
-    <div className="min-h-screen bg-[#0f0f1a] p-8">
+    <div className="p-8">
       <div className="max-w-2xl mx-auto space-y-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-xs text-[#555]">
@@ -136,11 +136,11 @@ export const PlanSettings = () => {
                     const val = e.target.value
                     patchPlan({ examDate: val || null })
                   }}
-                  className="px-3 py-2 rounded-lg border border-[#1e1e2e] bg-[#13131f] text-sm text-[#ddd] focus:outline-none focus:ring-2 focus:ring-[#4f8ef7]/40"
+                  className="px-3 py-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-sm text-[#ddd] focus:outline-none focus:ring-2 focus:ring-[#4f8ef7]/40"
                 />
               }
             />
-            <div className="border-t border-[#1e1e2e]" />
+            <div className="border-t border-white/[0.06]" />
             <SettingRow
               label="Daily goal"
               description="Number of practice questions per day"
@@ -155,18 +155,18 @@ export const PlanSettings = () => {
                     const val = e.target.value ? Number(e.target.value) : null
                     patchPlan({ dailyGoal: val })
                   }}
-                  className="w-20 px-3 py-2 rounded-lg border border-[#1e1e2e] bg-[#13131f] text-sm text-[#ddd] text-center focus:outline-none focus:ring-2 focus:ring-[#4f8ef7]/40"
+                  className="w-20 px-3 py-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-sm text-[#ddd] text-center focus:outline-none focus:ring-2 focus:ring-[#4f8ef7]/40"
                 />
               }
             />
-            <div className="border-t border-[#1e1e2e]" />
+            <div className="border-t border-white/[0.06]" />
             <SettingRow
               label="Study reminders"
               description="Get daily reminders to stay on track"
               action={
                 <button
                   disabled
-                  className="px-4 py-2 rounded-lg border border-[#1e1e2e] bg-[#13131f] text-xs font-semibold text-[#555] cursor-not-allowed"
+                  className="px-4 py-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-xs font-semibold text-[#555] cursor-not-allowed"
                 >
                   Coming soon
                 </button>
@@ -183,7 +183,7 @@ export const PlanSettings = () => {
             action={
               <button
                 disabled
-                className="px-4 py-2 rounded-lg border border-[#1e1e2e] bg-[#13131f] text-xs font-semibold text-[#555] cursor-not-allowed"
+                className="px-4 py-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-xs font-semibold text-[#555] cursor-not-allowed"
               >
                 Coming soon
               </button>
@@ -206,7 +206,7 @@ export const PlanSettings = () => {
                 </button>
               }
             />
-            <div className="border-t border-[#1e1e2e]" />
+            <div className="border-t border-white/[0.06]" />
             <SettingRow
               label="Remove plan"
               description={`Remove ${exam.label} from your study plans and delete all associated data`}
@@ -222,7 +222,7 @@ export const PlanSettings = () => {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setShowDeleteConfirm(false)}
-                      className="px-3 py-2 rounded-lg border border-[#1e1e2e] bg-[#13131f] text-xs font-semibold text-[#888] hover:text-[#ddd] transition-all"
+                      className="px-3 py-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-xs font-semibold text-[#888] hover:text-[#ddd] transition-all"
                     >
                       Cancel
                     </button>
@@ -256,7 +256,7 @@ const Section = ({
 }) => (
   <div className="space-y-4">
     <h2 className="text-sm font-semibold text-[#bbb]">{title}</h2>
-    <div className="rounded-xl border border-[#1e1e2e] bg-[#0d0d14] p-5">
+    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-5">
       {children}
     </div>
   </div>

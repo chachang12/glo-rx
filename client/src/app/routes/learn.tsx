@@ -43,7 +43,7 @@ export const Learn = () => {
         </div>
 
         <h1 className="max-w-4xl text-center text-5xl sm:text-7xl font-bold tracking-tight leading-[1.1]">
-          <span className="text-white">AI-powered</span>
+          <span className="text-white">AI-assisted</span>
           <br />
           <span className="bg-gradient-to-r from-[#4f8ef7] via-[#7c3aed] to-[#06b6d4] bg-clip-text text-transparent">
             exam prep.

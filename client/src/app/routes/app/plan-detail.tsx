@@ -82,7 +82,7 @@ export const PlanDetail = () => {
 
   if (notFound) {
     return (
-      <div className="min-h-screen bg-[#0f0f1a] p-8">
+      <div className="p-8">
         <div className="max-w-4xl mx-auto space-y-4">
           <h1 className="text-2xl font-bold text-[#e8e6f0]">Exam not found</h1>
           <p className="text-sm text-[#888]">No exam matching "{examCode}" exists.</p>
@@ -96,7 +96,7 @@ export const PlanDetail = () => {
 
   if (!exam) {
     return (
-      <div className="min-h-screen bg-[#0f0f1a] flex items-center justify-center">
+      <div className="flex items-center justify-center">
         <div className="w-6 h-6 border-2 border-[#4f8ef7] border-t-transparent rounded-full animate-spin" />
       </div>
     )
@@ -104,14 +104,14 @@ export const PlanDetail = () => {
 
   if (notEnrolled) {
     return (
-      <div className="min-h-screen bg-[#0f0f1a] p-8">
+      <div className="p-8">
         <div className="max-w-4xl mx-auto space-y-8">
           <div className="flex items-center gap-2 text-xs text-[#555]">
             <Link to={paths.app.plans.getHref()} className="text-[#4f8ef7] hover:underline">Plans</Link>
             <span>/</span>
             <span className="text-[#888]">{exam.label}</span>
           </div>
-          <div className="rounded-xl border border-dashed border-[#1e1e2e] bg-[#0d0d14] p-8 text-center space-y-4">
+          <div className="rounded-2xl border border-dashed border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-8 text-center space-y-4">
             <h1 className="text-2xl font-bold tracking-tight text-[#e8e6f0]">{exam.label}</h1>
             <p className="text-sm text-[#888]">{exam.description}</p>
             <button
@@ -128,7 +128,7 @@ export const PlanDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f0f1a] p-8">
+    <div className="p-8">
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-xs text-[#555]">
@@ -150,7 +150,7 @@ export const PlanDetail = () => {
           </div>
           <Link
             to={paths.app.planSettings.getHref(exam.code)}
-            className="p-2 rounded-lg border border-[#1e1e2e] bg-[#0d0d14] text-[#888] hover:text-[#4f8ef7] hover:border-[#4f8ef7]/40 transition-all"
+            className="p-2 rounded-lg border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm text-[#888] hover:text-[#4f8ef7] hover:border-[#4f8ef7]/30 transition-all"
             title="Plan settings"
           >
             <GearIcon />
@@ -166,10 +166,10 @@ export const PlanDetail = () => {
                 <Link
                   key={test._id}
                   to={`${paths.app.test.getHref()}?testId=${test._id}`}
-                  className="group flex items-center justify-between rounded-xl border border-[#1e1e2e] bg-[#0d0d14] p-4 hover:border-[#4f8ef7]/40 transition-all"
+                  className="group flex items-center justify-between rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-4 hover:border-[#4f8ef7]/30 transition-all"
                 >
                   <div className="space-y-1.5 min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-[#ddd] group-hover:text-[#4f8ef7] transition-colors truncate">
+                    <p className="text-sm font-semibold text-white group-hover:text-[#4f8ef7] transition-colors truncate">
                       {test.title}
                     </p>
                     <div className="flex items-center gap-3 text-xs text-[#888]">
@@ -196,7 +196,7 @@ export const PlanDetail = () => {
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-[#1e1e2e] bg-[#0d0d14] p-6 text-center">
+            <div className="rounded-2xl border border-dashed border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-6 text-center">
               <p className="text-sm text-[#888]">No community tests yet for {exam.label}</p>
               <p className="text-xs text-[#555] mt-1">Tests created by the community will appear here</p>
             </div>
@@ -209,9 +209,9 @@ export const PlanDetail = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Link
               to={paths.app.planFlashcards.getHref(exam.code)}
-              className="group rounded-xl border border-[#1e1e2e] bg-[#0d0d14] p-5 hover:border-[#4f8ef7]/40 transition-all"
+              className="group rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-5 hover:border-[#4f8ef7]/30 transition-all"
             >
-              <p className="text-sm font-semibold text-[#ddd] group-hover:text-[#4f8ef7] transition-colors">
+              <p className="text-sm font-semibold text-white group-hover:text-[#4f8ef7] transition-colors">
                 Flashcard Generator
               </p>
               <p className="text-xs text-[#888] mt-1">
@@ -251,7 +251,7 @@ const ResourceCard = ({
   title: string
   description: string
 }) => (
-  <div className="rounded-xl border border-dashed border-[#1e1e2e] bg-[#0d0d14] p-5 opacity-50">
+  <div className="rounded-2xl border border-dashed border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-5 opacity-50">
     <p className="text-sm font-semibold text-[#ddd]">{title}</p>
     <p className="text-xs text-[#888] mt-1">{description}</p>
     <p className="text-[10px] font-mono text-[#555] mt-2">Coming soon</p>

@@ -24,7 +24,7 @@ export const Profile = () => {
   if (!user) return null
 
   return (
-    <div className="min-h-screen bg-[#0f0f1a] p-8">
+    <div className="p-8">
       <div className="max-w-2xl mx-auto space-y-10">
         {/* Header */}
         <div className="space-y-3">
@@ -45,7 +45,7 @@ export const Profile = () => {
         </div>
 
         {/* Profile Card */}
-        <div className="rounded-xl border border-[#1e1e2e] bg-[#0d0d14] p-6 flex items-center gap-5">
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-6 flex items-center gap-5">
           <UserAvatar name={user.name} size="lg" />
           <div className="space-y-1">
             <p className="text-lg font-semibold text-[#e8e6f0]">{user.name}</p>
@@ -64,7 +64,7 @@ export const Profile = () => {
             </div>
             <button
               disabled
-              className="px-4 py-2 rounded-lg border border-[#1e1e2e] bg-[#13131f] text-xs font-semibold text-[#555] cursor-not-allowed"
+              className="px-4 py-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-xs font-semibold text-[#555] cursor-not-allowed"
             >
               Coming soon
             </button>
@@ -80,26 +80,26 @@ export const Profile = () => {
               button={
                 <button
                   onClick={handleSignOut}
-                  className="px-4 py-2 rounded-lg border border-[#1e1e2e] bg-[#13131f] text-xs font-semibold text-[#ddd] hover:border-[#4f8ef7]/40 hover:text-[#4f8ef7] transition-all"
+                  className="px-4 py-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-xs font-semibold text-[#ddd] hover:border-[#4f8ef7]/30 hover:text-[#4f8ef7] transition-all"
                 >
                   Sign out
                 </button>
               }
             />
-            <div className="border-t border-[#1e1e2e]" />
+            <div className="border-t border-white/[0.06]" />
             <ActionRow
               label="Export data"
               description="Download all your test history and profile data"
               button={
                 <button
                   disabled
-                  className="px-4 py-2 rounded-lg border border-[#1e1e2e] bg-[#13131f] text-xs font-semibold text-[#555] cursor-not-allowed"
+                  className="px-4 py-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-xs font-semibold text-[#555] cursor-not-allowed"
                 >
                   Coming soon
                 </button>
               }
             />
-            <div className="border-t border-[#1e1e2e]" />
+            <div className="border-t border-white/[0.06]" />
             <ActionRow
               label="Delete account"
               description="Permanently delete your account and all associated data"
@@ -115,7 +115,7 @@ export const Profile = () => {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setShowDeleteConfirm(false)}
-                      className="px-3 py-2 rounded-lg border border-[#1e1e2e] bg-[#13131f] text-xs font-semibold text-[#888] hover:text-[#ddd] transition-all"
+                      className="px-3 py-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-xs font-semibold text-[#888] hover:text-[#ddd] transition-all"
                     >
                       Cancel
                     </button>
@@ -145,7 +145,7 @@ const Section = ({
 }) => (
   <div className="space-y-4">
     <h2 className="text-sm font-semibold text-[#bbb]">{title}</h2>
-    <div className="rounded-xl border border-[#1e1e2e] bg-[#0d0d14] p-5">
+    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-5">
       {children}
     </div>
   </div>
