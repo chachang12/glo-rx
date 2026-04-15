@@ -141,55 +141,63 @@ export const Leaderboard = () => {
         )}
 
         {/* Leaderboard */}
-        <div className="space-y-2">
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm overflow-hidden">
           {entries.map((entry, i) => (
             <div
               key={entry.authId}
-              className={`flex items-center gap-4 rounded-xl border p-4 transition-all ${
-                entry.isMe
-                  ? 'border-[#4f8ef7]/30 bg-[#4f8ef7]/5'
-                  : 'border-white/[0.06] bg-white/[0.02] backdrop-blur-sm'
-              }`}
+              className={`flex items-center gap-4 px-5 py-4 transition-all ${
+                i > 0 ? 'border-t border-white/[0.04]' : ''
+              } ${entry.isMe ? 'bg-[#4f8ef7]/[0.04]' : 'hover:bg-white/[0.02]'}`}
             >
               {/* Rank */}
-              <div className="w-8 text-center">
+              <div className="w-7 text-center flex-shrink-0">
                 {i === 0 ? (
-                  <span className="text-lg">1</span>
+                  <span className="text-sm font-bold text-[#e8e6f0]">{i + 1}</span>
+                ) : i < 3 ? (
+                  <span className="text-sm font-semibold text-[#bbb]">{i + 1}</span>
                 ) : (
                   <span className="text-sm font-mono text-[#555]">{i + 1}</span>
                 )}
               </div>
 
               {/* Avatar */}
-              <div className="w-9 h-9 rounded-full bg-[#4f8ef7]/15 border border-[#4f8ef7]/30 flex items-center justify-center text-xs font-bold text-[#4f8ef7] select-none">
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold select-none flex-shrink-0 ${
+                i === 0
+                  ? 'bg-[#4f8ef7]/20 text-[#4f8ef7] ring-1 ring-[#4f8ef7]/30'
+                  : 'bg-white/[0.06] text-[#888]'
+              }`}>
                 {getInitials(entry.firstName, entry.lastName)}
               </div>
 
               {/* Name */}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-[#ddd] truncate">
-                  {entry.username ?? `${entry.firstName} ${entry.lastName}`}
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-[#e8e6f0] truncate">
+                    {entry.username ?? `${entry.firstName} ${entry.lastName}`}
+                  </p>
                   {entry.isMe && (
-                    <span className="ml-2 text-[10px] font-mono text-[#4f8ef7]">you</span>
+                    <span className="text-[10px] font-semibold text-[#4f8ef7] bg-[#4f8ef7]/10 px-1.5 py-0.5 rounded flex-shrink-0">
+                      you
+                    </span>
                   )}
-                </p>
-                <p className="text-xs text-[#555]">
-                  {entry.totalQuestions} questions answered
+                </div>
+                <p className="text-xs text-[#555] mt-0.5">
+                  {entry.totalQuestions} questions
                 </p>
               </div>
 
               {/* Streak */}
-              <div className="text-right">
-                <p className="text-lg font-bold tabular-nums text-[#e07b3f]">
-                  {entry.streak}d
-                </p>
-                <p className="text-[10px] font-mono text-[#555]">streak</p>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <span className="text-sm font-bold tabular-nums text-[#e07b3f]">
+                  {entry.streak}
+                </span>
+                <span className="text-[10px] text-[#888]">day streak</span>
               </div>
             </div>
           ))}
 
           {entries.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-8 text-center space-y-2">
+            <div className="p-8 text-center space-y-2">
               <p className="text-sm text-[#888]">No data yet</p>
               <p className="text-xs text-[#555]">
                 Complete a practice session to appear on the leaderboard

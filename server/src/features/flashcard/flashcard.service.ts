@@ -2,7 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { readFileSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { EXAMS } from '../../config/exams.js'
+import { ExamModel } from '../exam/exam.model.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -33,17 +33,24 @@ function loadReference(format: FlashcardFormat): string {
 
 // ── Course Context ───────────────────────────────────────────────────────────
 
-function buildCourseContext(examCode: string): string {
-  const exam = EXAMS.find((e) => e.code === examCode)
+async function buildCourseContext(examCode: string): Promise<string> {
+  const exam = await ExamModel.findOne({ code: examCode }).lean()
   if (!exam) return ''
 
-  return [
+  const parts = [
     `You are generating flashcards for a student preparing for the ${exam.label} exam.`,
     `Exam category: ${exam.category}.`,
     `${exam.description}.`,
     'Focus on concepts, terminology, and reasoning patterns that are directly testable on this exam.',
     'Prioritize clinical decision-making and applied knowledge over rote memorization of trivia.',
-  ].join(' ')
+  ]
+
+  // Use admin-managed AI reference if available
+  if (exam.aiReferenceText) {
+    parts.push('', '---', '', exam.aiReferenceText)
+  }
+
+  return parts.join(' ')
 }
 
 // ── Chunking ─────────────────────────────────────────────────────────────────
@@ -98,7 +105,7 @@ export async function generateFlashcards(
   const { text, examCode, format = 'remnote' } = options
 
   const formatReference = loadReference(format)
-  const courseContext = buildCourseContext(examCode)
+  const courseContext = await buildCourseContext(examCode)
 
   const systemPrompt = [
     formatReference,

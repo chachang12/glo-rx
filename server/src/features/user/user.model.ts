@@ -1,5 +1,4 @@
 import mongoose, { Schema, type InferSchemaType } from 'mongoose'
-import { EXAM_CODES } from '../../config/exams.js'
 
 const userSchema = new Schema(
   {
@@ -28,11 +27,10 @@ const userSchema = new Schema(
     // ── Exam Context ─────────────────────────────────────────────────────
     activeExam: {
       type: String,
-      enum: EXAM_CODES,
       default: null,
     },
     exams: {
-      type: [{ type: String, enum: EXAM_CODES }],
+      type: [{ type: String }],
       default: [],
     },
     examDate: { type: Date, default: null },
@@ -45,8 +43,9 @@ const userSchema = new Schema(
     licenses: {
       type: {
         aiGeneration: { type: Boolean, default: false },
+        customPlans: { type: Boolean, default: false },
       },
-      default: { aiGeneration: false },
+      default: { aiGeneration: false, customPlans: false },
     },
 
     // ── Account ──────────────────────────────────────────────────────────

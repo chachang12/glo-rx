@@ -12,6 +12,9 @@ import { planRoutes } from './features/plan/index.js'
 import { testRoutes } from './features/test/index.js'
 import { flashcardRoutes } from './features/flashcard/index.js'
 import { friendshipRoutes } from './features/friendship/index.js'
+import { customPlanRoutes } from './features/custom-plan/index.js'
+import { adminRoutes } from './features/admin/index.js'
+import { seedExams } from './config/exams.js'
 
 const app = new Hono()
 
@@ -20,7 +23,7 @@ app.use(
   cors({
     origin: process.env.CLIENT_URL ?? 'http://localhost:5173',
     allowHeaders: ['Content-Type', 'Authorization'],
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
     exposeHeaders: ['Set-Cookie'],
   })
@@ -30,18 +33,21 @@ app.use(
 app.all('/api/auth/*', (c) => auth.handler(c.req.raw))
 
 // Feature routes
+app.route('/api/admin', adminRoutes)
 app.route('/api/abg', abgRoutes)
 app.route('/api/exams', examRoutes)
 app.route('/api/flashcards', flashcardRoutes)
 app.route('/api/friends', friendshipRoutes)
 app.route('/api/plans', planRoutes)
+app.route('/api/custom-plans', customPlanRoutes)
 app.route('/api/sessions', sessionRoutes)
 app.route('/api/tests', testRoutes)
 app.route('/api/user', userRoutes)
 
 app.get('/health', (c) => c.json({ status: 'ok' }))
 
-connectDB().then(() => {
+connectDB().then(async () => {
+  await seedExams()
   serve({ fetch: app.fetch, port: 3001 }, () => {
     console.log('Server running on http://localhost:3001')
   })

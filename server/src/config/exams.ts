@@ -1,12 +1,8 @@
-export interface Exam {
-  code: string
-  label: string
-  category: 'nursing' | 'medical' | 'law' | 'accounting'
-  description: string
-  active: boolean
-}
+import { ExamModel } from '../features/exam/exam.model.js'
 
-export const EXAMS: Exam[] = [
+// ── Seed data (used for initial DB population) ──────────────────────────────
+
+export const SEED_EXAMS = [
   {
     code: 'nclex-rn',
     label: 'NCLEX-RN',
@@ -58,5 +54,20 @@ export const EXAMS: Exam[] = [
   },
 ]
 
-export const EXAM_CODES = EXAMS.map((e) => e.code)
-export type ExamCode = (typeof EXAM_CODES)[number]
+// ── Runtime helpers (DB-backed) ─────────────────────────────────────────────
+
+export async function isValidExamCode(code: string): Promise<boolean> {
+  if (code.startsWith('custom-')) return true
+  const exists = await ExamModel.exists({ code })
+  return !!exists
+}
+
+export async function seedExams(): Promise<void> {
+  for (const exam of SEED_EXAMS) {
+    await ExamModel.updateOne(
+      { code: exam.code },
+      { $setOnInsert: exam },
+      { upsert: true }
+    )
+  }
+}

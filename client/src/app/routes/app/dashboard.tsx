@@ -15,7 +15,10 @@ interface Exam {
 }
 
 interface Plan {
+  _id: string
   examCode: string
+  type?: 'standard' | 'custom'
+  examName?: string
   status: string
 }
 
@@ -24,8 +27,9 @@ interface Stats {
   accuracy: number | null
   streak: number
   daysToExam: number | null
-  sessionsCompleted: number
-  avgTimePerQuestion: number | null
+  nextExamLabel: string | null
+  masteredCount: number
+  totalTopics: number
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -50,7 +54,9 @@ export const Dashboard = () => {
     ]).finally(() => setReady(true))
   }, [])
 
-  const enrolledCodes = new Set(plans.map((p) => p.examCode))
+  const standardPlans = plans.filter((p) => p.type !== 'custom')
+  const customPlans = plans.filter((p) => p.type === 'custom')
+  const enrolledCodes = new Set(standardPlans.map((p) => p.examCode))
   const enrolledExams = exams.filter((e) => enrolledCodes.has(e.code))
 
   if (!ready) return <PageLoader />
@@ -71,9 +77,9 @@ export const Dashboard = () => {
         {/* Metrics */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <MetricCard
-            label="Answered"
-            value={stats?.totalQuestions ?? 0}
-            sublabel="Total questions"
+            label="Mastered"
+            value={stats ? `${stats.masteredCount}/${stats.totalTopics}` : '–'}
+            sublabel="Topics at 80%+"
             accent="#4f8ef7"
           />
           <MetricCard
@@ -91,35 +97,9 @@ export const Dashboard = () => {
           <MetricCard
             label="Exam In"
             value={stats?.daysToExam != null ? `${stats.daysToExam}d` : '–'}
-            sublabel="Days remaining"
+            sublabel={stats?.nextExamLabel ?? 'Set a date in your plan'}
             accent="#8b5cf6"
           />
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Link
-            to={paths.app.test.getHref()}
-            className="group rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-5 hover:border-[#4f8ef7]/30 hover:bg-white/[0.04] transition-all"
-          >
-            <p className="text-sm font-semibold text-white group-hover:text-[#4f8ef7] transition-colors">
-              Practice Test
-            </p>
-            <p className="text-xs text-[#888] mt-1">
-              Start a full-length practice session
-            </p>
-          </Link>
-          <Link
-            to={paths.app.abg.getHref()}
-            className="group rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-5 hover:border-[#4f8ef7]/30 hover:bg-white/[0.04] transition-all"
-          >
-            <p className="text-sm font-semibold text-white group-hover:text-[#4f8ef7] transition-colors">
-              ABG Driller
-            </p>
-            <p className="text-xs text-[#888] mt-1">
-              Arterial blood gas interpretation
-            </p>
-          </Link>
         </div>
 
         {/* Your Plans */}
@@ -133,8 +113,25 @@ export const Dashboard = () => {
               View all
             </Link>
           </div>
-          {enrolledExams.length > 0 ? (
+
+          {(enrolledExams.length > 0 || customPlans.length > 0) ? (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {/* Custom plans */}
+              {customPlans.map((plan) => (
+                <Link
+                  key={plan._id}
+                  to={paths.app.customPlanDetail.getHref(plan._id)}
+                  className="group rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-4 space-y-2 hover:border-white/[0.15] hover:bg-white/[0.04] transition-all"
+                >
+                  <div className="w-2 h-2 rounded-full bg-[#4f8ef7]" />
+                  <p className="text-sm font-semibold text-white group-hover:text-[#4f8ef7] transition-colors">
+                    {plan.examName ?? plan.examCode}
+                  </p>
+                  <p className="text-xs text-[#555]">Custom plan</p>
+                </Link>
+              ))}
+
+              {/* Standard plans */}
               {enrolledExams.map((exam) => (
                 <Link
                   key={exam.code}
@@ -144,8 +141,7 @@ export const Dashboard = () => {
                   <div
                     className="w-2 h-2 rounded-full"
                     style={{
-                      backgroundColor:
-                        CATEGORY_COLORS[exam.category] ?? '#888',
+                      backgroundColor: CATEGORY_COLORS[exam.category] ?? '#888',
                     }}
                   />
                   <p className="text-sm font-semibold text-white group-hover:text-[#4f8ef7] transition-colors">

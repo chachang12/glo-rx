@@ -5,6 +5,9 @@ import { UserModel } from './user.model.js'
 import { SessionModel } from '../session/session.model.js'
 import { FriendshipModel } from '../friendship/friendship.model.js'
 import { mongoClient } from '../../config/db.js'
+import { PlanModel } from '../plan/plan.model.js'
+import { TopicModel } from '../custom-plan/topic.model.js'
+import { ExamModel } from '../exam/exam.model.js'
 
 const userRoutes = new Hono<AuthEnv>()
 
@@ -104,29 +107,46 @@ userRoutes.get('/me/stats', async (c) => {
     }
   }
 
-  // Days to exam
+  // Closest exam date from plans
+  const plans = await PlanModel.find({ authId: authUser.id, examDate: { $ne: null } })
+    .sort({ examDate: 1 })
+    .lean()
+
   let daysToExam: number | null = null
-  if (user?.examDate) {
-    const diff = new Date(user.examDate).getTime() - Date.now()
-    daysToExam = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
+  let nextExamLabel: string | null = null
+
+  const now = Date.now()
+  for (const p of plans) {
+    if (p.examDate && p.examDate.getTime() > now) {
+      daysToExam = Math.ceil((p.examDate.getTime() - now) / 86400000)
+      if (p.type === 'custom') {
+        nextExamLabel = p.examName ?? p.examCode
+      } else {
+        const exam = await ExamModel.findOne({ code: p.examCode }).select('label').lean()
+        nextExamLabel = exam?.label ?? p.examCode
+      }
+      break
+    }
   }
 
-  // Sessions completed
-  const sessionsCompleted = sessions.length
-
-  // Average time per question
-  const totalTimeMs = sessions.reduce((sum, s) => sum + (s.durationMs ?? 0), 0)
-  const avgTimePerQuestion = totalQuestions > 0
-    ? Math.round(totalTimeMs / totalQuestions / 1000)
-    : null
+  // Masteries — count topics where mastery >= 80
+  const allTopicPlanIds = (await PlanModel.find({ authId: authUser.id }).select('_id').lean()).map((p) => p._id)
+  const masteredCount = await TopicModel.countDocuments({
+    planId: { $in: allTopicPlanIds },
+    mastery: { $gte: 80 },
+  })
+  const totalTopics = await TopicModel.countDocuments({
+    planId: { $in: allTopicPlanIds },
+  })
 
   return c.json({
     totalQuestions,
     accuracy,
     streak,
     daysToExam,
-    sessionsCompleted,
-    avgTimePerQuestion,
+    nextExamLabel,
+    masteredCount,
+    totalTopics,
   })
 })
 

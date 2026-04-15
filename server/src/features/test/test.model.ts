@@ -1,19 +1,24 @@
 import mongoose, { Schema, type InferSchemaType } from 'mongoose'
-import { EXAM_CODES } from '../../config/exams.js'
 
 const questionSchema = new Schema(
   {
-    id: { type: Number, required: true },
     type: {
       type: String,
-      enum: ['mcq', 'sata', 'ordered', 'calculation', 'exhibit'],
-      required: true,
+      enum: ['mcq', 'sata', 'ordered'],
+      default: 'mcq',
     },
     stem: { type: String, required: true },
     options: { type: Schema.Types.Mixed, required: true },
     answer: { type: [String], required: true },
+    explanation: { type: String, default: '' },
+    topics: { type: [String], default: [] },
+    difficulty: {
+      type: String,
+      enum: ['easy', 'medium', 'hard'],
+      default: null,
+    },
   },
-  { _id: false }
+  { _id: true }
 )
 
 const testSchema = new Schema(
@@ -28,7 +33,6 @@ const testSchema = new Schema(
     // ── Exam link ────────────────────────────────────────────────────────
     examCode: {
       type: String,
-      enum: EXAM_CODES,
       required: true,
       index: true,
     },

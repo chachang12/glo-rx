@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { requireAuth } from '../../middleware/auth.js'
 import type { AuthEnv } from '../../types.js'
 import { TestModel } from './test.model.js'
-import { EXAM_CODES } from '../../config/exams.js'
+import { ExamModel } from '../exam/exam.model.js'
 
 const testRoutes = new Hono<AuthEnv>()
 
@@ -13,7 +13,8 @@ testRoutes.post('/', async (c) => {
   const authUser = c.get('user')
   const body = await c.req.json()
 
-  if (!body.examCode || !EXAM_CODES.includes(body.examCode)) {
+  const examExists = body.examCode && await ExamModel.exists({ code: body.examCode })
+  if (!examExists) {
     return c.json({ error: 'Invalid exam code' }, 400)
   }
 

@@ -1,5 +1,5 @@
 import mongoose, { Schema, type InferSchemaType } from 'mongoose'
-import { EXAM_CODES } from '../../config/exams.js'
+import { isValidExamCode } from '../../config/exams.js'
 
 const planSchema = new Schema(
   {
@@ -10,9 +10,21 @@ const planSchema = new Schema(
     },
     examCode: {
       type: String,
-      enum: EXAM_CODES,
       required: true,
+      validate: {
+        validator: isValidExamCode,
+        message: 'Invalid exam code',
+      },
     },
+
+    // ── Plan type ────────────────────────────────────────────────────────
+    type: {
+      type: String,
+      enum: ['standard', 'custom'],
+      default: 'standard',
+    },
+    examName: { type: String, default: null }, // user-provided name for custom plans
+
     examDate: { type: Date, default: null },
     dailyGoal: { type: Number, default: null },
     status: {
@@ -20,6 +32,13 @@ const planSchema = new Schema(
       enum: ['active', 'paused', 'completed'],
       default: 'active',
     },
+
+    // ── Document storage tracking ────────────────────────────────────────
+    totalDocumentSize: { type: Number, default: 0 },
+
+    // ── Sharing ──────────────────────────────────────────────────────────
+    isPublished: { type: Boolean, default: false },
+    shareCode: { type: String, unique: true, sparse: true },
 
     // ── Usage tracking ───────────────────────────────────────────────────
     tier: {

@@ -3,7 +3,7 @@ import { createBrowserRouter, Navigate } from 'react-router'
 import { RouterProvider } from 'react-router/dom'
 
 import { paths } from '@/config/paths'
-import { ProtectedRoute } from '@/features/auth'
+import { ProtectedRoute, AdminRoute } from '@/features/auth'
 
 import AppRoot from './routes/app/root'
 
@@ -73,6 +73,41 @@ export const createAppRouter = () =>
                   })),
               },
               {
+                path: paths.app.customPlanCreate.path,
+                lazy: () =>
+                  import('./routes/app/custom-plan-create').then((m) => ({
+                    Component: m.CustomPlanCreate,
+                  })),
+              },
+              {
+                path: paths.app.customPlanSetup.path,
+                lazy: () =>
+                  import('./routes/app/custom-plan-setup').then((m) => ({
+                    Component: m.CustomPlanSetup,
+                  })),
+              },
+              {
+                path: paths.app.customPlanSettings.path,
+                lazy: () =>
+                  import('./routes/app/custom-plan-settings').then((m) => ({
+                    Component: m.CustomPlanSettings,
+                  })),
+              },
+              {
+                path: paths.app.customPlanDetail.path,
+                lazy: () =>
+                  import('./routes/app/custom-plan-detail').then((m) => ({
+                    Component: m.CustomPlanDetail,
+                  })),
+              },
+              {
+                path: paths.app.sharedPlan.path,
+                lazy: () =>
+                  import('./routes/app/shared-plan').then((m) => ({
+                    Component: m.SharedPlan,
+                  })),
+              },
+              {
                 path: paths.app.plan.path,
                 lazy: () =>
                   import('./routes/app/plan-detail').then((m) => ({
@@ -127,6 +162,25 @@ export const createAppRouter = () =>
                   import('./routes/app/settings').then((m) => ({
                     Component: m.Settings,
                   })),
+              },
+              {
+                element: <AdminRoute />,
+                children: [
+                  {
+                    path: paths.app.admin.path,
+                    lazy: () =>
+                      import('./routes/app/admin').then((m) => ({
+                        Component: m.AdminDashboard,
+                      })),
+                  },
+                  {
+                    path: paths.app.adminExam.path,
+                    lazy: () =>
+                      import('./routes/app/admin-exam').then((m) => ({
+                        Component: m.AdminExamEditor,
+                      })),
+                  },
+                ],
               },
             ],
           },

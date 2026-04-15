@@ -10,6 +10,7 @@ interface Exam {
   category: string
   description: string
   active: boolean
+  visibility?: 'hidden' | 'coming-soon' | 'live'
 }
 
 interface Plan {
@@ -41,7 +42,7 @@ export const Marketplace = () => {
 
   useEffect(() => {
     Promise.all([
-      apiFetch('/api/exams/all').then((r) => r.json()).then(setExams).catch(() => {}),
+      apiFetch('/api/exams').then((r) => r.json()).then(setExams).catch(() => {}),
       apiFetch('/api/plans').then((r) => r.json()).then(setPlans).catch(() => {}),
     ]).finally(() => setReady(true))
   }, [])
@@ -118,8 +119,8 @@ export const Marketplace = () => {
                             Enrolled
                           </span>
                         )}
-                        {!exam.active && !isEnrolled && (
-                          <span className="text-[10px] font-mono font-semibold text-[#888] bg-[#888]/10 px-2 py-0.5 rounded-full">
+                        {exam.visibility === 'coming-soon' && !isEnrolled && (
+                          <span className="text-[10px] font-mono font-semibold text-[#eab308] bg-[#eab308]/10 px-2 py-0.5 rounded-full">
                             Coming soon
                           </span>
                         )}
@@ -249,10 +250,10 @@ const ExamDialog = ({
             ) : (
               <button
                 onClick={onEnroll}
-                disabled={enrolling || !exam.active}
+                disabled={enrolling || exam.visibility === 'coming-soon'}
                 className="flex-1 py-2.5 rounded-lg bg-[#4f8ef7] text-[#0f0f1a] text-sm font-semibold hover:bg-[#4f8ef7]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {enrolling ? 'Adding...' : !exam.active ? 'Coming soon' : 'Add to my plans'}
+                {enrolling ? 'Adding...' : exam.visibility === 'coming-soon' ? 'Coming soon' : 'Add to my plans'}
               </button>
             )}
             <button

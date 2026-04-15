@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router'
 import { authClient } from '@/lib/auth-client'
 import { useUser, UserAvatar } from '@/features/auth'
@@ -9,6 +9,14 @@ export const Profile = () => {
   const { user } = useUser()
   const navigate = useNavigate()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    apiFetch('/api/user/me')
+      .then((r) => r.json())
+      .then((u) => { if (u.role === 'admin') setIsAdmin(true) })
+      .catch(() => {})
+  }, [])
 
   const handleSignOut = async () => {
     await authClient.signOut()
@@ -52,6 +60,25 @@ export const Profile = () => {
             <p className="text-sm text-[#888]">{user.email}</p>
           </div>
         </div>
+
+        {/* Admin */}
+        {isAdmin && (
+          <Link
+            to={paths.app.admin.getHref()}
+            className="flex items-center justify-between rounded-2xl border border-[#8b5cf6]/20 bg-[#8b5cf6]/5 p-5 hover:border-[#8b5cf6]/40 transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-[#8b5cf6]/15 flex items-center justify-center">
+                <ShieldIcon />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-[#ddd]">Admin Dashboard</p>
+                <p className="text-xs text-[#888]">Manage platform, users, and plans</p>
+              </div>
+            </div>
+            <span className="text-xs text-[#555]">&rarr;</span>
+          </Link>
+        )}
 
         {/* Subscription */}
         <Section title="Subscription">
@@ -149,6 +176,12 @@ const Section = ({
       {children}
     </div>
   </div>
+)
+
+const ShieldIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+  </svg>
 )
 
 const ActionRow = ({

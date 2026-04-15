@@ -12,7 +12,10 @@ interface Exam {
 }
 
 interface Plan {
+  _id: string
   examCode: string
+  type?: 'standard' | 'custom'
+  examName?: string
   status: string
 }
 
@@ -35,7 +38,9 @@ export const Plans = () => {
     ]).finally(() => setReady(true))
   }, [])
 
-  const enrolledCodes = new Set(plans.map((p) => p.examCode))
+  const standardPlans = plans.filter((p) => p.type !== 'custom')
+  const customPlans = plans.filter((p) => p.type === 'custom')
+  const enrolledCodes = new Set(standardPlans.map((p) => p.examCode))
   const enrolledExams = exams.filter((e) => enrolledCodes.has(e.code))
 
   if (!ready) return <PageLoader />
@@ -52,41 +57,82 @@ export const Plans = () => {
               Your enrolled exam prep plans.
             </p>
           </div>
-          <Link
-            to={paths.app.marketplace.getHref()}
-            className="px-4 py-2 rounded-lg border border-[#4f8ef7]/30 bg-[#4f8ef7]/5 text-xs font-semibold text-[#4f8ef7] hover:border-[#4f8ef7]/60 transition-all"
-          >
-            + Browse marketplace
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to={paths.app.customPlanCreate.getHref()}
+              className="px-4 py-2 rounded-lg border border-[#4f8ef7]/30 bg-[#4f8ef7]/5 text-xs font-semibold text-[#4f8ef7] hover:border-[#4f8ef7]/60 transition-all"
+            >
+              + Custom Plan
+            </Link>
+            <Link
+              to={paths.app.marketplace.getHref()}
+              className="px-4 py-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-xs font-semibold text-[#888] hover:text-[#ddd] transition-all"
+            >
+              Browse marketplace
+            </Link>
+          </div>
         </div>
 
-        {enrolledExams.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {enrolledExams.map((exam) => (
-              <Link
-                key={exam.code}
-                to={paths.app.plan.getHref(exam.code)}
-                className="group rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-5 space-y-3 hover:border-[#4f8ef7]/30 transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-2.5 h-2.5 rounded-full"
-                    style={{
-                      backgroundColor: CATEGORY_COLORS[exam.category] ?? '#888',
-                    }}
-                  />
-                  <p className="text-sm font-semibold text-white group-hover:text-[#4f8ef7] transition-colors">
-                    {exam.label}
+        {/* Custom Plans */}
+        {customPlans.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-sm font-semibold text-[#bbb]">Custom Plans</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {customPlans.map((plan) => (
+                <Link
+                  key={plan._id}
+                  to={paths.app.customPlanDetail.getHref(plan._id)}
+                  className="group rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-5 space-y-3 hover:border-[#4f8ef7]/30 transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#4f8ef7]" />
+                    <p className="text-sm font-semibold text-white group-hover:text-[#4f8ef7] transition-colors">
+                      {plan.examName ?? plan.examCode}
+                    </p>
+                  </div>
+                  <p className="text-xs text-[#888]">Custom study plan</p>
+                  <p className="text-xs font-mono text-[#555]">
+                    View plan &rarr;
                   </p>
-                </div>
-                <p className="text-xs text-[#888]">{exam.description}</p>
-                <p className="text-xs font-mono text-[#555]">
-                  View plan &rarr;
-                </p>
-              </Link>
-            ))}
+                </Link>
+              ))}
+            </div>
           </div>
-        ) : (
+        )}
+
+        {/* Standard Plans */}
+        {enrolledExams.length > 0 ? (
+          <div className="space-y-4">
+            {customPlans.length > 0 && (
+              <h2 className="text-sm font-semibold text-[#bbb]">Exam Prep Plans</h2>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {enrolledExams.map((exam) => (
+                <Link
+                  key={exam.code}
+                  to={paths.app.plan.getHref(exam.code)}
+                  className="group rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-5 space-y-3 hover:border-[#4f8ef7]/30 transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{
+                        backgroundColor: CATEGORY_COLORS[exam.category] ?? '#888',
+                      }}
+                    />
+                    <p className="text-sm font-semibold text-white group-hover:text-[#4f8ef7] transition-colors">
+                      {exam.label}
+                    </p>
+                  </div>
+                  <p className="text-xs text-[#888]">{exam.description}</p>
+                  <p className="text-xs font-mono text-[#555]">
+                    View plan &rarr;
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : customPlans.length === 0 ? (
           <Link
             to={paths.app.marketplace.getHref()}
             className="block rounded-2xl border border-dashed border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-8 text-center hover:border-[#4f8ef7]/30 transition-all space-y-2"
@@ -95,10 +141,10 @@ export const Plans = () => {
               No plans yet
             </p>
             <p className="text-xs text-[#4f8ef7]">
-              Browse the marketplace to get started
+              Create a custom plan or browse the marketplace to get started
             </p>
           </Link>
-        )}
+        ) : null}
       </div>
     </div>
   )

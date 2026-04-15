@@ -5,7 +5,9 @@ import { apiFetch } from '@/lib/api'
 
 const AppRoot = () => {
   useEffect(() => {
-    apiFetch('/api/user/me').catch(() => {})
+    apiFetch('/api/user/me')
+      .then((r) => { if (!r.ok) console.warn('Failed to load user profile:', r.status) })
+      .catch((err) => console.warn('Failed to load user profile:', err))
   }, [])
 
   return (

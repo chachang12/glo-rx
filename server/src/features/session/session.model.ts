@@ -1,5 +1,4 @@
 import mongoose, { Schema, type InferSchemaType } from 'mongoose'
-import { EXAM_CODES } from '../../config/exams.js'
 
 const answerSchema = new Schema(
   {
@@ -20,7 +19,6 @@ const sessionSchema = new Schema(
     },
     examCode: {
       type: String,
-      enum: EXAM_CODES,
       required: true,
     },
     answers: {
