@@ -47,14 +47,6 @@ app.route('/api/user', userRoutes)
 app.get('/health', (c) => c.json({ status: 'ok' }))
 
 connectDB().then(async () => {
-  // One-time fix: unset null usernames so sparse unique index works
-  const db = (await import('mongoose')).default.connection.db!
-  await db.collection('users').updateMany(
-    { username: null },
-    { $unset: { username: '' } }
-  )
-  try { await db.collection('users').dropIndex('username_1') } catch { /* already correct */ }
-
   await seedExams()
   serve({ fetch: app.fetch, port: 3001 }, () => {
     console.log('Server running on http://localhost:3001')
