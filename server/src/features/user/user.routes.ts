@@ -21,12 +21,19 @@ userRoutes.get('/me', async (c) => {
 
   // First login — create profile from OAuth data
   if (!user) {
-    const [firstName = '', lastName = ''] = (authUser.name ?? '').split(' ', 2)
-    user = await UserModel.create({
-      authId: authUser.id,
-      firstName,
-      lastName,
-    })
+    console.log(`Creating user profile for ${authUser.id} (${authUser.name ?? 'unknown'})`)
+    try {
+      const [firstName = '', lastName = ''] = (authUser.name ?? '').split(' ', 2)
+      user = await UserModel.create({
+        authId: authUser.id,
+        firstName,
+        lastName,
+      })
+      console.log(`User profile created: ${user._id}`)
+    } catch (err) {
+      console.error('Failed to create user profile:', err)
+      throw err
+    }
   }
 
   return c.json(user)

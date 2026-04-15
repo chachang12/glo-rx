@@ -18,7 +18,6 @@ const userSchema = new Schema(
       lowercase: true,
       trim: true,
       match: /^[a-z0-9_]{3,20}$/,
-      default: null,
     },
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
