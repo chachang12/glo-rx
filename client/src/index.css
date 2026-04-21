@@ -1,5 +1,81 @@
 @import "tailwindcss";
 
-@theme {
-  --font-sans: 'Inter', sans-serif;
+/* ==========================================================================
+   Design tokens (shared across landing, auth, and the app)
+   Dark mode is the default. A `data-theme="light"` attribute on <html>
+   flips the palette.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --bg: #05060a;
+  --bg-2: #0a0d15;
+
+  /* Text */
+  --ink: #f3f5f9;
+  --ink-dim: #a7adbd;
+  --ink-faint: #5b6173;
+
+  /* Hairlines + glass */
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --glass: rgba(255, 255, 255, 0.035);
+  --glass-strong: rgba(255, 255, 255, 0.06);
+
+  /* Brand accents (same in both modes) */
+  --teal: #6e9cc7;
+  --teal-deep: #3a5878;
+  --coral: #ff4858;
+  --blue: #6aa8ff;
+  --violet: #a78bfa;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f4f6fa;
+  --bg-2: #e8ecf3;
+  --ink: #0b0f18;
+  --ink-dim: #4d5568;
+  --ink-faint: #8b92a3;
+  --line: rgba(11, 15, 24, 0.10);
+  --line-strong: rgba(11, 15, 24, 0.18);
+  --glass: rgba(11, 15, 24, 0.03);
+  --glass-strong: rgba(11, 15, 24, 0.06);
+}
+
+/* Expose tokens as Tailwind utilities. `inline` tells Tailwind to keep the
+   var() reference at compile time so changing `data-theme` updates all
+   utilities live. */
+@theme inline {
+  --font-sans: 'Geist', 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --color-surface: var(--bg);
+  --color-surface-2: var(--bg-2);
+  --color-ink: var(--ink);
+  --color-ink-dim: var(--ink-dim);
+  --color-ink-faint: var(--ink-faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-glass: var(--glass);
+  --color-glass-strong: var(--glass-strong);
+
+  --color-brand-teal: var(--teal);
+  --color-brand-teal-deep: var(--teal-deep);
+  --color-brand-coral: var(--coral);
+  --color-brand-blue: var(--blue);
+  --color-brand-violet: var(--violet);
+}
+
+/* Baseline body style so the app picks up the theme surface + ink. */
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+}
+body {
+  font-family: 'Geist', 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
