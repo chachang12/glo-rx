@@ -96,7 +96,7 @@ export const createAppRouter = () =>
               {
                 path: paths.app.customPlanDetail.path,
                 lazy: () =>
-                  import('./routes/app/custom-plan-detail').then((m) => ({
+                  import('./routes/app/plan-detail').then((m) => ({
                     Component: m.CustomPlanDetail,
                   })),
               },

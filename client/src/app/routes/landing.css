@@ -611,70 +611,8 @@
 .axeous-landing .sw.today { background: #ff4858; box-shadow: 0 0 8px rgba(255, 72, 88, 0.6); }
 .axeous-landing .sw.future { background: rgba(255, 255, 255, 0.2); border: 1px solid var(--line-strong); }
 [data-theme="light"] .axeous-landing .sw.future { background: rgba(11, 15, 24, 0.1); }
-.axeous-landing .rm-track-wrap {
-  position: relative; overflow-x: auto; overflow-y: hidden;
-  scrollbar-width: none;
-}
-.axeous-landing .rm-track-wrap::-webkit-scrollbar { height: 0; display: none; }
-.axeous-landing .rm-node { position: relative; display: flex; flex-direction: column; align-items: center; padding-top: 80px; }
-.axeous-landing .rm-node .rm-dot {
-  position: absolute; top: 56px; left: 50%; transform: translateX(-50%);
-  width: 40px; height: 40px; border-radius: 50%;
-  display: grid; place-items: center;
-  background: rgba(10, 13, 21, 0.9);
-  border: 1.5px solid var(--line-strong);
-  color: var(--ink-faint);
-  z-index: 2;
-  transition: transform .2s;
-}
-[data-theme="light"] .axeous-landing .rm-node .rm-dot { background: #fff; }
-.axeous-landing .rm-node:hover .rm-dot { transform: translateX(-50%) scale(1.1); }
-.axeous-landing .rm-done .rm-dot { background: var(--teal); border-color: var(--teal); color: #04120f; box-shadow: 0 0 20px rgba(110, 156, 199, 0.4); }
-.axeous-landing .rm-today .rm-dot {
-  background: linear-gradient(135deg, #ff4858, #ff7a87);
-  border-color: #ff4858; color: #fff;
-  box-shadow: 0 0 28px rgba(255, 72, 88, 0.55);
-  animation: axRmPulse 2s ease-in-out infinite;
-}
-@keyframes axRmPulse { 0%, 100% { box-shadow: 0 0 28px rgba(255, 72, 88, 0.55); } 50% { box-shadow: 0 0 40px rgba(255, 72, 88, 0.8); } }
-.axeous-landing .rm-exam .rm-dot {
-  background: linear-gradient(135deg, #6aa8ff, #a78bfa);
-  border-color: #a78bfa; color: #fff;
-  width: 48px; height: 48px; top: 52px;
-  box-shadow: 0 0 24px rgba(167, 139, 250, 0.5);
-}
-.axeous-landing .rm-card {
-  position: relative;
-  width: 100%; max-width: 112px;
-  padding: 10px 10px;
-  border-radius: 10px;
-  background: rgba(10, 13, 21, 0.7);
-  border: 1px solid var(--line);
-  backdrop-filter: blur(10px);
-  text-align: left;
-  font-size: 11px;
-  transition: transform .2s, border-color .2s;
-  margin-top: 14px;
-}
-[data-theme="light"] .axeous-landing .rm-card { background: rgba(255, 255, 255, 0.85); border-color: rgba(11, 15, 24, 0.10); }
-.axeous-landing .rm-node:hover .rm-card { transform: translateY(-2px); border-color: var(--line-strong); }
-.axeous-landing .rm-future .rm-card { opacity: 0.6; }
-.axeous-landing .rm-today .rm-card { border-color: rgba(255, 72, 88, 0.35); background: rgba(255, 72, 88, 0.05); }
-.axeous-landing .rm-exam .rm-card { border-color: rgba(167, 139, 250, 0.4); background: rgba(167, 139, 250, 0.06); max-width: 120px; }
-.axeous-landing .rm-day { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-faint); letter-spacing: 0.08em; margin-bottom: 3px; }
-.axeous-landing .rm-kind {
-  display: inline-block; font-size: 9.5px; margin-bottom: 5px;
-  text-transform: uppercase; letter-spacing: 0.12em;
-  padding: 2px 5px; border-radius: 3px; font-weight: 600;
-}
-.axeous-landing .k-drill { background: rgba(110, 156, 199, 0.15); color: var(--teal); }
-.axeous-landing .k-quiz { background: rgba(167, 139, 250, 0.15); color: #a78bfa; }
-.axeous-landing .k-test { background: rgba(255, 72, 88, 0.15); color: #ff7a87; }
-.axeous-landing .k-review { background: rgba(255, 180, 90, 0.15); color: #ffb45a; }
-.axeous-landing .rm-label { color: var(--ink); font-size: 11.5px; line-height: 1.35; }
-.axeous-landing .rm-future .rm-label { color: var(--ink-dim); }
-.axeous-landing .rm-today-tag { margin-top: 6px; font-size: 10px; color: #ff7a87; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.06em; }
-.axeous-landing .rm-exam-tag { margin-top: 6px; font-size: 10px; color: #c4b5fd; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.14em; font-weight: 600; }
+/* Roadmap visuals (dots, cards) come from the shared RoadmapTrack component —
+   see features/roadmap/RoadmapTrack.css */
 .axeous-landing .rm-foot {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
   padding-top: 20px; margin-top: 8px; border-top: 1px solid var(--line);

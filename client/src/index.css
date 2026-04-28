@@ -30,6 +30,13 @@
   --coral: #ff4858;
   --blue: #6aa8ff;
   --violet: #a78bfa;
+  --amber: #ffb45a;
+
+  /* Radius scale — keep app surfaces consistent. See CLAUDE.md. */
+  --radius-sm: 6px;     /* chips, tags, small badges, mini bars */
+  --radius-md: 10px;    /* buttons, inputs, inner list items */
+  --radius-lg: 12px;    /* cards (the main app surface) */
+  --radius-full: 999px; /* pills, avatars, capsule nav */
 }
 
 :root[data-theme="light"] {
@@ -67,6 +74,12 @@
   --color-brand-coral: var(--coral);
   --color-brand-blue: var(--blue);
   --color-brand-violet: var(--violet);
+  --color-brand-amber: var(--amber);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-full: var(--radius-full);
 }
 
 /* Baseline body style so the app picks up the theme surface + ink. */

@@ -1,0 +1,219 @@
+/* ============================================================
+   Axeous Profile — scoped under .axeous-profile
+   Theme-aware via shared CSS custom properties.
+   ============================================================ */
+
+.axeous-profile {
+  font-family: 'Geist', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-feature-settings: 'ss01', 'cv11';
+  color: var(--ink);
+}
+
+.axeous-profile .wrap {
+  max-width: 860px; margin: 0 auto; padding: 0 32px;
+}
+.axeous-profile .page-bottom { padding-bottom: 64px; }
+
+/* ── Breadcrumb + Header ─────────────────────────────────── */
+.axeous-profile .breadcrumb {
+  padding: 28px 0 0;
+  font-size: 13px;
+  color: var(--ink-faint);
+  display: flex; align-items: center; gap: 8px;
+}
+.axeous-profile .breadcrumb a {
+  color: var(--ink-faint);
+  text-decoration: none;
+  transition: color .15s;
+}
+.axeous-profile .breadcrumb a:hover { color: var(--ink); }
+
+.axeous-profile .page-title {
+  font-size: 32px; font-weight: 500; letter-spacing: -0.02em;
+  margin: 8px 0 4px; color: var(--ink);
+}
+.axeous-profile .page-sub {
+  font-size: 15px; color: var(--ink-dim); margin: 0 0 32px;
+}
+
+/* ── Card base ───────────────────────────────────────────── */
+.axeous-profile .card {
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--ink) 4%, transparent),
+    color-mix(in oklab, var(--ink) 1.5%, transparent)
+  );
+  border: 1px solid var(--line);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.axeous-profile .card:hover { border-color: var(--line-strong); }
+
+/* ── Hero ────────────────────────────────────────────────── */
+.axeous-profile .profile-hero {
+  padding: 32px;
+  display: flex; align-items: center; gap: 24px;
+  position: relative; overflow: hidden; margin-bottom: 16px;
+}
+.axeous-profile .profile-hero::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(500px 300px at 0% 50%, rgba(110, 156, 199, 0.14), transparent 60%);
+}
+.axeous-profile .profile-hero > * { position: relative; }
+
+.axeous-profile .profile-avatar {
+  width: 80px; height: 80px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--teal), var(--blue));
+  display: grid; place-items: center;
+  font-size: 28px; font-weight: 600; color: #04120f;
+  box-shadow: 0 8px 32px rgba(110, 156, 199, 0.3);
+}
+.axeous-profile .profile-info { flex: 1; min-width: 0; }
+.axeous-profile .profile-name { font-size: 24px; font-weight: 500; margin: 0 0 4px; color: var(--ink); }
+.axeous-profile .profile-email { font-size: 14px; color: var(--ink-dim); margin: 0 0 12px; }
+
+.axeous-profile .profile-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+.axeous-profile .profile-badge {
+  padding: 4px 12px; border-radius: 999px; font-size: 12px;
+  background: var(--glass); border: 1px solid var(--line);
+  color: var(--ink-dim);
+  display: flex; align-items: center; gap: 6px;
+}
+.axeous-profile .profile-badge .badge-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+}
+
+.axeous-profile .edit-btn {
+  padding: 10px 18px; border-radius: 999px;
+  font-size: 13px; font-weight: 500;
+  background: var(--glass); border: 1px solid var(--line-strong);
+  color: var(--ink-dim);
+  cursor: pointer;
+  transition: all .2s;
+}
+.axeous-profile .edit-btn:hover {
+  background: rgba(255, 72, 88, 0.06);
+  border-color: rgba(255, 72, 88, 0.35);
+  color: var(--ink);
+}
+
+/* ── Stats strip ─────────────────────────────────────────── */
+.axeous-profile .stats-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+  margin-bottom: 24px;
+}
+.axeous-profile .stat-mini { padding: 18px; text-align: center; }
+.axeous-profile .stat-mini-val {
+  font-size: 24px; font-weight: 500; letter-spacing: -0.02em;
+}
+.axeous-profile .stat-mini-label {
+  font-size: 11px; color: var(--ink-faint);
+  text-transform: uppercase; letter-spacing: 0.1em; margin-top: 3px;
+}
+
+/* ── Section title ───────────────────────────────────────── */
+.axeous-profile .section-title {
+  font-size: 18px; font-weight: 500;
+  margin: 28px 0 14px; color: var(--ink);
+}
+.axeous-profile .section-title.danger { color: var(--coral); }
+
+.axeous-profile .section-card { padding: 0; }
+
+/* ── Row items ───────────────────────────────────────────── */
+.axeous-profile .row-item {
+  display: flex; align-items: center; gap: 16px;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--line);
+  transition: background .2s;
+  text-decoration: none;
+  color: inherit;
+}
+.axeous-profile .row-item:last-child { border-bottom: none; }
+.axeous-profile .row-item:hover { background: color-mix(in oklab, var(--ink) 2%, transparent); }
+
+.axeous-profile .row-icon {
+  width: 40px; height: 40px; border-radius: var(--radius-md);
+  display: grid; place-items: center; flex-shrink: 0;
+}
+.axeous-profile .row-info { flex: 1; min-width: 0; }
+.axeous-profile .row-title {
+  font-size: 14.5px; font-weight: 500; margin-bottom: 2px;
+  color: var(--ink);
+}
+.axeous-profile .row-sub { font-size: 12.5px; color: var(--ink-faint); }
+
+.axeous-profile .row-action {
+  padding: 8px 16px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 500;
+  background: var(--glass); border: 1px solid var(--line-strong);
+  color: var(--ink-dim);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .2s;
+}
+.axeous-profile .row-action:hover {
+  background: rgba(255, 72, 88, 0.06);
+  border-color: rgba(255, 72, 88, 0.35);
+  color: var(--ink);
+}
+.axeous-profile .row-action.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+.axeous-profile .row-action-link {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.axeous-profile .row-tag {
+  font-size: 11px; padding: 4px 10px; border-radius: var(--radius-sm);
+  background: rgba(167, 139, 250, 0.1);
+  border: 1px solid rgba(167, 139, 250, 0.2);
+  color: var(--violet);
+  white-space: nowrap;
+}
+.axeous-profile .row-tag.soon {
+  background: rgba(255, 180, 90, 0.1);
+  border-color: rgba(255, 180, 90, 0.2);
+  color: #ffb45a;
+}
+
+.axeous-profile .danger-row .row-title { color: var(--coral); }
+.axeous-profile .danger-action {
+  padding: 8px 16px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 500;
+  background: rgba(255, 72, 88, 0.06);
+  border: 1px solid rgba(255, 72, 88, 0.2);
+  color: var(--coral);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .2s;
+}
+.axeous-profile .danger-action:hover {
+  background: rgba(255, 72, 88, 0.12);
+  border-color: rgba(255, 72, 88, 0.4);
+}
+.axeous-profile .danger-confirm {
+  padding: 8px 14px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 500;
+  background: var(--coral); color: #fff;
+  border: none; cursor: pointer;
+  transition: opacity .15s;
+}
+.axeous-profile .danger-confirm:hover { opacity: 0.9; }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .axeous-profile .wrap { padding: 0 20px; }
+  .axeous-profile .stats-strip { grid-template-columns: repeat(2, 1fr); }
+  .axeous-profile .profile-hero {
+    flex-direction: column; text-align: center; padding: 24px;
+  }
+  .axeous-profile .profile-badges { justify-content: center; }
+  .axeous-profile .row-item { padding: 14px 18px; }
+}

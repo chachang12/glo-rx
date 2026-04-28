@@ -85,6 +85,9 @@ const examSchema = new Schema(
       enum: ['hidden', 'coming-soon', 'live'],
       default: 'hidden',
     },
+    // At most one exam is featured at a time — enforced server-side in the
+    // admin PATCH handler. Drives the Marketplace "Featured exam" hero card.
+    featured: { type: Boolean, default: false, index: true },
 
     // ── Admin-managed content ────────────────────────────────────────────
     topics: [{ type: String }], // e.g. ["Pharmacology", "Cardiology", ...]

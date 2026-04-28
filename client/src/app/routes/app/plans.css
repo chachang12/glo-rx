@@ -1,0 +1,289 @@
+/* ============================================================
+   Axeous Plans — scoped under .axeous-plans
+   Theme-aware (uses shared CSS custom properties from :root).
+   ============================================================ */
+
+.axeous-plans {
+  --green: #5bf08a;
+  position: relative;
+  font-family: 'Geist', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-feature-settings: 'ss01', 'cv11';
+  color: var(--ink);
+}
+
+.axeous-plans .wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+.axeous-plans .page-bottom { padding-bottom: 64px; }
+
+/* ── Header ──────────────────────────────────────────────── */
+.axeous-plans .page-header {
+  padding: 36px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.axeous-plans .page-header h1 {
+  font-size: 32px; font-weight: 500; letter-spacing: -0.02em;
+  margin: 0 0 4px; color: var(--ink);
+}
+.axeous-plans .page-header p {
+  font-size: 15px; color: var(--ink-dim); margin: 0;
+}
+.axeous-plans .header-actions {
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+}
+
+.axeous-plans .btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 999px;
+  font-size: 13.5px; font-weight: 500;
+  background: var(--ink); color: var(--bg);
+  text-decoration: none; cursor: pointer;
+  transition: transform .2s, box-shadow .2s;
+}
+.axeous-plans .btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 30px color-mix(in oklab, var(--ink) 30%, transparent);
+}
+.axeous-plans .btn-ghost {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 999px;
+  font-size: 13.5px; font-weight: 500;
+  background: var(--glass);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  backdrop-filter: blur(10px);
+  text-decoration: none; cursor: pointer;
+  transition: background .2s, border-color .2s;
+}
+.axeous-plans .btn-ghost:hover {
+  background: rgba(255, 72, 88, 0.06);
+  border-color: rgba(255, 72, 88, 0.35);
+}
+
+/* ── Card ────────────────────────────────────────────────── */
+.axeous-plans .card {
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--ink) 4%, transparent),
+    color-mix(in oklab, var(--ink) 1.5%, transparent)
+  );
+  border: 1px solid var(--line);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  overflow: hidden;
+  transition: transform .3s, border-color .3s;
+}
+.axeous-plans .card:hover { border-color: var(--line-strong); }
+
+/* ── Section label ───────────────────────────────────────── */
+.axeous-plans .section-label {
+  font-size: 18px; font-weight: 500; letter-spacing: -0.01em;
+  color: var(--ink); margin: 40px 0 16px;
+}
+
+/* ── Grid ────────────────────────────────────────────────── */
+.axeous-plans .plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+.axeous-plans .plans-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 900px) {
+  .axeous-plans .plans-grid.cols-3 { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+}
+
+/* ── Plan card ───────────────────────────────────────────── */
+.axeous-plans .plan-card {
+  padding: 28px;
+  position: relative;
+  overflow: hidden;
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+.axeous-plans .plan-card::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: var(--plan-glow, radial-gradient(400px 200px at 80% -20%, rgba(110, 156, 199, 0.14), transparent 60%));
+}
+.axeous-plans .plan-card > * { position: relative; }
+.axeous-plans .plan-card:hover { transform: translateY(-3px); }
+
+.axeous-plans .plan-top {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 8px; margin-bottom: 16px;
+}
+.axeous-plans .plan-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 12px 5px 8px; border-radius: 999px;
+  background: color-mix(in oklab, var(--bg) 60%, transparent);
+  border: 1px solid var(--line-strong);
+  font-size: 12px; color: var(--ink-dim);
+  backdrop-filter: blur(8px);
+}
+.axeous-plans .plan-badge-dot { width: 8px; height: 8px; border-radius: 50%; }
+.axeous-plans .plan-status {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
+  padding: 4px 10px; border-radius: 999px;
+  white-space: nowrap;
+}
+.axeous-plans .status-active {
+  color: var(--green);
+  background: rgba(91, 240, 138, 0.08);
+  border: 1px solid rgba(91, 240, 138, 0.2);
+}
+.axeous-plans .status-paused {
+  color: var(--ink-faint);
+  background: var(--glass);
+  border: 1px solid var(--line);
+}
+
+.axeous-plans .plan-title {
+  font-size: 24px; font-weight: 500; letter-spacing: -0.02em;
+  margin: 0 0 6px; color: var(--ink);
+}
+.axeous-plans .plan-sub {
+  font-size: 14px; color: var(--ink-dim); margin: 0 0 20px;
+}
+
+.axeous-plans .plan-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 12px; margin-bottom: 20px;
+}
+.axeous-plans .plan-stat {
+  padding: 12px; border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--ink) 2%, transparent);
+  border: 1px solid var(--line);
+}
+.axeous-plans .plan-stat-val {
+  font-size: 20px; font-weight: 500; letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.axeous-plans .plan-stat-label {
+  font-size: 11px; color: var(--ink-faint);
+  text-transform: uppercase; letter-spacing: 0.1em; margin-top: 2px;
+}
+
+.axeous-plans .plan-progress { margin-bottom: 16px; }
+.axeous-plans .plan-progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px; color: var(--ink-dim); margin-bottom: 8px;
+}
+.axeous-plans .plan-progress-bar {
+  width: 100%; height: 6px; border-radius: 3px;
+  background: color-mix(in oklab, var(--ink) 6%, transparent);
+}
+.axeous-plans .plan-progress-fill {
+  height: 6px; border-radius: 3px; transition: width .6s ease;
+}
+
+.axeous-plans .plan-topics {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.axeous-plans .plan-topic {
+  font-size: 11.5px; padding: 4px 10px; border-radius: var(--radius-sm);
+  background: color-mix(in oklab, var(--ink) 3%, transparent);
+  border: 1px solid var(--line);
+  color: var(--ink-dim);
+  transition: background .2s;
+}
+.axeous-plans .plan-topic:hover {
+  background: color-mix(in oklab, var(--ink) 6%, transparent);
+}
+
+.axeous-plans .plan-actions {
+  display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap;
+}
+.axeous-plans .plan-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 16px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 500;
+  background: var(--glass-strong);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  text-decoration: none; cursor: pointer;
+  transition: background .2s, transform .2s, border-color .2s;
+}
+.axeous-plans .plan-btn:hover {
+  background: rgba(255, 72, 88, 0.06);
+  border-color: rgba(255, 72, 88, 0.35);
+  transform: translateY(-1px);
+}
+.axeous-plans .plan-btn.primary {
+  background: var(--ink); color: var(--bg); border-color: transparent;
+}
+.axeous-plans .plan-btn.primary:hover {
+  box-shadow: 0 10px 30px color-mix(in oklab, var(--ink) 30%, transparent);
+  background: var(--ink);
+}
+
+/* ── Empty card ──────────────────────────────────────────── */
+.axeous-plans .empty-card {
+  padding: 48px 28px; text-align: center;
+  border: 1.5px dashed var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklab, var(--ink) 1.5%, transparent);
+  display: grid; place-items: center;
+}
+.axeous-plans .empty-icon {
+  margin-bottom: 16px;
+  color: var(--ink-faint);
+  display: flex;
+  justify-content: center;
+}
+.axeous-plans .empty-title {
+  font-size: 16px; font-weight: 500; color: var(--ink); margin-bottom: 6px;
+}
+.axeous-plans .empty-sub {
+  font-size: 13.5px; color: var(--ink-dim); margin-bottom: 20px;
+}
+
+/* ── Recommended card ────────────────────────────────────── */
+.axeous-plans .rec-card {
+  padding: 24px; position: relative; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.axeous-plans .rec-card::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(400px 200px at 50% -30%, rgba(167, 139, 250, 0.12), transparent 60%);
+}
+.axeous-plans .rec-card > * { position: relative; }
+.axeous-plans .rec-top {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 8px; margin-bottom: 10px;
+}
+.axeous-plans .rec-name { font-size: 16px; font-weight: 500; color: var(--ink); }
+.axeous-plans .rec-tag {
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.12em;
+  padding: 3px 8px; border-radius: 4px; font-weight: 600;
+  background: rgba(255, 72, 88, 0.12); color: var(--coral);
+  white-space: nowrap;
+}
+.axeous-plans .rec-desc {
+  font-size: 13px; color: var(--ink-dim);
+  line-height: 1.5; margin: 0 0 14px;
+}
+.axeous-plans .rec-meta {
+  display: flex; gap: 16px;
+  font-size: 12px; color: var(--ink-faint);
+  margin-top: auto;
+}
+.axeous-plans .rec-actions { margin-top: 16px; }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 780px) {
+  .axeous-plans .wrap { padding: 0 20px; }
+  .axeous-plans .page-header { padding: 24px 0 0; }
+  .axeous-plans .page-header h1 { font-size: 26px; }
+  .axeous-plans .section-label { margin: 32px 0 14px; }
+  .axeous-plans .plan-card { padding: 22px; }
+  .axeous-plans .plans-grid { grid-template-columns: 1fr; }
+}

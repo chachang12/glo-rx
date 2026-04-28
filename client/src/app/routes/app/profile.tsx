@@ -1,20 +1,38 @@
-import { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router'
 import { authClient } from '@/lib/auth-client'
-import { useUser, UserAvatar } from '@/features/auth'
+import { useUser } from '@/features/auth'
 import { paths } from '@/config/paths'
 import { apiFetch } from '@/lib/api'
+import { useTheme } from '@/components/theme-provider'
+import './profile.css'
+
+interface Stats {
+  totalQuestions: number
+  accuracy: number | null
+  streak: number
+  daysToExam: number | null
+  nextExamLabel: string | null
+  masteredCount: number
+  totalTopics: number
+}
 
 export const Profile = () => {
   const { user } = useUser()
   const navigate = useNavigate()
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const { theme } = useTheme()
+  const [stats, setStats] = useState<Stats | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   useEffect(() => {
     apiFetch('/api/user/me')
       .then((r) => r.json())
       .then((u) => { if (u.role === 'admin') setIsAdmin(true) })
+      .catch(() => {})
+    apiFetch('/api/user/me/stats')
+      .then((r) => r.json())
+      .then(setStats)
       .catch(() => {})
   }, [])
 
@@ -31,173 +49,259 @@ export const Profile = () => {
 
   if (!user) return null
 
+  const initials = getInitials(user.name)
+  const streak = stats?.streak ?? 0
+  const accuracy = stats?.accuracy
+  const totalQuestions = stats?.totalQuestions ?? 0
+  const planLabel = stats?.nextExamLabel ?? 'No active plan'
+
   return (
-    <div className="p-8">
-      <div className="max-w-2xl mx-auto space-y-10">
-        {/* Header */}
-        <div className="space-y-3">
-          <Link
-            to={paths.app.dashboard.getHref()}
-            className="inline-flex items-center gap-1.5 text-xs text-[#888] hover:text-[#4f8ef7] transition-colors"
-          >
-            &larr; Back to dashboard
-          </Link>
-          <div className="space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight text-[#e8e6f0]">
-              Profile
-            </h1>
-            <p className="text-sm text-[#888]">
-              Manage your account and preferences
-            </p>
-          </div>
-        </div>
+    <div className="axeous-profile">
+      <div className="wrap page-bottom">
+        <nav className="breadcrumb" aria-label="Breadcrumb">
+          <Link to={paths.app.dashboard.getHref()}>← Back to dashboard</Link>
+        </nav>
+        <h1 className="page-title">Profile</h1>
+        <p className="page-sub">Manage your account and preferences</p>
 
-        {/* Profile Card */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-6 flex items-center gap-5">
-          <UserAvatar name={user.name} size="lg" />
-          <div className="space-y-1">
-            <p className="text-lg font-semibold text-[#e8e6f0]">{user.name}</p>
-            <p className="text-sm text-[#888]">{user.email}</p>
-          </div>
-        </div>
-
-        {/* Admin */}
-        {isAdmin && (
-          <Link
-            to={paths.app.admin.getHref()}
-            className="flex items-center justify-between rounded-2xl border border-[#8b5cf6]/20 bg-[#8b5cf6]/5 p-5 hover:border-[#8b5cf6]/40 transition-all"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-[#8b5cf6]/15 flex items-center justify-center">
-                <ShieldIcon />
+        {/* HERO */}
+        <div className="card profile-hero">
+          <div className="profile-avatar">{initials}</div>
+          <div className="profile-info">
+            <h2 className="profile-name">{user.name ?? 'Axeous user'}</h2>
+            <p className="profile-email">{user.email ?? ''}</p>
+            <div className="profile-badges">
+              <div className="profile-badge">
+                <span
+                  className="badge-dot"
+                  style={{ background: 'var(--green)', boxShadow: '0 0 6px var(--green)' }}
+                />
+                Active
               </div>
-              <div>
-                <p className="text-sm font-semibold text-[#ddd]">Admin Dashboard</p>
-                <p className="text-xs text-[#888]">Manage platform, users, and plans</p>
-              </div>
+              {stats?.nextExamLabel && (
+                <div className="profile-badge">
+                  <span
+                    className="badge-dot"
+                    style={{ background: 'var(--teal)', boxShadow: '0 0 6px var(--teal)' }}
+                  />
+                  {planLabel}
+                </div>
+              )}
+              {streak > 0 && (
+                <div className="profile-badge">
+                  <span
+                    className="badge-dot"
+                    style={{ background: 'var(--teal)', boxShadow: '0 0 6px var(--teal)' }}
+                  />
+                  {streak}d streak
+                </div>
+              )}
             </div>
-            <span className="text-xs text-[#555]">&rarr;</span>
+          </div>
+          <Link to={paths.app.settings.getHref()} className="edit-btn">
+            Edit profile
           </Link>
+        </div>
+
+        {/* STATS */}
+        <div className="stats-strip">
+          <div className="card stat-mini">
+            <div className="stat-mini-val" style={{ color: 'var(--teal)' }}>{totalQuestions}</div>
+            <div className="stat-mini-label">Questions</div>
+          </div>
+          <div className="card stat-mini">
+            <div className="stat-mini-val" style={{ color: 'var(--green)' }}>
+              {accuracy != null ? `${accuracy}%` : '—'}
+            </div>
+            <div className="stat-mini-label">Accuracy</div>
+          </div>
+          <div className="card stat-mini">
+            <div className="stat-mini-val">{streak}d</div>
+            <div className="stat-mini-label">Streak</div>
+          </div>
+          <div className="card stat-mini">
+            <div className="stat-mini-val" style={{ color: 'var(--violet)' }}>—</div>
+            <div className="stat-mini-label">Rank</div>
+          </div>
+        </div>
+
+        {isAdmin && (
+          <>
+            <h3 className="section-title">Admin</h3>
+            <div className="card section-card">
+              <Link to={paths.app.admin.getHref()} className="row-item">
+                <div
+                  className="row-icon"
+                  style={{
+                    background: 'rgba(167,139,250,0.12)',
+                    border: '1px solid rgba(167,139,250,0.2)',
+                  }}
+                >
+                  <GearIcon color="var(--violet)" />
+                </div>
+                <div className="row-info">
+                  <div className="row-title">Admin Dashboard</div>
+                  <div className="row-sub">Manage platform, users, and plans</div>
+                </div>
+                <span className="row-action">Open →</span>
+              </Link>
+            </div>
+          </>
         )}
 
-        {/* Subscription */}
-        <Section title="Subscription">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-[#ddd]">Free Plan</p>
-              <p className="text-xs text-[#888] mt-0.5">
-                Upgrade for unlimited practice tests and advanced analytics
-              </p>
-            </div>
-            <button
-              disabled
-              className="px-4 py-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-xs font-semibold text-[#555] cursor-not-allowed"
+        {/* PREFERENCES */}
+        <h3 className="section-title">Preferences</h3>
+        <div className="card section-card">
+          <div className="row-item">
+            <div
+              className="row-icon"
+              style={{
+                background: 'rgba(106,168,255,0.12)',
+                border: '1px solid rgba(106,168,255,0.2)',
+              }}
             >
-              Coming soon
+              {theme === 'dark' ? <MoonIcon color="var(--blue)" /> : <SunIcon color="var(--blue)" />}
+            </div>
+            <div className="row-info">
+              <div className="row-title">Appearance</div>
+              <div className="row-sub">
+                {theme === 'dark' ? 'Dark' : 'Light'} mode is currently enabled
+              </div>
+            </div>
+            <Link
+              to={paths.app.settings.getHref()}
+              className="row-action row-action-link"
+            >
+              Change
+            </Link>
+          </div>
+        </div>
+
+        {/* ACCOUNT */}
+        <h3 className="section-title">Account</h3>
+        <div className="card section-card">
+          <div className="row-item">
+            <div
+              className="row-icon"
+              style={{ background: 'var(--glass)', border: '1px solid var(--line)' }}
+            >
+              <SignOutIcon color="var(--ink-dim)" />
+            </div>
+            <div className="row-info">
+              <div className="row-title">Sign out</div>
+              <div className="row-sub">Sign out of your account on this device</div>
+            </div>
+            <button onClick={handleSignOut} className="row-action" type="button">
+              Sign out
             </button>
           </div>
-        </Section>
+        </div>
 
-        {/* Account Actions */}
-        <Section title="Account">
-          <div className="space-y-3">
-            <ActionRow
-              label="Sign out"
-              description="Sign out of your account on this device"
-              button={
+        {/* DANGER */}
+        <h3 className="section-title danger">Danger zone</h3>
+        <div className="card section-card">
+          <div className="row-item danger-row">
+            <div
+              className="row-icon"
+              style={{
+                background: 'rgba(255,72,88,0.08)',
+                border: '1px solid rgba(255,72,88,0.2)',
+              }}
+            >
+              <TrashIcon color="var(--coral)" />
+            </div>
+            <div className="row-info">
+              <div className="row-title">Delete account</div>
+              <div className="row-sub">
+                Permanently delete your account and all data
+              </div>
+            </div>
+            {!showDeleteConfirm ? (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="danger-action"
+                type="button"
+              >
+                Delete account
+              </button>
+            ) : (
+              <div style={{ display: 'flex', gap: 8 }}>
                 <button
-                  onClick={handleSignOut}
-                  className="px-4 py-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-xs font-semibold text-[#ddd] hover:border-[#4f8ef7]/30 hover:text-[#4f8ef7] transition-all"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="row-action"
+                  type="button"
                 >
-                  Sign out
+                  Cancel
                 </button>
-              }
-            />
-            <div className="border-t border-white/[0.06]" />
-            <ActionRow
-              label="Export data"
-              description="Download all your test history and profile data"
-              button={
                 <button
-                  disabled
-                  className="px-4 py-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-xs font-semibold text-[#555] cursor-not-allowed"
+                  onClick={handleDeleteAccount}
+                  className="danger-confirm"
+                  type="button"
                 >
-                  Coming soon
+                  Confirm delete
                 </button>
-              }
-            />
-            <div className="border-t border-white/[0.06]" />
-            <ActionRow
-              label="Delete account"
-              description="Permanently delete your account and all associated data"
-              button={
-                !showDeleteConfirm ? (
-                  <button
-                    onClick={() => setShowDeleteConfirm(true)}
-                    className="px-4 py-2 rounded-lg border border-[#ef4444]/30 bg-[#ef4444]/5 text-xs font-semibold text-[#ef4444] hover:border-[#ef4444]/60 transition-all"
-                  >
-                    Delete
-                  </button>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setShowDeleteConfirm(false)}
-                      className="px-3 py-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-xs font-semibold text-[#888] hover:text-[#ddd] transition-all"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleDeleteAccount}
-                      className="px-3 py-2 rounded-lg bg-[#ef4444] text-xs font-semibold text-white hover:bg-[#ef4444]/90 transition-all"
-                    >
-                      Confirm delete
-                    </button>
-                  </div>
-                )
-              }
-            />
+              </div>
+            )}
           </div>
-        </Section>
+        </div>
       </div>
     </div>
   )
 }
 
-const Section = ({
-  title,
-  children,
-}: {
-  title: string
-  children: React.ReactNode
-}) => (
-  <div className="space-y-4">
-    <h2 className="text-sm font-semibold text-[#bbb]">{title}</h2>
-    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-5">
-      {children}
-    </div>
-  </div>
-)
+// ============================================================
+// Helpers
+// ============================================================
 
-const ShieldIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+function getInitials(name: string | null | undefined): string {
+  if (!name) return '?'
+  const parts = name.trim().split(/\s+/)
+  if (parts.length === 1) return parts[0][0].toUpperCase()
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+}
+
+// ============================================================
+// Icons
+// ============================================================
+
+const GearIcon = ({ color }: { color: string }) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
   </svg>
 )
 
-const ActionRow = ({
-  label,
-  description,
-  button,
-}: {
-  label: string
-  description: string
-  button: React.ReactNode
-}) => (
-  <div className="flex items-center justify-between gap-4">
-    <div>
-      <p className="text-sm font-semibold text-[#ddd]">{label}</p>
-      <p className="text-xs text-[#888] mt-0.5">{description}</p>
-    </div>
-    {button}
-  </div>
+const SunIcon = ({ color }: { color: string }) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <path
+      d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+      stroke={color}
+      strokeWidth="1.6"
+      strokeLinecap="round"
+    />
+    <circle cx="12" cy="12" r="4" stroke={color} strokeWidth="1.6" />
+  </svg>
+)
+
+const MoonIcon = ({ color }: { color: string }) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <path
+      d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79Z"
+      stroke={color}
+      strokeWidth="1.6"
+      strokeLinejoin="round"
+    />
+  </svg>
+)
+
+const SignOutIcon = ({ color }: { color: string }) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+  </svg>
+)
+
+const TrashIcon = ({ color }: { color: string }) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+  </svg>
 )

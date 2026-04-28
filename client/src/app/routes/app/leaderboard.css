@@ -1,0 +1,407 @@
+/* ============================================================
+   Axeous Leaderboard — scoped under .axeous-leaderboard
+   Theme-aware via shared CSS custom properties.
+   ============================================================ */
+
+.axeous-leaderboard {
+  --green: #5bf08a;
+  --gold: #ffd700;
+  --silver: #c0c0c0;
+  --bronze: #cd7f32;
+  font-family: 'Geist', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-feature-settings: 'ss01', 'cv11';
+  color: var(--ink);
+}
+
+.axeous-leaderboard .wrap {
+  max-width: 1240px; margin: 0 auto; padding: 0 32px;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.axeous-leaderboard .page-header {
+  padding: 36px 0 0;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  flex-wrap: wrap; gap: 16px;
+}
+.axeous-leaderboard .page-header h1 {
+  font-size: 32px; font-weight: 500; letter-spacing: -0.02em;
+  margin: 0 0 4px; color: var(--ink);
+}
+.axeous-leaderboard .page-header p {
+  font-size: 15px; color: var(--ink-dim); margin: 0;
+}
+.axeous-leaderboard .btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 999px;
+  font-size: 13.5px; font-weight: 500;
+  background: var(--ink); color: var(--bg);
+  border: none; cursor: pointer;
+  transition: transform .2s, box-shadow .2s;
+}
+.axeous-leaderboard .btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 30px color-mix(in oklab, var(--ink) 25%, transparent);
+}
+
+/* ── Card base ───────────────────────────────────────────── */
+.axeous-leaderboard .card {
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--ink) 4%, transparent),
+    color-mix(in oklab, var(--ink) 1.5%, transparent)
+  );
+  border: 1px solid var(--line);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.axeous-leaderboard .card:hover { border-color: var(--line-strong); }
+
+/* ── Pending requests ────────────────────────────────────── */
+.axeous-leaderboard .requests-section { margin-top: 28px; }
+.axeous-leaderboard .requests-title {
+  font-size: 14px; font-weight: 500; color: var(--ink);
+  display: inline-flex; align-items: center; gap: 8px;
+  margin: 0 0 10px;
+}
+.axeous-leaderboard .requests-count {
+  font-size: 10px; font-weight: 700;
+  background: var(--brand-blue, #6aa8ff); color: var(--bg);
+  padding: 2px 7px; border-radius: 999px;
+}
+.axeous-leaderboard .request-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 18px; border-radius: var(--radius-md);
+  background: rgba(110, 156, 199, 0.05);
+  border: 1px solid rgba(110, 156, 199, 0.2);
+  margin-bottom: 8px;
+}
+.axeous-leaderboard .request-icon {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(110, 156, 199, 0.15);
+  border: 1px solid rgba(110, 156, 199, 0.3);
+  display: grid; place-items: center;
+  font-size: 13px; font-weight: 600; color: var(--teal);
+  flex-shrink: 0;
+}
+.axeous-leaderboard .request-info { flex: 1; min-width: 0; }
+.axeous-leaderboard .request-name {
+  font-size: 14px; font-weight: 500; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.axeous-leaderboard .request-sub { font-size: 12px; color: var(--ink-dim); margin-top: 2px; }
+.axeous-leaderboard .req-btn {
+  padding: 7px 14px; border-radius: 999px;
+  font-size: 12px; font-weight: 500;
+  cursor: pointer; border: 1px solid;
+  transition: all .15s;
+}
+.axeous-leaderboard .req-btn.accept {
+  background: rgba(91, 240, 138, 0.1);
+  border-color: rgba(91, 240, 138, 0.3);
+  color: var(--green);
+}
+.axeous-leaderboard .req-btn.accept:hover {
+  background: rgba(91, 240, 138, 0.18);
+  border-color: rgba(91, 240, 138, 0.45);
+}
+.axeous-leaderboard .req-btn.decline {
+  background: var(--glass);
+  border-color: var(--line);
+  color: var(--ink-dim);
+}
+.axeous-leaderboard .req-btn.decline:hover {
+  background: var(--glass-strong);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+/* ── Podium ──────────────────────────────────────────────── */
+.axeous-leaderboard .podium-section { margin-top: 32px; }
+.axeous-leaderboard .podium-card { padding: 0; }
+.axeous-leaderboard .podium {
+  display: flex; justify-content: center; align-items: flex-end;
+  gap: 16px; padding: 40px 24px 0;
+}
+.axeous-leaderboard .podium-slot {
+  display: flex; flex-direction: column; align-items: center;
+}
+.axeous-leaderboard .podium-avatar {
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-weight: 600; position: relative;
+  color: #04120f;
+}
+.axeous-leaderboard .podium-avatar .crown {
+  position: absolute; top: -14px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 18px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+}
+.axeous-leaderboard .podium-name {
+  font-size: 14px; font-weight: 500;
+  margin-top: 10px; color: var(--ink);
+  max-width: 140px; text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.axeous-leaderboard .podium-you {
+  font-size: 11px; color: var(--teal); margin-top: 2px;
+}
+.axeous-leaderboard .podium-streak {
+  font-size: 20px; font-weight: 600; margin-top: 6px;
+}
+.axeous-leaderboard .podium-streak-label {
+  font-size: 11px; color: var(--ink-faint);
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+.axeous-leaderboard .podium-base {
+  width: 100%; margin-top: 16px;
+  border-radius: 12px 12px 0 0;
+  display: grid; place-items: center; padding: 12px 0;
+  font-size: 28px; font-weight: 700;
+  color: color-mix(in oklab, var(--ink) 15%, transparent);
+}
+.axeous-leaderboard .p-1 .podium-avatar { width: 72px; height: 72px; font-size: 20px; }
+.axeous-leaderboard .p-1 .podium-base { height: 100px; width: 160px; background: linear-gradient(180deg, rgba(255, 215, 0, 0.12), rgba(255, 215, 0, 0.03)); }
+.axeous-leaderboard .p-1 .podium-streak { font-size: 28px; color: var(--gold); }
+.axeous-leaderboard .p-2 .podium-avatar { width: 60px; height: 60px; font-size: 17px; }
+.axeous-leaderboard .p-2 .podium-base { height: 70px; width: 140px; background: linear-gradient(180deg, rgba(192, 192, 192, 0.12), rgba(192, 192, 192, 0.03)); }
+.axeous-leaderboard .p-2 .podium-streak { color: var(--silver); }
+.axeous-leaderboard .p-3 .podium-avatar { width: 56px; height: 56px; font-size: 16px; }
+.axeous-leaderboard .p-3 .podium-base { height: 50px; width: 130px; background: linear-gradient(180deg, rgba(205, 127, 50, 0.12), rgba(205, 127, 50, 0.03)); }
+.axeous-leaderboard .p-3 .podium-streak { color: var(--bronze); }
+
+/* ── Filter bar ──────────────────────────────────────────── */
+.axeous-leaderboard .filter-bar {
+  display: flex; gap: 8px; margin: 28px 0 16px; flex-wrap: wrap;
+}
+.axeous-leaderboard .filter-tab {
+  padding: 8px 16px; border-radius: 999px;
+  font-size: 13px;
+  background: var(--glass);
+  border: 1px solid var(--line);
+  color: var(--ink-dim);
+  cursor: pointer;
+  transition: all .2s;
+}
+.axeous-leaderboard .filter-tab:hover {
+  background: rgba(255, 72, 88, 0.06);
+  border-color: rgba(255, 72, 88, 0.35);
+  color: var(--ink);
+}
+.axeous-leaderboard .filter-tab.active {
+  background: var(--glass-strong);
+  border-color: var(--line-strong);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* ── Table ───────────────────────────────────────────────── */
+.axeous-leaderboard .lb-table { padding: 0; }
+.axeous-leaderboard .lb-header {
+  display: grid;
+  grid-template-columns: 48px 48px 1fr 120px 100px 100px;
+  gap: 12px; align-items: center;
+  padding: 14px 24px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--ink-faint);
+  border-bottom: 1px solid var(--line);
+}
+.axeous-leaderboard .lb-row {
+  display: grid;
+  grid-template-columns: 48px 48px 1fr 120px 100px 100px;
+  gap: 12px; align-items: center;
+  padding: 14px 24px; font-size: 14px;
+  border-bottom: 1px solid var(--line);
+  transition: background .2s;
+}
+.axeous-leaderboard .lb-row:last-child { border-bottom: none; }
+.axeous-leaderboard .lb-row:hover { background: color-mix(in oklab, var(--ink) 2%, transparent); }
+.axeous-leaderboard .lb-row.is-you {
+  background: rgba(110, 156, 199, 0.06);
+  border-left: 3px solid var(--teal);
+  padding-left: 21px;
+}
+
+.axeous-leaderboard .lb-rank { font-size: 16px; font-weight: 600; text-align: center; }
+.axeous-leaderboard .lb-rank.r1 { color: var(--gold); }
+.axeous-leaderboard .lb-rank.r2 { color: var(--silver); }
+.axeous-leaderboard .lb-rank.r3 { color: var(--bronze); }
+
+.axeous-leaderboard .lb-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 12px; font-weight: 600; color: #04120f;
+}
+
+.axeous-leaderboard .lb-name {
+  font-weight: 500; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.axeous-leaderboard .lb-you-tag {
+  display: inline-block;
+  font-size: 10px; color: var(--teal);
+  background: rgba(110, 156, 199, 0.1);
+  border: 1px solid rgba(110, 156, 199, 0.2);
+  padding: 1px 6px; border-radius: 4px;
+  margin-left: 8px;
+}
+.axeous-leaderboard .lb-streak {
+  font-weight: 500;
+  display: flex; align-items: baseline; gap: 6px;
+}
+.axeous-leaderboard .lb-streak-val { font-size: 16px; color: var(--ink); }
+.axeous-leaderboard .lb-streak-unit { font-size: 12px; color: var(--ink-faint); }
+.axeous-leaderboard .lb-questions,
+.axeous-leaderboard .lb-accuracy {
+  color: var(--ink-dim); font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.axeous-leaderboard .lb-empty {
+  padding: 48px 24px; text-align: center;
+}
+.axeous-leaderboard .lb-empty-title { font-size: 14px; color: var(--ink-dim); margin-bottom: 6px; }
+.axeous-leaderboard .lb-empty-sub { font-size: 12px; color: var(--ink-faint); }
+
+/* ── Your stats ──────────────────────────────────────────── */
+.axeous-leaderboard .your-stats {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 16px; margin-top: 28px; margin-bottom: 64px;
+}
+.axeous-leaderboard .stat-card { padding: 20px; text-align: center; }
+.axeous-leaderboard .stat-val {
+  font-size: 28px; font-weight: 500; letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.axeous-leaderboard .stat-label {
+  font-size: 12px; color: var(--ink-faint);
+  text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px;
+}
+
+/* ── Add friend modal ────────────────────────────────────── */
+.axeous-leaderboard-modal {
+  position: fixed; inset: 0; z-index: 60;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+.axeous-leaderboard-modal .modal-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+.axeous-leaderboard-modal .modal-card {
+  position: relative;
+  width: 100%; max-width: 440px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--ink) 5%, transparent),
+    color-mix(in oklab, var(--ink) 2%, transparent)
+  );
+  border: 1px solid var(--line);
+  backdrop-filter: blur(20px) saturate(140%);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+.axeous-leaderboard-modal .modal-body { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.axeous-leaderboard-modal .modal-head {
+  display: flex; justify-content: space-between; align-items: center;
+}
+.axeous-leaderboard-modal .modal-title {
+  font-size: 18px; font-weight: 500; color: var(--ink);
+}
+.axeous-leaderboard-modal .modal-close {
+  background: none; border: none;
+  font-size: 22px; line-height: 1;
+  color: var(--ink-dim); cursor: pointer;
+}
+.axeous-leaderboard-modal .modal-close:hover { color: var(--ink); }
+.axeous-leaderboard-modal .search-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  background: var(--glass);
+  color: var(--ink);
+  font-size: 14px;
+  transition: border-color .15s;
+  font-family: inherit;
+}
+.axeous-leaderboard-modal .search-input:focus {
+  outline: none; border-color: var(--line-strong);
+}
+.axeous-leaderboard-modal .search-input::placeholder { color: var(--ink-faint); }
+.axeous-leaderboard-modal .search-error { font-size: 12px; color: var(--coral); }
+.axeous-leaderboard-modal .search-results {
+  display: flex; flex-direction: column; gap: 8px;
+  max-height: 280px; overflow-y: auto;
+}
+.axeous-leaderboard-modal .search-empty,
+.axeous-leaderboard-modal .search-loading {
+  text-align: center; font-size: 12px; color: var(--ink-faint);
+  padding: 12px 0;
+}
+.axeous-leaderboard-modal .search-loading .spinner {
+  display: inline-block; width: 16px; height: 16px;
+  border: 2px solid var(--teal);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: lbSpin .8s linear infinite;
+}
+@keyframes lbSpin { to { transform: rotate(360deg); } }
+.axeous-leaderboard-modal .result-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: var(--radius-md);
+  background: var(--glass); border: 1px solid var(--line);
+}
+.axeous-leaderboard-modal .result-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 11px; font-weight: 600; color: #04120f;
+  flex-shrink: 0;
+}
+.axeous-leaderboard-modal .result-info { flex: 1; min-width: 0; }
+.axeous-leaderboard-modal .result-name {
+  font-size: 13px; font-weight: 500; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.axeous-leaderboard-modal .result-sub { font-size: 11px; color: var(--ink-faint); }
+.axeous-leaderboard-modal .result-btn {
+  padding: 6px 12px; border-radius: 999px;
+  font-size: 12px; font-weight: 500;
+  cursor: pointer; border: 1px solid;
+  transition: all .15s;
+}
+.axeous-leaderboard-modal .result-btn.add {
+  background: rgba(110, 156, 199, 0.08);
+  border-color: rgba(110, 156, 199, 0.3);
+  color: var(--teal);
+}
+.axeous-leaderboard-modal .result-btn.add:hover {
+  background: rgba(110, 156, 199, 0.16);
+  border-color: rgba(110, 156, 199, 0.5);
+}
+.axeous-leaderboard-modal .result-btn.sent {
+  background: rgba(91, 240, 138, 0.08);
+  border-color: rgba(91, 240, 138, 0.3);
+  color: var(--green);
+  cursor: default;
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 800px) {
+  .axeous-leaderboard .podium { gap: 10px; padding: 32px 16px 0; }
+  .axeous-leaderboard .lb-header,
+  .axeous-leaderboard .lb-row { grid-template-columns: 36px 36px 1fr 80px; padding: 12px 18px; }
+  .axeous-leaderboard .lb-row.is-you { padding-left: 15px; }
+  .axeous-leaderboard .lb-questions,
+  .axeous-leaderboard .lb-accuracy,
+  .axeous-leaderboard .lb-header span:nth-child(5),
+  .axeous-leaderboard .lb-header span:nth-child(6) { display: none; }
+  .axeous-leaderboard .your-stats { grid-template-columns: repeat(2, 1fr); margin-bottom: 48px; }
+  .axeous-leaderboard .wrap { padding: 0 20px; }
+  .axeous-leaderboard .page-header h1 { font-size: 26px; }
+}

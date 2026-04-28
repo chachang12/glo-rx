@@ -1,6 +1,11 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '@/lib/api'
 import { PageLoader } from '@/features/ui/PageLoader'
+import './leaderboard.css'
+
+// ============================================================
+// Types
+// ============================================================
 
 interface LeaderboardEntry {
   authId: string
@@ -10,6 +15,7 @@ interface LeaderboardEntry {
   isMe: boolean
   streak: number
   totalQuestions: number
+  accuracy?: number | null
 }
 
 interface SearchResult {
@@ -25,7 +31,9 @@ interface FriendRequest {
   sentAt: string
 }
 
-// Exported so the navbar can fetch the count
+type SortMode = 'streak' | 'questions'
+
+// Exported so the navbar can fetch the request count
 export async function fetchIncomingRequestCount(): Promise<number> {
   try {
     const res = await apiFetch('/api/friends/requests/incoming')
@@ -37,11 +45,47 @@ export async function fetchIncomingRequestCount(): Promise<number> {
   }
 }
 
+// ============================================================
+// Avatar palette — deterministic per user
+// ============================================================
+
+const AVATAR_GRADIENTS = [
+  'linear-gradient(135deg, #a78bfa, #7c5cbf)',
+  'linear-gradient(135deg, #ff7a87, #d64050)',
+  'linear-gradient(135deg, #5bf08a, #3ab860)',
+  'linear-gradient(135deg, #ffb45a, #d4903a)',
+  'linear-gradient(135deg, #6aa8ff, #4a88d4)',
+  'linear-gradient(135deg, #a7adbd, #7a8090)',
+]
+const GOLD_GRADIENT = 'linear-gradient(135deg, #ffd700, #f0a500)'
+const SILVER_GRADIENT = 'linear-gradient(135deg, #c0c0c0, #8a8a8a)'
+const BRONZE_GRADIENT = 'linear-gradient(135deg, #cd7f32, #a0622e)'
+const YOU_GRADIENT = 'linear-gradient(135deg, var(--teal), var(--blue))'
+
+function hashString(s: string): number {
+  let h = 0
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0
+  return Math.abs(h)
+}
+
+function avatarColor(entry: LeaderboardEntry, rank: number): string {
+  if (entry.isMe) return YOU_GRADIENT
+  if (rank === 1) return GOLD_GRADIENT
+  if (rank === 2) return SILVER_GRADIENT
+  if (rank === 3) return BRONZE_GRADIENT
+  return AVATAR_GRADIENTS[hashString(entry.authId) % AVATAR_GRADIENTS.length]
+}
+
+// ============================================================
+// Main component
+// ============================================================
+
 export const Leaderboard = () => {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [requests, setRequests] = useState<FriendRequest[]>([])
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [ready, setReady] = useState(false)
+  const [sort, setSort] = useState<SortMode>('streak')
 
   const loadData = useCallback(() => {
     return Promise.all([
@@ -67,154 +111,226 @@ export const Leaderboard = () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ requesterId }),
     })
-    if (res.ok) {
-      setRequests((prev) => prev.filter((r) => r.from !== requesterId))
-    }
+    if (res.ok) setRequests((prev) => prev.filter((r) => r.from !== requesterId))
   }
+
+  const sortedEntries = useMemo(() => {
+    return [...entries].sort((a, b) => {
+      if (sort === 'questions') return b.totalQuestions - a.totalQuestions
+      return b.streak - a.streak
+    })
+  }, [entries, sort])
+
+  const me = sortedEntries.find((e) => e.isMe)
+  const myRank = me ? sortedEntries.indexOf(me) + 1 : null
+  const top3 = sortedEntries.slice(0, 3)
 
   if (!ready) return <PageLoader />
 
   return (
-    <div className="p-8">
-      <div className="max-w-2xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight text-[#e8e6f0]">
-              Leaderboard
-            </h1>
-            <p className="text-sm text-[#888]">
-              You and your friends, ranked by study streak.
+    <div className="axeous-leaderboard">
+      <div className="wrap">
+        <header className="page-header">
+          <div>
+            <h1>Leaderboard</h1>
+            <p>
+              You and your friends, ranked by{' '}
+              {sort === 'streak' ? 'study streak' : 'questions answered'}.
             </p>
           </div>
+          <button className="btn-primary" onClick={() => setShowAddDialog(true)} type="button">
+            <PlusIcon /> Add friend
+          </button>
+        </header>
+
+        {requests.length > 0 && (
+          <section className="requests-section">
+            <h2 className="requests-title">
+              Friend Requests
+              <span className="requests-count">{requests.length}</span>
+            </h2>
+            {requests.map((req) => (
+              <div key={req.friendshipId} className="request-row">
+                <div className="request-icon">?</div>
+                <div className="request-info">
+                  <div className="request-name">{req.from}</div>
+                  <div className="request-sub">wants to be your friend</div>
+                </div>
+                <button
+                  onClick={() => handleAccept(req.from)}
+                  className="req-btn accept"
+                  type="button"
+                >
+                  Accept
+                </button>
+                <button
+                  onClick={() => handleDecline(req.from)}
+                  className="req-btn decline"
+                  type="button"
+                >
+                  Decline
+                </button>
+              </div>
+            ))}
+          </section>
+        )}
+
+        {top3.length >= 3 && (
+          <section className="podium-section">
+            <div className="card podium-card">
+              <div className="podium">
+                <PodiumSlot entry={top3[1]} place={2} sort={sort} />
+                <PodiumSlot entry={top3[0]} place={1} sort={sort} crown />
+                <PodiumSlot entry={top3[2]} place={3} sort={sort} />
+              </div>
+            </div>
+          </section>
+        )}
+
+        <div className="filter-bar">
           <button
-            onClick={() => setShowAddDialog(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#4f8ef7]/30 bg-[#4f8ef7]/5 text-xs font-semibold text-[#4f8ef7] hover:border-[#4f8ef7]/60 transition-all"
+            className={`filter-tab${sort === 'streak' ? ' active' : ''}`}
+            onClick={() => setSort('streak')}
+            type="button"
           >
-            <PlusIcon />
-            Add friend
+            Study Streak
+          </button>
+          <button
+            className={`filter-tab${sort === 'questions' ? ' active' : ''}`}
+            onClick={() => setSort('questions')}
+            type="button"
+          >
+            Questions Answered
           </button>
         </div>
 
-        {/* Pending requests */}
-        {requests.length > 0 && (
-          <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-[#bbb]">
-              Friend Requests
-              <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#4f8ef7] text-[10px] font-bold text-[#0f0f1a]">
-                {requests.length}
-              </span>
-            </h2>
-            {requests.map((req) => (
-              <div
-                key={req.friendshipId}
-                className="flex items-center gap-3 rounded-2xl border border-[#4f8ef7]/20 bg-[#4f8ef7]/5 p-4"
-              >
-                <div className="w-9 h-9 rounded-full bg-[#4f8ef7]/15 border border-[#4f8ef7]/30 flex items-center justify-center text-xs font-bold text-[#4f8ef7] select-none">
-                  ?
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[#ddd] truncate">
-                    {req.from}
-                  </p>
-                  <p className="text-xs text-[#888]">
-                    wants to be your friend
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleAccept(req.from)}
-                    className="px-3 py-1.5 rounded-lg bg-[#4f8ef7] text-xs font-semibold text-[#0f0f1a] hover:bg-[#4f8ef7]/90 transition-all"
-                  >
-                    Accept
-                  </button>
-                  <button
-                    onClick={() => handleDecline(req.from)}
-                    className="px-3 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm text-xs font-semibold text-[#888] hover:text-[#ddd] transition-all"
-                  >
-                    Decline
-                  </button>
-                </div>
-              </div>
-            ))}
+        <div className="card lb-table">
+          <div className="lb-header">
+            <span>Rank</span>
+            <span />
+            <span>Name</span>
+            <span>Streak</span>
+            <span>Questions</span>
+            <span>Accuracy</span>
           </div>
-        )}
-
-        {/* Leaderboard */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm overflow-hidden">
-          {entries.map((entry, i) => (
-            <div
-              key={entry.authId}
-              className={`flex items-center gap-4 px-5 py-4 transition-all ${
-                i > 0 ? 'border-t border-white/[0.04]' : ''
-              } ${entry.isMe ? 'bg-[#4f8ef7]/[0.04]' : 'hover:bg-white/[0.02]'}`}
-            >
-              {/* Rank */}
-              <div className="w-7 text-center flex-shrink-0">
-                {i === 0 ? (
-                  <span className="text-sm font-bold text-[#e8e6f0]">{i + 1}</span>
-                ) : i < 3 ? (
-                  <span className="text-sm font-semibold text-[#bbb]">{i + 1}</span>
-                ) : (
-                  <span className="text-sm font-mono text-[#555]">{i + 1}</span>
-                )}
-              </div>
-
-              {/* Avatar */}
-              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold select-none flex-shrink-0 ${
-                i === 0
-                  ? 'bg-[#4f8ef7]/20 text-[#4f8ef7] ring-1 ring-[#4f8ef7]/30'
-                  : 'bg-white/[0.06] text-[#888]'
-              }`}>
-                {getInitials(entry.firstName, entry.lastName)}
-              </div>
-
-              {/* Name */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-[#e8e6f0] truncate">
-                    {entry.username ?? `${entry.firstName} ${entry.lastName}`}
-                  </p>
-                  {entry.isMe && (
-                    <span className="text-[10px] font-semibold text-[#4f8ef7] bg-[#4f8ef7]/10 px-1.5 py-0.5 rounded flex-shrink-0">
-                      you
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-[#555] mt-0.5">
-                  {entry.totalQuestions} questions
-                </p>
-              </div>
-
-              {/* Streak */}
-              <div className="flex items-center gap-1.5 flex-shrink-0">
-                <span className="text-sm font-bold tabular-nums text-[#e07b3f]">
-                  {entry.streak}
-                </span>
-                <span className="text-[10px] text-[#888]">day streak</span>
-              </div>
-            </div>
-          ))}
-
-          {entries.length === 0 && (
-            <div className="p-8 text-center space-y-2">
-              <p className="text-sm text-[#888]">No data yet</p>
-              <p className="text-xs text-[#555]">
+          {sortedEntries.length === 0 ? (
+            <div className="lb-empty">
+              <div className="lb-empty-title">No data yet</div>
+              <div className="lb-empty-sub">
                 Complete a practice session to appear on the leaderboard
-              </p>
+              </div>
             </div>
+          ) : (
+            sortedEntries.map((entry, i) => {
+              const rank = i + 1
+              const rankClass = rank <= 3 ? `r${rank}` : ''
+              const displayName = entry.username ?? (`${entry.firstName} ${entry.lastName}`.trim() || '—')
+              return (
+                <div
+                  key={entry.authId}
+                  className={`lb-row${entry.isMe ? ' is-you' : ''}`}
+                >
+                  <div className={`lb-rank ${rankClass}`}>{rank}</div>
+                  <div
+                    className="lb-avatar"
+                    style={{ background: avatarColor(entry, rank) }}
+                  >
+                    {getInitials(entry.firstName, entry.lastName)}
+                  </div>
+                  <div className="lb-name">
+                    {displayName}
+                    {entry.isMe && <span className="lb-you-tag">you</span>}
+                  </div>
+                  <div className="lb-streak">
+                    <span className="lb-streak-val">{entry.streak}</span>
+                    <span className="lb-streak-unit">days</span>
+                  </div>
+                  <div className="lb-questions">
+                    {entry.totalQuestions.toLocaleString()}
+                  </div>
+                  <div className="lb-accuracy">
+                    {entry.accuracy != null ? `${entry.accuracy}%` : '—'}
+                  </div>
+                </div>
+              )
+            })
           )}
         </div>
+
+        {me && (
+          <div className="your-stats">
+            <div className="card stat-card">
+              <div className="stat-val" style={{ color: 'var(--teal)' }}>
+                {myRank != null ? `#${myRank}` : '—'}
+              </div>
+              <div className="stat-label">Your rank</div>
+            </div>
+            <div className="card stat-card">
+              <div className="stat-val">{me.streak}d</div>
+              <div className="stat-label">Current streak</div>
+            </div>
+            <div className="card stat-card">
+              <div className="stat-val">{me.totalQuestions.toLocaleString()}</div>
+              <div className="stat-label">Questions</div>
+            </div>
+            <div className="card stat-card">
+              <div className="stat-val" style={{ color: 'var(--green)' }}>
+                {me.accuracy != null ? `${me.accuracy}%` : '—'}
+              </div>
+              <div className="stat-label">Accuracy</div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {showAddDialog && (
-        <AddFriendDialog onClose={() => setShowAddDialog(false)} />
-      )}
+      {showAddDialog && <AddFriendDialog onClose={() => setShowAddDialog(false)} />}
     </div>
   )
 }
 
-// ── Add Friend Dialog ────────────────────────────────────────────────────────
+// ============================================================
+// Podium slot
+// ============================================================
+
+const PodiumSlot = ({
+  entry,
+  place,
+  sort,
+  crown = false,
+}: {
+  entry: LeaderboardEntry
+  place: 1 | 2 | 3
+  sort: SortMode
+  crown?: boolean
+}) => {
+  const displayName = entry.username ?? (`${entry.firstName} ${entry.lastName}`.trim() || '—')
+  const value = sort === 'streak' ? entry.streak : entry.totalQuestions
+  const unit = sort === 'streak' ? 'd' : ''
+  const label = sort === 'streak' ? 'Streak' : 'Questions'
+
+  return (
+    <div className={`podium-slot p-${place}`}>
+      <div
+        className="podium-avatar"
+        style={{ background: avatarColor(entry, place) }}
+      >
+        {crown && <span className="crown">👑</span>}
+        {getInitials(entry.firstName, entry.lastName)}
+      </div>
+      <div className="podium-name">{displayName}</div>
+      {entry.isMe && <div className="podium-you">that's you</div>}
+      <div className="podium-streak">
+        {value.toLocaleString()}{unit}
+      </div>
+      <div className="podium-streak-label">{label}</div>
+      <div className="podium-base">{place}</div>
+    </div>
+  )
+}
+
+// ============================================================
+// Add Friend modal
+// ============================================================
 
 const AddFriendDialog = ({ onClose }: { onClose: () => void }) => {
   const [query, setQuery] = useState('')
@@ -226,17 +342,11 @@ const AddFriendDialog = ({ onClose }: { onClose: () => void }) => {
   const handleSearch = useCallback(async (q: string) => {
     setQuery(q)
     setError(null)
-    if (q.trim().length < 3) {
-      setResults([])
-      return
-    }
-
+    if (q.trim().length < 3) { setResults([]); return }
     setSearching(true)
     try {
       const res = await apiFetch(`/api/user/search?q=${encodeURIComponent(q.trim())}`)
-      if (res.ok) {
-        setResults(await res.json())
-      }
+      if (res.ok) setResults(await res.json())
     } finally {
       setSearching(false)
     }
@@ -249,7 +359,6 @@ const AddFriendDialog = ({ onClose }: { onClose: () => void }) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ recipientId }),
     })
-
     if (res.ok) {
       setSent((prev) => new Set(prev).add(recipientId))
     } else {
@@ -259,77 +368,59 @@ const AddFriendDialog = ({ onClose }: { onClose: () => void }) => {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-
-      <div className="relative w-full max-w-md rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm shadow-2xl shadow-black/40 overflow-hidden">
-        <div className="p-6 space-y-5">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-[#e8e6f0]">Add Friend</h2>
-            <button
-              onClick={onClose}
-              className="text-[#555] hover:text-[#ddd] transition-colors text-lg"
-            >
-              &times;
+    <div className="axeous-leaderboard-modal">
+      <div className="modal-overlay" onClick={onClose} />
+      <div className="modal-card">
+        <div className="modal-body">
+          <div className="modal-head">
+            <div className="modal-title">Add friend</div>
+            <button onClick={onClose} className="modal-close" aria-label="Close" type="button">
+              ×
             </button>
           </div>
-
-          {/* Search input */}
           <input
             type="text"
             value={query}
             onChange={(e) => handleSearch(e.target.value)}
-            placeholder="Search by name or email..."
+            placeholder="Search by name or email…"
+            className="search-input"
             autoFocus
-            className="w-full px-4 py-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] text-sm text-[#ddd] placeholder-[#555] focus:outline-none focus:ring-2 focus:ring-[#4f8ef7]/40"
           />
-
-          {/* Error */}
-          {error && (
-            <p className="text-xs text-[#ef4444]">{error}</p>
-          )}
-
-          {/* Results */}
-          <div className="max-h-64 overflow-y-auto space-y-2">
+          {error && <div className="search-error">{error}</div>}
+          <div className="search-results">
             {searching && (
-              <div className="flex items-center justify-center py-4">
-                <div className="w-4 h-4 border-2 border-[#4f8ef7] border-t-transparent rounded-full animate-spin" />
+              <div className="search-loading">
+                <span className="spinner" />
               </div>
             )}
-
             {!searching && results.length === 0 && query.length >= 3 && (
-              <p className="text-xs text-[#555] text-center py-4">No users found</p>
+              <div className="search-empty">No users found</div>
             )}
-
             {results.map((user) => {
               const isSent = sent.has(user.authId)
               return (
-                <div
-                  key={user.authId}
-                  className="flex items-center gap-3 rounded-lg border border-white/[0.08] bg-white/[0.03] p-3"
-                >
-                  <div className="w-8 h-8 rounded-full bg-[#4f8ef7]/15 border border-[#4f8ef7]/30 flex items-center justify-center text-xs font-bold text-[#4f8ef7]">
+                <div key={user.authId} className="result-row">
+                  <div
+                    className="result-avatar"
+                    style={{
+                      background: AVATAR_GRADIENTS[hashString(user.authId) % AVATAR_GRADIENTS.length],
+                    }}
+                  >
                     {getInitials(user.firstName, user.lastName)}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[#ddd] truncate">
-                      {user.username ?? `${user.firstName} ${user.lastName}`}
-                    </p>
+                  <div className="result-info">
+                    <div className="result-name">
+                      {user.username ?? (`${user.firstName} ${user.lastName}`.trim() || '—')}
+                    </div>
                     {user.username && (
-                      <p className="text-xs text-[#555]">
-                        {user.firstName} {user.lastName}
-                      </p>
+                      <div className="result-sub">{user.firstName} {user.lastName}</div>
                     )}
                   </div>
                   <button
                     onClick={() => handleSendRequest(user.authId)}
                     disabled={isSent}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                      isSent
-                        ? 'border border-[#10b981]/30 bg-[#10b981]/5 text-[#10b981]'
-                        : 'border border-[#4f8ef7]/30 bg-[#4f8ef7]/5 text-[#4f8ef7] hover:border-[#4f8ef7]/60'
-                    }`}
+                    className={`result-btn ${isSent ? 'sent' : 'add'}`}
+                    type="button"
                   >
                     {isSent ? 'Sent' : 'Add'}
                   </button>
@@ -343,7 +434,9 @@ const AddFriendDialog = ({ onClose }: { onClose: () => void }) => {
   )
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ============================================================
+// Helpers
+// ============================================================
 
 function getInitials(firstName: string, lastName: string): string {
   return `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase() || '?'

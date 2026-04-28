@@ -111,16 +111,29 @@ adminRoutes.patch('/exams/:code', async (c) => {
   const { code } = c.req.param()
   const body = await c.req.json()
 
-  const allowed = ['label', 'category', 'description', 'active', 'visibility', 'topics', 'aiReferenceText', 'aiReferenceFileName']
+  const allowed = [
+    'label', 'category', 'description', 'active', 'visibility', 'featured',
+    'topics', 'aiReferenceText', 'aiReferenceFileName',
+  ]
   const updates: Record<string, unknown> = {}
   for (const key of allowed) {
     if (key in body) updates[key] = body[key]
   }
 
+  // Featured is mutually exclusive: setting one to true unfeatures the others.
+  // Run this BEFORE the target update so a concurrent request can't leave two
+  // featured at once.
+  if (updates.featured === true) {
+    await ExamModel.updateMany(
+      { code: { $ne: code }, featured: true },
+      { $set: { featured: false } },
+    )
+  }
+
   const exam = await ExamModel.findOneAndUpdate(
     { code },
     { $set: updates },
-    { new: true }
+    { new: true },
   )
 
   if (!exam) return c.json({ error: 'Exam not found' }, 404)

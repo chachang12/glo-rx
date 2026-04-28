@@ -23,10 +23,14 @@ export const UserAvatar = ({ name, size = 'md', className }: UserAvatarProps) =>
   return (
     <div
       className={cn(
-        'rounded-full bg-[#4f8ef7]/15 border border-[#4f8ef7]/30 flex items-center justify-center font-bold text-[#4f8ef7] select-none',
+        'rounded-full flex items-center justify-center font-semibold select-none',
         sizeMap[size],
         className
       )}
+      style={{
+        background: 'linear-gradient(135deg, var(--teal), var(--blue))',
+        color: '#04120f',
+      }}
     >
       {getInitials(name)}
     </div>

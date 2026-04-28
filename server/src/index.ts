@@ -14,6 +14,7 @@ import { flashcardRoutes } from './features/flashcard/index.js'
 import { friendshipRoutes } from './features/friendship/index.js'
 import { customPlanRoutes } from './features/custom-plan/index.js'
 import { adminRoutes } from './features/admin/index.js'
+import { ebayDeletionRoutes } from './features/ebay-deletion/index.js'
 import { seedExams } from './config/exams.js'
 
 const app = new Hono()
@@ -34,6 +35,7 @@ app.all('/api/auth/*', (c) => auth.handler(c.req.raw))
 
 // Feature routes
 app.route('/api/admin', adminRoutes)
+app.route('/api/ebay-deletion', ebayDeletionRoutes)
 app.route('/api/abg', abgRoutes)
 app.route('/api/exams', examRoutes)
 app.route('/api/flashcards', flashcardRoutes)

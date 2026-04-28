@@ -8,7 +8,7 @@ const examRoutes = new Hono<AuthEnv>()
 // GET /api/exams — returns visible exams (live + coming-soon) for marketplace
 examRoutes.get('/', async (c) => {
   const exams = await ExamModel.find({ visibility: { $in: ['live', 'coming-soon'] } })
-    .select('code label category description active visibility')
+    .select('code label category description active visibility featured')
     .sort({ category: 1, label: 1 })
     .lean()
   return c.json(exams)
@@ -17,7 +17,7 @@ examRoutes.get('/', async (c) => {
 // GET /api/exams/all — returns all exams (for plan detail lookups)
 examRoutes.get('/all', async (c) => {
   const exams = await ExamModel.find()
-    .select('code label category description active visibility')
+    .select('code label category description active visibility featured')
     .sort({ category: 1, label: 1 })
     .lean()
   return c.json(exams)

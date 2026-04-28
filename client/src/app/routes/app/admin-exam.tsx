@@ -12,6 +12,7 @@ interface ExamData {
   description: string
   active: boolean
   visibility: 'hidden' | 'coming-soon' | 'live'
+  featured: boolean
   topics: string[]
   aiReferenceText: string
   aiReferenceFileName: string | null
@@ -277,6 +278,33 @@ export const AdminExamEditor = () => {
                     {v === 'hidden' ? 'Hidden' : v === 'coming-soon' ? 'Coming Soon' : 'Live'}
                   </button>
                 ))}
+              </div>
+            </Field>
+            <Field label="Featured">
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-xs text-[#555] max-w-md">
+                  Surfaces this exam in the marketplace Featured card. Only one exam can be featured at a time — enabling this automatically unfeatures any other exam.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => save({ featured: !exam.featured })}
+                  disabled={saving || exam.visibility !== 'live'}
+                  aria-pressed={exam.featured}
+                  title={exam.visibility !== 'live' ? 'Exam must be Live to feature it' : undefined}
+                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                    exam.featured
+                      ? 'border-[#a78bfa]/40 bg-[#a78bfa]/30'
+                      : 'border-white/[0.1] bg-white/[0.04]'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 rounded-full transition-transform ${
+                      exam.featured
+                        ? 'translate-x-6 bg-[#a78bfa] shadow-[0_0_8px_rgba(167,139,250,0.6)]'
+                        : 'translate-x-1 bg-[#888]'
+                    }`}
+                  />
+                </button>
               </div>
             </Field>
           </div>

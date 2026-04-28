@@ -1,8 +1,14 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { CSSProperties } from 'react'
+import { Link, useNavigate } from 'react-router'
 import { paths } from '@/config/paths'
 import { apiFetch } from '@/lib/api'
-import { useNavigate } from 'react-router'
 import { PageLoader } from '@/features/ui/PageLoader'
+import './marketplace.css'
+
+// ============================================================
+// Types
+// ============================================================
 
 interface Exam {
   code: string
@@ -11,6 +17,7 @@ interface Exam {
   description: string
   active: boolean
   visibility?: 'hidden' | 'coming-soon' | 'live'
+  featured?: boolean
 }
 
 interface Plan {
@@ -18,25 +25,124 @@ interface Plan {
   status: string
 }
 
+type FilterMode = 'all' | 'enrolled' | 'available'
+type ExamTag = 'enrolled' | 'soon' | 'available'
+
+interface ExamMeta {
+  topicList?: string[]
+  glow?: string
+}
+
+// ============================================================
+// Static catalogue enrichments (descriptive only — no fabricated stats)
+// ============================================================
+
+const EXAM_META: Record<string, ExamMeta> = {
+  'nclex-rn': {
+    topicList: ['Pharmacology', 'Med-Surg', 'Pediatrics', 'OB', 'Psych', 'Fundamentals'],
+    glow: 'radial-gradient(300px 150px at 90% -20%, rgba(110,156,199,0.14), transparent 60%)',
+  },
+  'nclex-pn': {
+    topicList: ['Pharmacology', 'Safe Care', 'Health Promo'],
+    glow: 'radial-gradient(300px 150px at 90% -20%, rgba(110,156,199,0.10), transparent 60%)',
+  },
+  'teas-7': {
+    topicList: ['Reading', 'Math', 'Science', 'English'],
+    glow: 'radial-gradient(300px 150px at 90% -20%, rgba(106,168,255,0.10), transparent 60%)',
+  },
+  vtne: {
+    topicList: ['Pharmacology', 'Surgical', 'Anesthesia', 'Lab'],
+    glow: 'radial-gradient(300px 150px at 90% -20%, rgba(167,139,250,0.14), transparent 60%)',
+  },
+  dat: {
+    topicList: ['Biology', 'Gen Chem', 'Orgo', 'PAT', 'Reading'],
+    glow: 'radial-gradient(300px 150px at 90% -20%, rgba(255,180,90,0.10), transparent 60%)',
+  },
+  mcat: {
+    topicList: ['Bio/Biochem', 'Chem/Phys', 'CARS', 'Psych/Soc'],
+    glow: 'radial-gradient(300px 150px at 90% -20%, rgba(255,72,88,0.10), transparent 60%)',
+  },
+  'usmle-step-1': {
+    topicList: ['Anatomy', 'Pathology', 'Pharmacology', 'Biochem'],
+    glow: 'radial-gradient(300px 150px at 90% -20%, rgba(255,72,88,0.08), transparent 60%)',
+  },
+  gre: {
+    topicList: ['Verbal', 'Quant', 'Writing'],
+    glow: 'radial-gradient(300px 150px at 90% -20%, rgba(106,168,255,0.12), transparent 60%)',
+  },
+  gmat: {
+    topicList: ['Quant', 'Verbal', 'IR', 'AWA'],
+    glow: 'radial-gradient(300px 150px at 90% -20%, rgba(106,168,255,0.08), transparent 60%)',
+  },
+}
+
 const CATEGORY_COLORS: Record<string, string> = {
-  nursing: '#4f8ef7',
-  medical: '#10b981',
-  law: '#8b5cf6',
-  accounting: '#e07b3f',
+  nursing: 'var(--teal)',
+  veterinary: 'var(--violet)',
+  dental: '#ffb45a',
+  medical: 'var(--coral)',
+  graduate: 'var(--blue)',
+  law: 'var(--violet)',
+  accounting: '#ffb45a',
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
   nursing: 'Nursing',
+  veterinary: 'Veterinary',
+  dental: 'Dental',
   medical: 'Medical',
+  graduate: 'Graduate',
   law: 'Law',
   accounting: 'Accounting',
 }
 
+// Fixed category order so grouping is stable across reloads.
+const CATEGORY_ORDER = [
+  'nursing',
+  'medical',
+  'veterinary',
+  'dental',
+  'graduate',
+  'law',
+  'accounting',
+]
+
+// ============================================================
+// Helpers
+// ============================================================
+
+function categoryColor(category: string): string {
+  return CATEGORY_COLORS[category] ?? 'var(--blue)'
+}
+
+function categoryLabel(category: string): string {
+  return CATEGORY_LABELS[category] ?? category.charAt(0).toUpperCase() + category.slice(1)
+}
+
+function resolveTag(exam: Exam, isEnrolled: boolean): ExamTag {
+  if (isEnrolled) return 'enrolled'
+  if (exam.visibility === 'coming-soon') return 'soon'
+  return 'available'
+}
+
+function tagLabel(tag: ExamTag): string {
+  switch (tag) {
+    case 'enrolled': return 'Enrolled'
+    case 'soon': return 'Coming soon'
+    case 'available': return 'Available'
+  }
+}
+
+// ============================================================
+// Main component
+// ============================================================
+
 export const Marketplace = () => {
   const [exams, setExams] = useState<Exam[]>([])
   const [plans, setPlans] = useState<Plan[]>([])
-  const [selectedExam, setSelectedExam] = useState<Exam | null>(null)
-  const [enrolling, setEnrolling] = useState(false)
+  const [enrolling, setEnrolling] = useState<string | null>(null)
+  const [filter, setFilter] = useState<FilterMode>('all')
+  const [search, setSearch] = useState('')
   const [ready, setReady] = useState(false)
   const navigate = useNavigate()
 
@@ -47,224 +153,314 @@ export const Marketplace = () => {
     ]).finally(() => setReady(true))
   }, [])
 
-  const enrolledCodes = new Set(plans.map((p) => p.examCode))
+  const enrolledCodes = useMemo(
+    () => new Set(plans.map((p) => p.examCode)),
+    [plans],
+  )
 
-  const handleEnroll = useCallback(async (examCode: string) => {
-    setEnrolling(true)
-    try {
-      const res = await apiFetch('/api/plans', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-
-        body: JSON.stringify({ examCode }),
-      })
-      if (res.ok) {
-        const plan = await res.json()
-        setPlans((prev) => [...prev, plan])
-        setSelectedExam(null)
-        navigate(paths.app.plan.getHref(examCode))
+  const handleEnroll = useCallback(
+    async (examCode: string) => {
+      setEnrolling(examCode)
+      try {
+        const res = await apiFetch('/api/plans', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ examCode }),
+        })
+        if (res.ok) {
+          const plan = await res.json()
+          setPlans((prev) => [...prev, plan])
+          navigate(paths.app.plan.getHref(examCode))
+        }
+      } finally {
+        setEnrolling(null)
       }
-    } finally {
-      setEnrolling(false)
-    }
-  }, [navigate])
+    },
+    [navigate],
+  )
 
-  // Group exams by category
-  const categories = [...new Set(exams.map((e) => e.category))]
+  // Apply search + filter
+  const matchingExams = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return exams.filter((e) => {
+      const isEnrolled = enrolledCodes.has(e.code)
+      const isComingSoon = e.visibility === 'coming-soon'
+
+      if (filter === 'enrolled' && !isEnrolled) return false
+      if (filter === 'available' && (isEnrolled || isComingSoon)) return false
+
+      if (q) {
+        const meta = EXAM_META[e.code]
+        const haystack = [
+          e.label,
+          e.description,
+          e.category,
+          categoryLabel(e.category),
+          ...(meta?.topicList ?? []),
+        ].join(' ').toLowerCase()
+        if (!haystack.includes(q)) return false
+      }
+      return true
+    })
+  }, [exams, enrolledCodes, filter, search])
+
+  // Group by category, preserving fixed order then alpha for unknowns.
+  const grouped = useMemo(() => {
+    const map = new Map<string, Exam[]>()
+    for (const e of matchingExams) {
+      if (!map.has(e.category)) map.set(e.category, [])
+      map.get(e.category)!.push(e)
+    }
+    const ordered: Array<{ category: string; exams: Exam[] }> = []
+    for (const cat of CATEGORY_ORDER) {
+      const list = map.get(cat)
+      if (list?.length) {
+        ordered.push({ category: cat, exams: list })
+        map.delete(cat)
+      }
+    }
+    for (const [category, list] of [...map.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+      ordered.push({ category, exams: list })
+    }
+    return ordered
+  }, [matchingExams])
+
+  // Pick the featured exam (admin-controlled via `featured` on the Exam schema).
+  // Hidden when searching/filtering, or when the featured exam isn't live yet.
+  // The CTA adapts to enrollment state, so admins can still verify their own change.
+  const featured = useMemo(() => {
+    if (filter !== 'all' || search.trim()) return null
+    for (const exam of exams) {
+      if (!exam.featured) continue
+      if (exam.visibility === 'coming-soon') continue
+      return { exam, meta: EXAM_META[exam.code] ?? {} }
+    }
+    return null
+  }, [exams, filter, search])
 
   if (!ready) return <PageLoader />
 
   return (
-    <div className="p-8">
-      <div className="max-w-4xl mx-auto space-y-10">
-        {/* Header */}
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-[#e8e6f0]">
-            Marketplace
-          </h1>
-          <p className="text-sm text-[#888]">
-            Browse available exam prep plans. Add them to your study dashboard.
-          </p>
+    <div className="axeous-marketplace">
+      <div className="wrap page-bottom">
+        <header className="page-header">
+          <div>
+            <h1>Marketplace</h1>
+            <p>Browse available exam prep plans. Add them to your study dashboard.</p>
+          </div>
+        </header>
+
+        <div className="search-bar">
+          <SearchIcon />
+          <input
+            className="search-input"
+            placeholder="Search exams, topics, or categories…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <div className="filter-pills">
+            {(['all', 'enrolled', 'available'] as FilterMode[]).map((f) => (
+              <button
+                key={f}
+                type="button"
+                className={`filter-pill${filter === f ? ' active' : ''}`}
+                onClick={() => setFilter(f)}
+              >
+                {f === 'all' ? 'All' : f === 'enrolled' ? 'Enrolled' : 'Available'}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Categories */}
-        {categories.map((category) => {
-          const categoryExams = exams.filter((e) => e.category === category)
-          return (
-            <div key={category} className="space-y-4">
-              <div className="flex items-center gap-2">
+        {featured && (
+          <FeaturedCard
+            exam={featured.exam}
+            meta={featured.meta}
+            isEnrolled={enrolledCodes.has(featured.exam.code)}
+            onEnroll={() => handleEnroll(featured.exam.code)}
+            enrolling={enrolling === featured.exam.code}
+          />
+        )}
+
+        {grouped.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-title">No exams match</div>
+            <div className="empty-sub">
+              {search ? `Try a different search term.` : `Try switching the filter above.`}
+            </div>
+          </div>
+        ) : (
+          grouped.map(({ category, exams: catExams }) => (
+            <div key={category} className="category">
+              <div className="cat-head">
                 <div
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: CATEGORY_COLORS[category] ?? '#888' }}
+                  className="cat-dot"
+                  style={{
+                    background: categoryColor(category),
+                    boxShadow: `0 0 8px ${categoryColor(category)}`,
+                  }}
                 />
-                <h2 className="text-sm font-semibold text-[#bbb]">
-                  {CATEGORY_LABELS[category] ?? category}
-                </h2>
+                <span className="cat-name">{categoryLabel(category)}</span>
+                <span className="cat-count">
+                  {catExams.length} exam{catExams.length !== 1 ? 's' : ''}
+                </span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {categoryExams.map((exam) => {
-                  const isEnrolled = enrolledCodes.has(exam.code)
-                  return (
-                    <button
-                      key={exam.code}
-                      onClick={() => setSelectedExam(exam)}
-                      className="group text-left rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-5 space-y-3 hover:border-[#4f8ef7]/30 transition-all"
-                    >
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold text-white group-hover:text-[#4f8ef7] transition-colors">
-                          {exam.label}
-                        </p>
-                        {isEnrolled && (
-                          <span className="text-[10px] font-mono font-semibold text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded-full">
-                            Enrolled
-                          </span>
-                        )}
-                        {exam.visibility === 'coming-soon' && !isEnrolled && (
-                          <span className="text-[10px] font-mono font-semibold text-[#eab308] bg-[#eab308]/10 px-2 py-0.5 rounded-full">
-                            Coming soon
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-[#888]">{exam.description}</p>
-                    </button>
-                  )
-                })}
+              <div className="exam-grid">
+                {catExams.map((exam) => (
+                  <ExamCard
+                    key={exam.code}
+                    exam={exam}
+                    isEnrolled={enrolledCodes.has(exam.code)}
+                    enrolling={enrolling === exam.code}
+                    onEnroll={() => handleEnroll(exam.code)}
+                  />
+                ))}
               </div>
             </div>
-          )
-        })}
+          ))
+        )}
       </div>
-
-      {/* Dialog */}
-      {selectedExam && (
-        <ExamDialog
-          exam={selectedExam}
-          isEnrolled={enrolledCodes.has(selectedExam.code)}
-          enrolling={enrolling}
-          onEnroll={() => handleEnroll(selectedExam.code)}
-          onClose={() => setSelectedExam(null)}
-          onViewPlan={() => {
-            setSelectedExam(null)
-            navigate(paths.app.plan.getHref(selectedExam.code))
-          }}
-        />
-      )}
     </div>
   )
 }
 
-const ExamDialog = ({
+// ============================================================
+// Featured card
+// ============================================================
+
+const FeaturedCard = ({
+  exam,
+  meta,
+  isEnrolled,
+  onEnroll,
+  enrolling,
+}: {
+  exam: Exam
+  meta: ExamMeta
+  isEnrolled: boolean
+  onEnroll: () => void
+  enrolling: boolean
+}) => (
+  <div className="card featured-card">
+    <div className="featured-badge">
+      <span className="fb-star">★</span> Featured exam
+    </div>
+    <h2 className="featured-title">{exam.label}</h2>
+    <p className="featured-desc">{exam.description}</p>
+    {meta.topicList && meta.topicList.length > 0 && (
+      <div className="exam-topics" style={{ marginBottom: 20 }}>
+        {meta.topicList.map((t) => (
+          <span key={t} className="exam-topic">{t}</span>
+        ))}
+      </div>
+    )}
+    {isEnrolled ? (
+      <Link to={paths.app.plan.getHref(exam.code)} className="exam-btn enroll">
+        View my plan <ArrowIcon size={13} />
+      </Link>
+    ) : (
+      <button
+        type="button"
+        className="exam-btn enroll"
+        onClick={onEnroll}
+        disabled={enrolling}
+      >
+        {enrolling ? 'Adding…' : `Start ${exam.label} prep`} <ArrowIcon size={13} />
+      </button>
+    )}
+  </div>
+)
+
+// ============================================================
+// Exam card
+// ============================================================
+
+const ExamCard = ({
   exam,
   isEnrolled,
   enrolling,
   onEnroll,
-  onClose,
-  onViewPlan,
 }: {
   exam: Exam
   isEnrolled: boolean
   enrolling: boolean
   onEnroll: () => void
-  onClose: () => void
-  onViewPlan: () => void
 }) => {
-  const color = CATEGORY_COLORS[exam.category] ?? '#888'
+  const meta = EXAM_META[exam.code]
+  const tag = resolveTag(exam, isEnrolled)
+  const style: CSSProperties = meta?.glow ? { ['--exam-glow' as string]: meta.glow } : {}
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
+    <div className="card exam-card" style={style}>
+      <div className="exam-top">
+        <span className="exam-name">{exam.label}</span>
+        <span className={`exam-tag tag-${tag}`}>{tagLabel(tag)}</span>
+      </div>
+      <p className="exam-desc">{exam.description}</p>
 
-      {/* Dialog */}
-      <div className="relative w-full max-w-md rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm shadow-2xl shadow-black/40 overflow-hidden">
-        {/* Color accent bar */}
-        <div className="h-1" style={{ backgroundColor: color }} />
-
-        <div className="p-6 space-y-5">
-          {/* Header */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div
-                  className="w-2.5 h-2.5 rounded-full"
-                  style={{ backgroundColor: color }}
-                />
-                <span className="text-[10px] font-mono uppercase tracking-widest text-[#888]">
-                  {CATEGORY_LABELS[exam.category] ?? exam.category}
-                </span>
-              </div>
-              <button
-                onClick={onClose}
-                className="text-[#555] hover:text-[#ddd] transition-colors text-lg leading-none"
-              >
-                &times;
-              </button>
-            </div>
-            <h2 className="text-xl font-bold text-[#e8e6f0]">{exam.label}</h2>
-          </div>
-
-          {/* Description */}
-          <p className="text-sm text-[#888] leading-relaxed">
-            {exam.description}. Comprehensive practice tests, topic reviews, and
-            AI-generated study schedules to prepare you for exam day.
-          </p>
-
-          {/* Plan details */}
-          <div className="rounded-lg border border-white/[0.08] bg-white/[0.03] p-4 space-y-2">
-            <p className="text-xs font-mono uppercase tracking-widest text-[#555]">
-              Includes
-            </p>
-            <ul className="space-y-1.5">
-              {[
-                'Practice tests with detailed explanations',
-                'AI-powered clinical vignettes',
-                'Performance analytics & tracking',
-                'Personalized study schedule',
-              ].map((item) => (
-                <li key={item} className="flex items-start gap-2 text-xs text-[#bbb]">
-                  <span className="text-[#4f8ef7] mt-0.5">+</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Pricing stub */}
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-[#e8e6f0]">Free</span>
-            <span className="text-xs text-[#555]">during early access</span>
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-3">
-            {isEnrolled ? (
-              <button
-                onClick={onViewPlan}
-                className="flex-1 py-2.5 rounded-lg bg-[#4f8ef7] text-[#0f0f1a] text-sm font-semibold hover:bg-[#4f8ef7]/90 transition-all"
-              >
-                View my plan
-              </button>
-            ) : (
-              <button
-                onClick={onEnroll}
-                disabled={enrolling || exam.visibility === 'coming-soon'}
-                className="flex-1 py-2.5 rounded-lg bg-[#4f8ef7] text-[#0f0f1a] text-sm font-semibold hover:bg-[#4f8ef7]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {enrolling ? 'Adding...' : exam.visibility === 'coming-soon' ? 'Coming soon' : 'Add to my plans'}
-              </button>
-            )}
-            <button
-              onClick={onClose}
-              className="px-4 py-2.5 rounded-lg border border-white/[0.08] bg-white/[0.03] text-sm font-semibold text-[#888] hover:text-[#ddd] transition-all"
-            >
-              Cancel
-            </button>
-          </div>
+      {meta?.topicList && meta.topicList.length > 0 && (
+        <div className="exam-topics">
+          {meta.topicList.map((t) => (
+            <span key={t} className="exam-topic">{t}</span>
+          ))}
         </div>
+      )}
+
+      <div className="exam-actions">
+        {isEnrolled ? (
+          <>
+            <button type="button" className="exam-btn enrolled" disabled>
+              Enrolled <CheckIcon />
+            </button>
+            <Link to={paths.app.plan.getHref(exam.code)} className="exam-btn view">
+              View plan <ArrowIcon size={12} />
+            </Link>
+          </>
+        ) : tag === 'soon' ? (
+          <button type="button" className="exam-btn soon" disabled>
+            Coming soon
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="exam-btn enroll"
+            onClick={onEnroll}
+            disabled={enrolling}
+          >
+            {enrolling ? 'Adding…' : 'Enroll'} <ArrowIcon size={12} />
+          </button>
+        )}
       </div>
     </div>
   )
 }
+
+// ============================================================
+// Icons
+// ============================================================
+
+const SearchIcon = () => (
+  <svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="1.6" />
+    <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+  </svg>
+)
+
+const ArrowIcon = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path
+      d="M5 12h14M13 5l7 7-7 7"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+)
+
+const CheckIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+    <path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+

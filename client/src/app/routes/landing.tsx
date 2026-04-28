@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { paths } from '@/config/paths'
 import AxeousLogo from '@/components/ui/AxeousLogo'
 import { ThemeToggle } from '@/components/theme-provider'
+import { RoadmapTrack, type RoadmapDay } from '@/features/roadmap'
 import './landing.css'
 
 const ArrowIcon = ({ size = 14 }: { size?: number }) => (
@@ -225,21 +226,6 @@ const Hero = () => (
         </div>
         <LogoPrism />
       </div>
-
-      <div className="meta-strip">
-        <div className="meta-cell">
-          <div className="meta-num">12</div>
-          <div className="meta-label">Standardized tests covered</div>
-        </div>
-        <div className="meta-cell">
-          <div className="meta-num">180k+</div>
-          <div className="meta-label">Practice questions</div>
-        </div>
-        <div className="meta-cell">
-          <div className="meta-num">98%</div>
-          <div className="meta-label">Score improvement rate</div>
-        </div>
-      </div>
     </div>
   </section>
 )
@@ -408,147 +394,22 @@ const Marquee = () => {
   )
 }
 
-type RoadmapDay = {
-  d: number
-  kind: 'drill' | 'quiz' | 'test' | 'review'
-  label: string
-  status: 'done' | 'today' | 'future' | 'exam'
-}
-
-const ROADMAP_ICONS: Record<RoadmapDay['kind'], React.ReactNode> = {
-  drill: <path d="M4 12h6m4 0h6M10 8l4 8M10 16l4-8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />,
-  quiz: (
-    <g>
-      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.6" fill="none" />
-      <path
-        d="M9 10c0-1.5 1.3-2.5 3-2.5s3 1 3 2.5-3 1.8-3 3.5M12 17v.01"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-    </g>
-  ),
-  test: (
-    <g>
-      <rect x="5" y="4" width="14" height="16" rx="2" stroke="currentColor" strokeWidth="1.6" fill="none" />
-      <path d="M9 9h6M9 13h6M9 17h3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </g>
-  ),
-  review: (
-    <path
-      d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      fill="none"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  ),
-}
-
-const RoadmapTrack = ({ days }: { days: RoadmapDay[] }) => {
-  const N = days.length
-  const trackW = 1600
-  const padL = 60
-  const padR = 60
-  const usable = trackW - padL - padR
-  const spacing = usable / (N - 1)
-
-  const amplitude = 22
-  const midY = 150
-  const waveY = (x: number) => midY + Math.sin((x / trackW) * Math.PI * 3) * amplitude
-
-  const nodes = days.map((day, i) => {
-    const x = padL + i * spacing
-    const y = waveY(x)
-    return { ...day, x, y, i }
-  })
-
-  const pathPts: string[] = []
-  for (let px = 0; px <= trackW; px += 4) {
-    const y = midY + Math.sin((px / trackW) * Math.PI * 3) * amplitude
-    pathPts.push(`${px},${y}`)
-  }
-  const pathD = `M ${pathPts[0]} ` + pathPts.slice(1).map((p) => `L ${p}`).join(' ')
-
-  const trackH = 340
-
-  return (
-    <div className="rm-track-wrap" style={{ position: 'relative', height: trackH, overflowX: 'auto', overflowY: 'visible' }}>
-      <div style={{ position: 'relative', width: trackW, height: trackH, minWidth: trackW }}>
-        <svg
-          style={{ position: 'absolute', left: 0, top: 0, width: trackW, height: trackH, pointerEvents: 'none' }}
-          viewBox={`0 0 ${trackW} ${trackH}`}
-          fill="none"
-        >
-          <defs>
-            <linearGradient id="rmLine" x1="0" x2="1" y1="0" y2="0">
-              <stop offset="0%" stopColor="#6e9cc7" />
-              <stop offset="38%" stopColor="#6e9cc7" />
-              <stop offset="42%" stopColor="rgba(255,255,255,0.14)" />
-              <stop offset="100%" stopColor="rgba(255,255,255,0.14)" />
-            </linearGradient>
-          </defs>
-          <path d={pathD} stroke="rgba(110,156,199,0.2)" strokeWidth="6" strokeLinecap="round" style={{ filter: 'blur(6px)' }} />
-          <path d={pathD} stroke="url(#rmLine)" strokeWidth="2.5" strokeLinecap="round" />
-        </svg>
-
-        {nodes.map((day) => {
-          const above = day.i % 2 === 0
-          const card = (
-            <div className="rm-card" style={above ? { marginBottom: 28 } : { marginTop: 28 }}>
-              <div className="rm-day">Day {day.d}</div>
-              <span className={`rm-kind k-${day.kind}`}>{day.kind}</span>
-              <div className="rm-label">{day.label}</div>
-              {day.status === 'today' && <div className="rm-today-tag">Today · 38 min</div>}
-              {day.status === 'exam' && <div className="rm-exam-tag">EXAM DAY</div>}
-            </div>
-          )
-          return (
-            <div
-              key={day.d}
-              className={`rm-node rm-${day.status} rm-${day.kind}`}
-              style={{
-                position: 'absolute',
-                left: day.x,
-                top: day.y,
-                transform: 'translate(-50%,-50%)',
-                display: 'flex',
-                flexDirection: above ? 'column-reverse' : 'column',
-                alignItems: 'center',
-              }}
-            >
-              {above && card}
-              <div className="rm-dot">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  {ROADMAP_ICONS[day.kind]}
-                </svg>
-              </div>
-              {!above && card}
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
 const Roadmap = () => {
   const days: RoadmapDay[] = [
-    { d: 1, kind: 'drill', label: 'Pharmacology', status: 'done' },
-    { d: 2, kind: 'quiz', label: 'Med-surg', status: 'done' },
-    { d: 3, kind: 'drill', label: 'Peds nursing', status: 'done' },
-    { d: 4, kind: 'review', label: 'Weak spots', status: 'done' },
-    { d: 5, kind: 'test', label: 'Section test', status: 'done' },
-    { d: 6, kind: 'drill', label: 'OB nursing', status: 'today' },
-    { d: 7, kind: 'quiz', label: 'Psych nursing', status: 'future' },
-    { d: 8, kind: 'drill', label: 'Prioritization', status: 'future' },
-    { d: 9, kind: 'review', label: 'Mistakes', status: 'future' },
-    { d: 10, kind: 'test', label: 'Timed section', status: 'future' },
-    { d: 11, kind: 'drill', label: 'Lab values', status: 'future' },
-    { d: 12, kind: 'quiz', label: 'SATA drills', status: 'future' },
-    { d: 13, kind: 'review', label: 'Final review', status: 'future' },
-    { d: 14, kind: 'test', label: 'Full mock', status: 'exam' },
+    { id: 1, dayNumber: 1, kind: 'drill', label: 'Pharmacology', status: 'done' },
+    { id: 2, dayNumber: 2, kind: 'quiz', label: 'Med-surg', status: 'done' },
+    { id: 3, dayNumber: 3, kind: 'drill', label: 'Peds nursing', status: 'done' },
+    { id: 4, dayNumber: 4, kind: 'review', label: 'Weak spots', status: 'done' },
+    { id: 5, dayNumber: 5, kind: 'test', label: 'Section test', status: 'done' },
+    { id: 6, dayNumber: 6, kind: 'drill', label: 'OB nursing', status: 'today', tag: 'Today · 38 min' },
+    { id: 7, dayNumber: 7, kind: 'quiz', label: 'Psych nursing', status: 'future' },
+    { id: 8, dayNumber: 8, kind: 'drill', label: 'Prioritization', status: 'future' },
+    { id: 9, dayNumber: 9, kind: 'review', label: 'Mistakes', status: 'future' },
+    { id: 10, dayNumber: 10, kind: 'test', label: 'Timed section', status: 'future' },
+    { id: 11, dayNumber: 11, kind: 'drill', label: 'Lab values', status: 'future' },
+    { id: 12, dayNumber: 12, kind: 'quiz', label: 'SATA drills', status: 'future' },
+    { id: 13, dayNumber: 13, kind: 'review', label: 'Final review', status: 'future' },
+    { id: 14, dayNumber: 14, kind: 'test', label: 'Full mock', status: 'exam', tag: 'EXAM DAY' },
   ]
   return (
     <section className="features" id="plan">
@@ -581,7 +442,15 @@ const Roadmap = () => {
             </div>
           </div>
 
-          <RoadmapTrack days={days} />
+          <RoadmapTrack
+            days={days}
+            trackWidth={1600}
+            trackHeight={340}
+            amplitude={22}
+            midY={150}
+            iconSize={16}
+            cardMargin={28}
+          />
 
           <div className="rm-foot">
             <div className="rm-foot-item">
