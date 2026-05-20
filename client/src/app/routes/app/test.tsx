@@ -7,7 +7,7 @@ import { PracticeSession, type SessionResults } from '@/features/practice-test/c
 
 interface SessionQuestion {
   _id: string
-  type: 'mcq' | 'sata' | 'ordered'
+  type: 'mcq' | 'sata' | 'ordered' | 'calculation' | 'exhibit'
   stem: string
   options: Record<string, string> | string[]
   answer: string[]
@@ -27,6 +27,8 @@ export const Test = () => {
   const examCode = searchParams.get('examCode')
   const mode = searchParams.get('mode') // 'bank'
   const topicsParam = searchParams.get('topics')
+  const topicId = searchParams.get('topicId')
+  const customPlanId = searchParams.get('customPlanId') // present for custom-plan topic practice
 
   const [questions, setQuestions] = useState<SessionQuestion[]>([])
   const [sessionTitle, setSessionTitle] = useState('')
@@ -52,6 +54,30 @@ export const Test = () => {
           setQuestions(data.questions ?? [])
           setSessionTitle(data.title ?? 'Practice Test')
           setGradingMode('end') // full tests default to end grading
+        } else if (topicId && (customPlanId || examCode)) {
+          // Topic-anchored practice — questions generated for a specific topic
+          const url = customPlanId
+            ? `/api/custom-plans/${customPlanId}/topics/${topicId}/questions`
+            : `/api/plans/${examCode}/topics/${topicId}/questions`
+          const res = await apiFetch(url)
+          if (!res.ok) { setError('Failed to load questions'); return }
+          const data = await res.json()
+          // Server returns { questions: [{ id, type, stem, options, answer, explanation, difficulty }] }
+          // Adapt to the SessionQuestion shape PracticeSession expects.
+          const adapted: SessionQuestion[] = (data.questions ?? []).map((q: { id: string } & Omit<SessionQuestion, '_id'>) => ({
+            _id: q.id,
+            type: q.type,
+            stem: q.stem,
+            // FIB stores options as {} server-side; Mongoose Mixed can drop the
+            // empty object before it reaches the client, so coalesce.
+            options: q.options ?? (q.type === 'ordered' ? [] : {}),
+            answer: q.answer,
+            explanation: q.explanation,
+            difficulty: q.difficulty,
+          }))
+          setQuestions(adapted)
+          setSessionTitle(data.topicLabel ?? 'Topic Practice')
+          setGradingMode('instant')
         } else if (examCode) {
           // Question bank or topic-based practice
           let url = `/api/exams/${examCode}/questions?limit=100`
@@ -73,7 +99,7 @@ export const Test = () => {
     }
 
     loadQuestions()
-  }, [testId, isOfficial, examCode, mode, topicsParam])
+  }, [testId, isOfficial, examCode, mode, topicsParam, topicId, customPlanId])
 
   const handleStartSession = useCallback(() => {
     // Slice questions to desired count and shuffle

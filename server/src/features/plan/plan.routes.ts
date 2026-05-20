@@ -2,11 +2,15 @@ import { Hono } from 'hono'
 import { requireAuth } from '../../middleware/auth.js'
 import type { AuthEnv } from '../../types.js'
 import { PlanModel } from './plan.model.js'
-import { ExamModel } from '../exam/exam.model.js'
+import { ExamModel, QuestionBankModel } from '../exam/exam.model.js'
 import { TopicModel } from '../custom-plan/topic.model.js'
 import { RoadmapDayModel } from '../custom-plan/roadmap-day.model.js'
 import { computeMastery } from '../custom-plan/mastery.algorithm.js'
 import { generateRoadmap } from '../custom-plan/roadmap.algorithm.js'
+import {
+  generateQuestionsForTopic,
+  GenerationError,
+} from '../generation/generate-questions.service.js'
 
 const planRoutes = new Hono<AuthEnv>()
 
@@ -175,6 +179,71 @@ planRoutes.patch('/:examCode/topics/:topicId/record', async (c) => {
   return c.json(topic)
 })
 
+// ── POST /:examCode/topics/:topicId/generate-questions — AI question gen ───
+
+planRoutes.post('/:examCode/topics/:topicId/generate-questions', async (c) => {
+  const authUser = c.get('user')
+  const { examCode, topicId } = c.req.param()
+
+  const plan = await PlanModel.findOne({ authId: authUser.id, examCode }).lean()
+  if (!plan) return c.json({ error: 'Plan not found' }, 404)
+
+  const topic = await TopicModel.findOne({ _id: topicId, planId: plan._id }).lean()
+  if (!topic) return c.json({ error: 'Topic not found' }, 404)
+
+  const body = await c.req.json().catch(() => ({}))
+
+  try {
+    const result = await generateQuestionsForTopic({
+      topicId: topic._id,
+      count: body.count,
+      allowedTypes: body.types,
+      typeWeights: body.typeWeights,
+      difficulty: body.difficulty,
+      customInstructions: body.customInstructions,
+      force: !!body.force,
+    })
+    return c.json(result)
+  } catch (err) {
+    if (err instanceof GenerationError) {
+      return c.json({ error: err.message }, err.status as 400 | 404 | 409 | 502)
+    }
+    console.error('Question generation failed:', err)
+    return c.json({ error: 'Question generation failed. Please try again.' }, 500)
+  }
+})
+
+// ── GET /:examCode/topics/:topicId/questions — Cached topic questions ───────
+
+planRoutes.get('/:examCode/topics/:topicId/questions', async (c) => {
+  const authUser = c.get('user')
+  const { examCode, topicId } = c.req.param()
+
+  const plan = await PlanModel.findOne({ authId: authUser.id, examCode }).lean()
+  if (!plan) return c.json({ error: 'Plan not found' }, 404)
+
+  const topic = await TopicModel.findOne({ _id: topicId, planId: plan._id }).lean()
+  if (!topic) return c.json({ error: 'Topic not found' }, 404)
+
+  const questions = await QuestionBankModel.find({ topicId: topic._id })
+    .sort({ createdAt: -1 })
+    .lean()
+
+  return c.json({
+    topicId: String(topic._id),
+    topicLabel: topic.label,
+    questions: questions.map((q) => ({
+      id: String(q._id),
+      type: q.type,
+      stem: q.stem,
+      options: q.options,
+      answer: q.answer,
+      explanation: q.explanation,
+      difficulty: q.difficulty,
+    })),
+  })
+})
+
 // ── GET /:examCode/readiness — Overall readiness score ──────────────────────
 
 planRoutes.get('/:examCode/readiness', async (c) => {
@@ -196,15 +265,37 @@ planRoutes.get('/:examCode/readiness', async (c) => {
     topics.reduce((sum, t) => sum + t.mastery, 0) / topics.length
   )
 
+  const counts = await QuestionBankModel.aggregate([
+    { $match: { topicId: { $in: topics.map((t) => t._id) } } },
+    { $group: { _id: '$topicId', count: { $sum: 1 } } },
+  ])
+  const countByTopic = new Map(counts.map((c) => [String(c._id), c.count]))
+
+  // Standard plans don't have user-uploaded source excerpts, but they can fall
+  // back to admin-supplied aiReferenceText. Surface availability so the UI
+  // can show or hide the Generate CTA accordingly.
+  const exam = await ExamModel.findOne({ code: examCode })
+    .select('aiReferenceText allowedQuestionTypes')
+    .lean()
+  const examHasReference = !!(exam?.aiReferenceText && exam.aiReferenceText.trim())
+  const allowedQuestionTypes =
+    exam?.allowedQuestionTypes && exam.allowedQuestionTypes.length > 0
+      ? exam.allowedQuestionTypes
+      : ['mcq']
+
   return c.json({
     readiness,
     topicCount: topics.length,
+    allowedQuestionTypes,
     topics: topics.map((t) => ({
       id: t._id,
       label: t.label,
+      description: t.description ?? '',
       mastery: t.mastery,
       questionsAnswered: t.questionsAnswered,
       correctCount: t.correctCount,
+      hasSourceExcerpts: (t.sourceExcerpts?.length ?? 0) > 0 || examHasReference,
+      generatedQuestionCount: countByTopic.get(String(t._id)) ?? 0,
     })),
   })
 })

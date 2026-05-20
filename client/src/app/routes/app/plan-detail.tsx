@@ -34,15 +34,38 @@ interface PlanRecord {
 interface TopicData {
   id: string
   label: string
+  description?: string
   mastery: number
   questionsAnswered: number
   correctCount: number
+  hasSourceExcerpts?: boolean
+  generatedQuestionCount?: number
 }
 
 interface ReadinessData {
   readiness: number
   topicCount: number
   topics: TopicData[]
+  allowedQuestionTypes?: string[]
+}
+
+const ALL_TYPE_LABELS: Record<string, string> = {
+  mcq: 'MCQ',
+  sata: 'SATA',
+  ordered: 'Order',
+  calculation: 'Calc',
+  exhibit: 'Exhibit',
+  priority: 'Priority',
+  fib: 'Fill-in',
+}
+
+// Cycling weight states: 0 (off) → 1 (light) → 2 (normal) → 3 (heavy) → 0 …
+type TypeWeight = 0 | 1 | 2 | 3
+const WEIGHT_LABELS: Record<TypeWeight, string> = {
+  0: '✕',
+  1: '•',
+  2: '••',
+  3: '•••',
 }
 
 interface RoadmapDayData {
@@ -158,9 +181,12 @@ function normalizeTopics(raw: Array<Record<string, unknown>>): TopicData[] {
   return raw.map((t) => ({
     id: (t.id ?? t._id) as string,
     label: t.label as string,
+    description: (t.description as string) ?? '',
     mastery: t.mastery as number,
     questionsAnswered: t.questionsAnswered as number,
     correctCount: t.correctCount as number,
+    hasSourceExcerpts: (t.hasSourceExcerpts as boolean) ?? false,
+    generatedQuestionCount: (t.generatedQuestionCount as number) ?? 0,
   }))
 }
 
@@ -204,6 +230,15 @@ const PlanDetailLayout = ({ kind }: { kind: Kind }) => {
   const [publishing, setPublishing] = useState(false)
   const [copied, setCopied] = useState(false)
 
+  // Topic drawer state — shared across both kinds.
+  const [drawerTopic, setDrawerTopic] = useState<TopicData | null>(null)
+  const [drawerCount, setDrawerCount] = useState(10)
+  const [drawerDifficulty, setDrawerDifficulty] = useState<'easy' | 'medium' | 'hard' | 'mixed'>('mixed')
+  const [drawerInstructions, setDrawerInstructions] = useState('')
+  const [drawerGenerating, setDrawerGenerating] = useState(false)
+  const [drawerError, setDrawerError] = useState<string | null>(null)
+  const [drawerTypeWeights, setDrawerTypeWeights] = useState<Record<string, TypeWeight>>({})
+
   // Route base for plan-scoped endpoints
   const apiBase = kind === 'custom'
     ? `/api/custom-plans/${identifier}`
@@ -216,7 +251,13 @@ const PlanDetailLayout = ({ kind }: { kind: Kind }) => {
       apiFetch(`${apiBase}/readiness`)
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
-          if (data) setReadiness({ ...data, topics: normalizeTopics(data.topics ?? []) })
+          if (data) {
+            setReadiness({
+              ...data,
+              topics: normalizeTopics(data.topics ?? []),
+              allowedQuestionTypes: data.allowedQuestionTypes ?? ['mcq'],
+            })
+          }
         })
         .catch(() => {}),
       apiFetch(`${apiBase}/roadmap`)
@@ -345,6 +386,90 @@ const PlanDetailLayout = ({ kind }: { kind: Kind }) => {
       setPublishing(false)
     }
   }, [kind, identifier])
+
+  const refreshReadiness = useCallback(async () => {
+    if (!identifier) return
+    const res = await apiFetch(`${apiBase}/readiness`)
+    if (!res.ok) return
+    const data = await res.json()
+    setReadiness({
+      ...data,
+      topics: normalizeTopics(data.topics ?? []),
+      allowedQuestionTypes: data.allowedQuestionTypes ?? ['mcq'],
+    })
+  }, [identifier, apiBase])
+
+  const openTopicDrawer = useCallback((topic: TopicData) => {
+    setDrawerTopic(topic)
+    setDrawerError(null)
+    setDrawerInstructions('')
+    // Seed weights to "normal" for every allowed type. User can cycle each
+    // pill to off / light / normal / heavy from there.
+    const types = readiness?.allowedQuestionTypes ?? ['mcq']
+    const seeded: Record<string, TypeWeight> = {}
+    for (const t of types) seeded[t] = 2
+    setDrawerTypeWeights(seeded)
+  }, [readiness?.allowedQuestionTypes])
+
+  const closeTopicDrawer = useCallback(() => {
+    if (drawerGenerating) return
+    setDrawerTopic(null)
+    setDrawerError(null)
+  }, [drawerGenerating])
+
+  const handleGenerateQuestions = useCallback(async () => {
+    if (!drawerTopic || !identifier) return
+    setDrawerGenerating(true)
+    setDrawerError(null)
+    try {
+      const res = await apiFetch(`${apiBase}/topics/${drawerTopic.id}/generate-questions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          count: drawerCount,
+          difficulty: drawerDifficulty,
+          customInstructions: drawerInstructions.trim() || undefined,
+          typeWeights: drawerTypeWeights,
+          force: (drawerTopic.generatedQuestionCount ?? 0) >= drawerCount,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setDrawerError(data.error ?? 'Question generation failed')
+        return
+      }
+      const data = await res.json()
+      // Update the drawer topic + readiness count optimistically
+      setDrawerTopic((prev) =>
+        prev
+          ? {
+              ...prev,
+              generatedQuestionCount:
+                (prev.generatedQuestionCount ?? 0) + (data.cached ? 0 : data.generatedCount ?? 0),
+            }
+          : prev
+      )
+      await refreshReadiness()
+    } catch {
+      setDrawerError('Question generation failed')
+    } finally {
+      setDrawerGenerating(false)
+    }
+  }, [drawerTopic, identifier, apiBase, drawerCount, drawerDifficulty, drawerInstructions, drawerTypeWeights, refreshReadiness])
+
+  const startTopicPractice = useCallback(
+    (topic: TopicData) => {
+      if (!identifier) return
+      const params = new URLSearchParams({ topicId: topic.id })
+      if (kind === 'custom') {
+        params.set('customPlanId', identifier)
+      } else {
+        params.set('examCode', identifier)
+      }
+      navigate(`${paths.app.test.getHref()}?${params.toString()}`)
+    },
+    [identifier, kind, navigate]
+  )
 
   const copyShareLink = useCallback(() => {
     if (!plan?.shareCode) return
@@ -756,8 +881,14 @@ const PlanDetailLayout = ({ kind }: { kind: Kind }) => {
               <div className="topics-grid">
                 {readiness.topics.map((topic) => {
                   const color = masteryColor(topic.mastery)
+                  const hasQuestions = (topic.generatedQuestionCount ?? 0) > 0
                   return (
-                    <div key={topic.id} className="topic-card">
+                    <button
+                      key={topic.id}
+                      type="button"
+                      className="topic-card topic-card-button"
+                      onClick={() => openTopicDrawer(topic)}
+                    >
                       <div className="topic-top">
                         <span className="topic-name">{topic.label}</span>
                         <span className="topic-pct" style={{ color }}>{topic.mastery}%</span>
@@ -772,8 +903,11 @@ const PlanDetailLayout = ({ kind }: { kind: Kind }) => {
                           }}
                         />
                       </div>
-                      <div className="topic-meta">{topic.questionsAnswered} answered — mastery</div>
-                    </div>
+                      <div className="topic-meta">
+                        {topic.questionsAnswered} answered
+                        {hasQuestions && ` · ${topic.generatedQuestionCount} questions`}
+                      </div>
+                    </button>
                   )
                 })}
               </div>
@@ -868,6 +1002,232 @@ const PlanDetailLayout = ({ kind }: { kind: Kind }) => {
           )}
         </div>
       </div>
+
+      {drawerTopic && (
+        <TopicDrawer
+          topic={drawerTopic}
+          count={drawerCount}
+          setCount={setDrawerCount}
+          difficulty={drawerDifficulty}
+          setDifficulty={setDrawerDifficulty}
+          instructions={drawerInstructions}
+          setInstructions={setDrawerInstructions}
+          allowedTypes={readiness?.allowedQuestionTypes ?? ['mcq']}
+          typeWeights={drawerTypeWeights}
+          setTypeWeights={setDrawerTypeWeights}
+          generating={drawerGenerating}
+          error={drawerError}
+          canGenerate={drawerTopic.hasSourceExcerpts ?? false}
+          onClose={closeTopicDrawer}
+          onGenerate={handleGenerateQuestions}
+          onPractice={() => {
+            const t = drawerTopic
+            closeTopicDrawer()
+            startTopicPractice(t)
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+// ============================================================
+// Topic Drawer
+// ============================================================
+
+interface TopicDrawerProps {
+  topic: TopicData
+  count: number
+  setCount: (n: number) => void
+  difficulty: 'easy' | 'medium' | 'hard' | 'mixed'
+  setDifficulty: (d: 'easy' | 'medium' | 'hard' | 'mixed') => void
+  instructions: string
+  setInstructions: (s: string) => void
+  allowedTypes: string[]
+  typeWeights: Record<string, TypeWeight>
+  setTypeWeights: (next: Record<string, TypeWeight>) => void
+  generating: boolean
+  error: string | null
+  canGenerate: boolean
+  onClose: () => void
+  onGenerate: () => void
+  onPractice: () => void
+}
+
+const TopicDrawer = ({
+  topic,
+  count,
+  setCount,
+  difficulty,
+  setDifficulty,
+  instructions,
+  setInstructions,
+  allowedTypes,
+  typeWeights,
+  setTypeWeights,
+  generating,
+  error,
+  canGenerate,
+  onClose,
+  onGenerate,
+  onPractice,
+}: TopicDrawerProps) => {
+  const cycleWeight = (type: string) => {
+    const current = typeWeights[type] ?? 2
+    const next: TypeWeight = ((current + 1) % 4) as TypeWeight
+    setTypeWeights({ ...typeWeights, [type]: next })
+  }
+  const noTypesEnabled = allowedTypes.every((t) => (typeWeights[t] ?? 2) === 0)
+  const hasQuestions = (topic.generatedQuestionCount ?? 0) > 0
+  const masteryColor =
+    topic.mastery >= 80
+      ? 'var(--green)'
+      : topic.mastery >= 60
+      ? 'var(--teal)'
+      : topic.mastery >= 40
+      ? '#ffb45a'
+      : 'var(--coral)'
+
+  return (
+    <div className="topic-drawer-backdrop" onClick={onClose} role="presentation">
+      <aside
+        className="topic-drawer"
+        role="dialog"
+        aria-label={`${topic.label} — practice options`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="topic-drawer-head">
+          <div>
+            <div className="topic-drawer-eyebrow">Topic</div>
+            <h2 className="topic-drawer-title">{topic.label}</h2>
+            <div className="topic-drawer-meta">
+              <span style={{ color: masteryColor }}>{topic.mastery}% mastery</span>
+              <span className="topic-drawer-sep">·</span>
+              <span>{topic.questionsAnswered} answered</span>
+              {hasQuestions && (
+                <>
+                  <span className="topic-drawer-sep">·</span>
+                  <span>{topic.generatedQuestionCount} generated questions</span>
+                </>
+              )}
+            </div>
+          </div>
+          <button type="button" onClick={onClose} className="topic-drawer-close" aria-label="Close">
+            ×
+          </button>
+        </div>
+
+        {topic.description && <p className="topic-drawer-desc">{topic.description}</p>}
+
+        {hasQuestions && (
+          <div className="topic-drawer-section">
+            <button type="button" onClick={onPractice} className="topic-drawer-practice">
+              Practice {topic.generatedQuestionCount} question{topic.generatedQuestionCount === 1 ? '' : 's'} →
+            </button>
+          </div>
+        )}
+
+        <div className="topic-drawer-section">
+          <div className="topic-drawer-section-head">
+            {hasQuestions ? 'Generate more questions' : 'Generate practice questions'}
+          </div>
+
+          {!canGenerate && (
+            <p className="topic-drawer-hint">
+              This topic has no source material to generate from. Re-run topic extraction or upload more notes.
+            </p>
+          )}
+
+          <div className="topic-drawer-row">
+            <label className="topic-drawer-label">Count</label>
+            <div className="topic-drawer-pills">
+              {[5, 10, 15, 20].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setCount(n)}
+                  className={`topic-drawer-pill${count === n ? ' is-active' : ''}`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="topic-drawer-row">
+            <label className="topic-drawer-label">Difficulty</label>
+            <div className="topic-drawer-pills">
+              {(['easy', 'medium', 'hard', 'mixed'] as const).map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setDifficulty(d)}
+                  className={`topic-drawer-pill${difficulty === d ? ' is-active' : ''}`}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {allowedTypes.length > 1 && (
+            <div className="topic-drawer-row topic-drawer-row-full">
+              <label className="topic-drawer-label">
+                Type mix <span className="topic-drawer-optional">(click to cycle: ✕ off → • light → •• normal → ••• heavy)</span>
+              </label>
+              <div className="topic-drawer-pills">
+                {allowedTypes.map((t) => {
+                  const weight = (typeWeights[t] ?? 2) as TypeWeight
+                  const off = weight === 0
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => cycleWeight(t)}
+                      className={`topic-drawer-pill topic-drawer-typepill${off ? ' is-off' : ' is-active'}`}
+                      aria-label={`${ALL_TYPE_LABELS[t] ?? t} weight: ${WEIGHT_LABELS[weight]}`}
+                    >
+                      <span className="typepill-label">{ALL_TYPE_LABELS[t] ?? t}</span>
+                      <span className="typepill-weight">{WEIGHT_LABELS[weight]}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="topic-drawer-row topic-drawer-row-full">
+            <label className="topic-drawer-label" htmlFor="topic-drawer-instructions">
+              Custom instructions <span className="topic-drawer-optional">(optional)</span>
+            </label>
+            <textarea
+              id="topic-drawer-instructions"
+              value={instructions}
+              onChange={(e) => setInstructions(e.target.value)}
+              placeholder="e.g. Focus on dose calculations and contraindications"
+              rows={3}
+              className="topic-drawer-textarea"
+            />
+          </div>
+
+          {error && <div className="topic-drawer-error">{error}</div>}
+
+          {noTypesEnabled && (
+            <div className="topic-drawer-hint">
+              All question types are turned off. Toggle at least one above before generating.
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={onGenerate}
+            disabled={generating || !canGenerate || noTypesEnabled}
+            className="topic-drawer-generate"
+          >
+            {generating ? 'Writing questions…' : `Generate ${count} question${count === 1 ? '' : 's'}`}
+          </button>
+        </div>
+      </aside>
     </div>
   )
 }

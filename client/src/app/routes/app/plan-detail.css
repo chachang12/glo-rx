@@ -583,6 +583,232 @@
   background: var(--glass-strong);
 }
 
+/* ── Topic card as button ─────────────────────────────────── */
+.axeous-plan-detail .topic-card-button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.axeous-plan-detail .topic-card-button:hover {
+  border-color: var(--line-strong);
+}
+.axeous-plan-detail .topic-card-button:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+/* ── Topic drawer ─────────────────────────────────────────── */
+.axeous-plan-detail .topic-drawer-backdrop {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+  display: flex; justify-content: flex-end;
+  animation: topic-drawer-fade 0.18s ease-out;
+}
+@keyframes topic-drawer-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.axeous-plan-detail .topic-drawer {
+  width: min(480px, 100%);
+  max-width: 100%;
+  height: 100%;
+  /* Solid base layered with a subtle highlight so the panel reads as opaque
+     without losing the app's glassy look. Avoid `var(--surface)` (undefined). */
+  background:
+    linear-gradient(180deg,
+      color-mix(in oklab, var(--ink) 6%, var(--bg)) 0%,
+      var(--bg) 240px,
+      var(--bg) 100%
+    );
+  border-left: 1px solid var(--line-strong);
+  box-shadow: -16px 0 40px -12px rgba(0, 0, 0, 0.55);
+  padding: 24px 24px 32px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  animation: topic-drawer-slide 0.22s ease-out;
+}
+@keyframes topic-drawer-slide {
+  from { transform: translateX(20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.axeous-plan-detail .topic-drawer-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px;
+}
+.axeous-plan-detail .topic-drawer-eyebrow {
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: color-mix(in oklab, var(--ink) 50%, transparent);
+}
+.axeous-plan-detail .topic-drawer-title {
+  font-size: 22px; font-weight: 700; margin: 4px 0 8px;
+  color: var(--ink);
+}
+.axeous-plan-detail .topic-drawer-meta {
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  font-size: 12.5px;
+  color: color-mix(in oklab, var(--ink) 65%, transparent);
+}
+.axeous-plan-detail .topic-drawer-sep { opacity: 0.5; }
+.axeous-plan-detail .topic-drawer-close {
+  background: transparent; border: none; cursor: pointer;
+  font-size: 28px; line-height: 1; padding: 0 4px;
+  color: color-mix(in oklab, var(--ink) 50%, transparent);
+}
+.axeous-plan-detail .topic-drawer-close:hover { color: var(--ink); }
+.axeous-plan-detail .topic-drawer-desc {
+  font-size: 13.5px; line-height: 1.55;
+  color: color-mix(in oklab, var(--ink) 75%, transparent);
+  margin: 0;
+}
+.axeous-plan-detail .topic-drawer-section {
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.axeous-plan-detail .topic-drawer-section-head {
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: color-mix(in oklab, var(--ink) 60%, transparent);
+}
+.axeous-plan-detail .topic-drawer-hint {
+  font-size: 12.5px; line-height: 1.5;
+  color: color-mix(in oklab, var(--ink) 55%, transparent);
+  margin: 0;
+  padding: 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-md);
+}
+.axeous-plan-detail .topic-drawer-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+}
+.axeous-plan-detail .topic-drawer-row-full {
+  flex-direction: column; align-items: flex-start;
+}
+.axeous-plan-detail .topic-drawer-label {
+  font-size: 12.5px; font-weight: 500;
+  color: color-mix(in oklab, var(--ink) 70%, transparent);
+}
+.axeous-plan-detail .topic-drawer-optional {
+  font-weight: 400;
+  color: color-mix(in oklab, var(--ink) 45%, transparent);
+}
+.axeous-plan-detail .topic-drawer-pills {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.axeous-plan-detail .topic-drawer-pill {
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 500;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--line);
+  background: transparent;
+  color: color-mix(in oklab, var(--ink) 70%, transparent);
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.axeous-plan-detail .topic-drawer-pill:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+.axeous-plan-detail .topic-drawer-pill.is-active {
+  border-color: var(--teal);
+  background: color-mix(in oklab, var(--teal) 12%, transparent);
+  color: var(--teal);
+}
+
+/* Type-mix pills: label + weight indicator, cycles through 4 states */
+.axeous-plan-detail .topic-drawer-typepill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 10px;
+  padding-left: 10px;
+}
+.axeous-plan-detail .topic-drawer-typepill .typepill-label {
+  font-weight: 500;
+}
+.axeous-plan-detail .topic-drawer-typepill .typepill-weight {
+  font-size: 11px;
+  letter-spacing: 1px;
+  opacity: 0.85;
+  min-width: 22px;
+  text-align: right;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.axeous-plan-detail .topic-drawer-typepill.is-off {
+  opacity: 0.45;
+  border-color: var(--line);
+  background: transparent;
+  color: color-mix(in oklab, var(--ink) 50%, transparent);
+}
+.axeous-plan-detail .topic-drawer-typepill.is-off:hover {
+  opacity: 0.7;
+  border-color: var(--line-strong);
+}
+.axeous-plan-detail .topic-drawer-textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 13px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  background: color-mix(in oklab, var(--ink) 3%, transparent);
+  color: var(--ink);
+  resize: vertical;
+  min-height: 70px;
+}
+.axeous-plan-detail .topic-drawer-textarea:focus {
+  outline: none;
+  border-color: var(--teal);
+}
+.axeous-plan-detail .topic-drawer-error {
+  font-size: 12.5px;
+  color: var(--coral);
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in oklab, var(--coral) 35%, transparent);
+  background: color-mix(in oklab, var(--coral) 8%, transparent);
+}
+.axeous-plan-detail .topic-drawer-generate,
+.axeous-plan-detail .topic-drawer-practice {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 11px 16px;
+  font-size: 13.5px; font-weight: 600;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--teal);
+  background: var(--teal);
+  color: #0b1320;
+  cursor: pointer;
+  transition: opacity .15s, transform .12s;
+}
+.axeous-plan-detail .topic-drawer-generate:hover,
+.axeous-plan-detail .topic-drawer-practice:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+.axeous-plan-detail .topic-drawer-generate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+.axeous-plan-detail .topic-drawer-practice {
+  background: transparent;
+  color: var(--teal);
+}
+
+@media (max-width: 480px) {
+  .axeous-plan-detail .topic-drawer { padding: 18px 18px 28px; }
+  .axeous-plan-detail .topic-drawer-title { font-size: 19px; }
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 780px) {
   .axeous-plan-detail .wrap { padding: 0 20px; }

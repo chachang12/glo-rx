@@ -1,7 +1,7 @@
 // ── JSON Schemas for question and test validation ───────────────────────────
 
 export interface QuestionShape {
-  type: 'mcq' | 'sata' | 'ordered'
+  type: 'mcq' | 'sata' | 'ordered' | 'calculation' | 'exhibit' | 'priority' | 'fib'
   stem: string
   options: Record<string, string> | string[]
   answer: string[]
@@ -23,7 +23,9 @@ export interface BulkQuestionsShape {
 
 // ── Validation ──────────────────────────────────────────────────────────────
 
-const QUESTION_TYPES = ['mcq', 'sata', 'ordered'] as const
+const QUESTION_TYPES = ['mcq', 'sata', 'ordered', 'calculation', 'exhibit', 'priority', 'fib'] as const
+// Types that render as A/B/C/D options with exactly 1 correct key.
+const SINGLE_ANSWER_TYPES = new Set(['mcq', 'calculation', 'exhibit', 'priority'])
 const DIFFICULTIES = ['easy', 'medium', 'hard'] as const
 
 export function validateQuestion(q: unknown, index?: number): string | null {
@@ -52,6 +54,15 @@ export function validateQuestion(q: unknown, index?: number): string | null {
     if (!obj.options.every((o: unknown) => typeof o === 'string')) {
       return `${prefix}ordered question options must all be strings`
     }
+  } else if (obj.type === 'fib') {
+    // FIB has no multiple-choice options; the user types in their answer.
+    // We persist `options` as `{}` so the storage shape stays consistent.
+    if (obj.options === undefined || obj.options === null) {
+      obj.options = {}
+    }
+    if (typeof obj.options !== 'object' || Array.isArray(obj.options)) {
+      return `${prefix}fib options must be an object (use {} if there are no choices)`
+    }
   } else {
     if (!obj.options || typeof obj.options !== 'object' || Array.isArray(obj.options)) {
       return `${prefix}options must be an object like { "A": "...", "B": "..." }`
@@ -75,8 +86,8 @@ export function validateQuestion(q: unknown, index?: number): string | null {
     return `${prefix}all answer values must be strings`
   }
 
-  // Validate answer keys exist in options
-  if (obj.type !== 'ordered') {
+  // Validate answer keys exist in options (only for option-grid types)
+  if (obj.type !== 'ordered' && obj.type !== 'fib') {
     const optionKeys = Object.keys(obj.options as Record<string, unknown>)
     for (const a of obj.answer as string[]) {
       if (!optionKeys.includes(a)) {
@@ -85,9 +96,16 @@ export function validateQuestion(q: unknown, index?: number): string | null {
     }
   }
 
-  // mcq must have exactly 1 answer
-  if (obj.type === 'mcq' && (obj.answer as string[]).length !== 1) {
-    return `${prefix}mcq questions must have exactly 1 answer`
+  // single-answer types must have exactly 1 answer
+  if (SINGLE_ANSWER_TYPES.has(obj.type as string) && (obj.answer as string[]).length !== 1) {
+    return `${prefix}${obj.type} questions must have exactly 1 answer`
+  }
+
+  // FIB answer must be non-empty trimmed strings (synonyms allowed via array)
+  if (obj.type === 'fib') {
+    for (const a of obj.answer as string[]) {
+      if (!a.trim()) return `${prefix}fib answer entries must be non-empty strings`
+    }
   }
 
   // explanation (optional)

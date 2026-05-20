@@ -48,6 +48,32 @@ const planSchema = new Schema(
     },
     usageCount: { type: Number, default: 0 },
     usageResetAt: { type: Date, default: () => getNextReset() },
+
+    // ── Transient: extracted topics awaiting user confirmation ───────────
+    // Populated by POST /extract-topics, consumed by POST /confirm-topics.
+    // Cleared after confirmation. Holds the enriched citation data the model
+    // returned so we can persist topic descriptions + sourceExcerpts even
+    // though the review UI only edits labels.
+    pendingTopics: {
+      type: [
+        new Schema(
+          {
+            label: { type: String, required: true },
+            description: { type: String, default: '' },
+            parentLabel: { type: String, default: null },
+            sourceChunks: [
+              {
+                documentId: { type: Schema.Types.ObjectId, required: true },
+                chunkIndex: { type: Number, required: true },
+                excerpt: { type: String, required: true },
+              },
+            ],
+          },
+          { _id: false }
+        ),
+      ],
+      default: [],
+    },
   },
   {
     timestamps: true,

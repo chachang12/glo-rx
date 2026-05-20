@@ -1,6 +1,6 @@
 export interface Question {
   id: number;
-  type: "mcq" | "sata" | "ordered" | "calculation" | "exhibit";
+  type: "mcq" | "sata" | "ordered" | "calculation" | "exhibit" | "priority" | "fib";
   stem: string;
   options: Record<string, string>;
   answer: string[];
