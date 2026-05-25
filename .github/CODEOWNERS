@@ -1,0 +1,56 @@
+# CODEOWNERS — required reviewers per path.
+#
+# Last matching pattern wins. GitHub only enforces this when
+# "Require review from Code Owners" is enabled on the protected branch
+# (Settings → Branches → Branch protection rules).
+#
+# Replace the placeholders below with real GitHub handles before merging:
+#   @LEAD   — repo owner / final reviewer on anything shared or risky
+#   @DEV1   — Learn-focused dev
+#   @DEV2   — Collect-focused dev
+# If both devs float across products, see the bottom of this file.
+
+# ── Default ────────────────────────────────────────────────────────────
+*                                   @LEAD
+
+# ── Shared code (lead reviews — touches both products) ─────────────────
+/client/src/features/shared/        @LEAD
+/client/src/lib/                    @LEAD
+/client/src/app/                    @LEAD
+/client/src/config/                 @LEAD
+/client/src/index.css               @LEAD
+/server/src/lib/                    @LEAD
+/server/src/middleware/             @LEAD
+/server/src/config/                 @LEAD
+/server/src/features/shared/        @LEAD
+
+# ── Learn product ──────────────────────────────────────────────────────
+/client/src/features/learn/         @LEAD @DEV1
+/client/src/app/routes/learn/       @LEAD @DEV1
+/server/src/features/learn/         @LEAD @DEV1
+
+# ── Collect product ────────────────────────────────────────────────────
+/client/src/features/collect/       @LEAD @DEV2
+/client/src/app/routes/collect/     @LEAD @DEV2
+/server/src/features/collect/       @LEAD @DEV2
+
+# ── Infra, deps, deploy config (lead-only) ─────────────────────────────
+/.github/                           @LEAD
+/CLAUDE.md                          @LEAD
+/README.md                          @LEAD
+**/package.json                     @LEAD
+**/package-lock.json                @LEAD
+**/tsconfig*.json                   @LEAD
+**/vite.config.ts                   @LEAD
+**/eslint.config.js                 @LEAD
+/render.yaml                        @LEAD
+
+# ── If both devs float across products ─────────────────────────────────
+# Replace the product blocks above with a single block:
+#
+#   /client/src/features/learn/     @LEAD @DEV1 @DEV2
+#   /client/src/features/collect/   @LEAD @DEV1 @DEV2
+#   ...
+#
+# GitHub requires only one of the listed owners to approve, so this
+# keeps both devs eligible reviewers without forcing both to sign off.
