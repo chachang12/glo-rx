@@ -112,6 +112,18 @@ export const paths = {
         path: 'collect/dashboard',
         getHref: () => '/app/collect/dashboard',
       },
+      search: {
+        path: 'collect/search',
+        getHref: () => '/app/collect/search',
+      },
+      watch: {
+        path: 'collect/watch',
+        getHref: () => '/app/collect/watch',
+      },
+      profile: {
+        path: 'collect/profile',
+        getHref: () => '/app/collect/profile',
+      },
     },
   },
 } as const

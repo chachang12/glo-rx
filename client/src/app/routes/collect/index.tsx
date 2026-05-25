@@ -1,7 +1,15 @@
 import { Link } from 'react-router'
 import { paths } from '@/config/paths'
+import { useUser } from '@/features/shared/auth'
 
 export const Collect = () => {
+  const { user, isLoading } = useUser()
+  const collectHref = paths.app.collect.dashboard.getHref()
+  const ctaHref = user
+    ? collectHref
+    : paths.auth.login.getHref(collectHref)
+  const ctaLabel = isLoading ? 'Sign in' : user ? 'Open Collect' : 'Sign in'
+
   return (
     <div className="relative min-h-screen bg-[#060611] overflow-hidden">
       {/* ── Gradient blobs — warm/amber tones ───────────────────────────── */}
@@ -25,6 +33,12 @@ export const Collect = () => {
           <Link to={paths.home.getHref()} className="text-sm text-[#aaa] hover:text-white transition-colors">
             All products
           </Link>
+          <Link
+            to={ctaHref}
+            className="rounded-full bg-[#f59e0b] px-4 py-1.5 text-sm font-semibold text-[#060611] transition-colors hover:bg-[#fbbf24]"
+          >
+            {ctaLabel}
+          </Link>
         </div>
       </nav>
 
@@ -33,7 +47,7 @@ export const Collect = () => {
         {/* Badge */}
         <div className="mb-8 px-4 py-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm text-xs text-[#aaa] font-medium">
           <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#f59e0b] mr-2" />
-          Early development — coming soon
+          Beta access — sign in to try it
         </div>
 
         <h1 className="max-w-4xl text-center text-5xl sm:text-7xl font-bold tracking-tight leading-[1.1]">
@@ -50,12 +64,12 @@ export const Collect = () => {
         </p>
 
         <div className="mt-10 flex items-center gap-4">
-          <button
-            disabled
-            className="px-6 py-3 rounded-full bg-[#f59e0b]/50 text-sm font-semibold text-white/70 cursor-not-allowed"
+          <Link
+            to={ctaHref}
+            className="px-6 py-3 rounded-full bg-[#f59e0b] text-sm font-semibold text-[#060611] transition-all hover:bg-[#fbbf24] hover:-translate-y-px"
           >
-            Coming soon
-          </button>
+            {ctaLabel}
+          </Link>
           <a
             href="#features"
             className="px-6 py-3 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm text-sm font-semibold text-[#aaa] hover:text-white hover:bg-white/10 transition-all"

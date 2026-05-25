@@ -183,7 +183,7 @@ export const createAppRouter = () =>
                 ],
               },
 
-              // ── Collect (placeholder) ────────────────────────────────
+              // ── Collect ──────────────────────────────────────────────
               {
                 path: paths.app.collect.root.path,
                 lazy: () =>
@@ -200,6 +200,27 @@ export const createAppRouter = () =>
                     lazy: () =>
                       import('./routes/collect/dashboard').then((m) => ({
                         Component: m.CollectDashboard,
+                      })),
+                  },
+                  {
+                    path: 'search',
+                    lazy: () =>
+                      import('./routes/collect/search').then((m) => ({
+                        Component: m.CollectSearch,
+                      })),
+                  },
+                  {
+                    path: 'watch',
+                    lazy: () =>
+                      import('./routes/collect/watch').then((m) => ({
+                        Component: m.CollectWatch,
+                      })),
+                  },
+                  {
+                    path: 'profile',
+                    lazy: () =>
+                      import('./routes/collect/profile').then((m) => ({
+                        Component: m.CollectProfile,
                       })),
                   },
                 ],

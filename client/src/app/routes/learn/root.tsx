@@ -1,10 +1,13 @@
-import { Outlet } from 'react-router'
+import { Outlet, useLocation } from 'react-router'
 import { Navbar } from '@/features/shared/navigation/Navbar'
 import { useGetMe } from '@/features/shared/user'
 
 const AppRoot = () => {
   // Ensures the app user record exists in our DB on first visit.
   useGetMe()
+  const location = useLocation()
+  // Collect renders its own navbar; suppress the Learn nav while inside Collect.
+  const isCollect = location.pathname.startsWith('/app/collect')
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-surface text-ink">
@@ -43,7 +46,7 @@ const AppRoot = () => {
       />
 
       <div className="relative z-10 pt-3">
-        <Navbar />
+        {!isCollect && <Navbar />}
         <Outlet />
       </div>
     </div>

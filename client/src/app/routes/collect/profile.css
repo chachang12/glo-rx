@@ -1,0 +1,190 @@
+/* ============================================================
+   Axeous Collect / Profile — scoped under .axeous-collect-profile
+   Mirrors the Learn profile shape with a warm (amber) accent
+   to match the Collect product palette.
+   ============================================================ */
+
+.axeous-collect-profile {
+  font-family: 'Geist', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-feature-settings: 'ss01', 'cv11';
+  color: var(--ink);
+}
+
+.axeous-collect-profile .wrap {
+  max-width: 860px; margin: 0 auto; padding: 0 32px;
+}
+.axeous-collect-profile .page-bottom { padding-bottom: 64px; }
+
+/* ── Breadcrumb + Header ─────────────────────────────────── */
+.axeous-collect-profile .breadcrumb {
+  padding: 28px 0 0;
+  font-size: 13px;
+  color: var(--ink-faint);
+  display: flex; align-items: center; gap: 8px;
+}
+.axeous-collect-profile .breadcrumb a {
+  color: var(--ink-faint);
+  text-decoration: none;
+  transition: color .15s;
+}
+.axeous-collect-profile .breadcrumb a:hover { color: var(--ink); }
+
+.axeous-collect-profile .page-title {
+  font-size: 32px; font-weight: 500; letter-spacing: -0.02em;
+  margin: 8px 0 4px; color: var(--ink);
+}
+.axeous-collect-profile .page-sub {
+  font-size: 15px; color: var(--ink-dim); margin: 0 0 32px;
+}
+
+/* ── Card base ───────────────────────────────────────────── */
+.axeous-collect-profile .card {
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--ink) 4%, transparent),
+    color-mix(in oklab, var(--ink) 1.5%, transparent)
+  );
+  border: 1px solid var(--line);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.axeous-collect-profile .card:hover { border-color: var(--line-strong); }
+
+/* ── Hero (warm Collect accent) ──────────────────────────── */
+.axeous-collect-profile .profile-hero {
+  padding: 32px;
+  display: flex; align-items: center; gap: 24px;
+  position: relative; overflow: hidden; margin-bottom: 16px;
+}
+.axeous-collect-profile .profile-hero::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(500px 300px at 0% 50%, rgba(255, 180, 90, 0.14), transparent 60%);
+}
+.axeous-collect-profile .profile-hero > * { position: relative; }
+
+.axeous-collect-profile .profile-avatar {
+  width: 80px; height: 80px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--amber), var(--coral));
+  display: grid; place-items: center;
+  font-size: 28px; font-weight: 600; color: #1a1108;
+  box-shadow: 0 8px 32px rgba(255, 180, 90, 0.3);
+}
+.axeous-collect-profile .profile-info { flex: 1; min-width: 0; }
+.axeous-collect-profile .profile-name { font-size: 24px; font-weight: 500; margin: 0 0 4px; color: var(--ink); }
+.axeous-collect-profile .profile-email { font-size: 14px; color: var(--ink-dim); margin: 0 0 12px; }
+
+.axeous-collect-profile .profile-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+.axeous-collect-profile .profile-badge {
+  padding: 4px 12px; border-radius: var(--radius-full); font-size: 12px;
+  background: var(--glass); border: 1px solid var(--line);
+  color: var(--ink-dim);
+  display: flex; align-items: center; gap: 6px;
+}
+.axeous-collect-profile .profile-badge .badge-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+}
+
+/* ── Stats strip ─────────────────────────────────────────── */
+.axeous-collect-profile .stats-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+  margin-bottom: 24px;
+}
+.axeous-collect-profile .stat-mini { padding: 18px; text-align: center; }
+.axeous-collect-profile .stat-mini-val {
+  font-size: 24px; font-weight: 500; letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.axeous-collect-profile .stat-mini-val.muted { color: var(--ink-faint); }
+.axeous-collect-profile .stat-mini-val.amber { color: var(--amber); }
+.axeous-collect-profile .stat-mini-label {
+  font-size: 11px; color: var(--ink-faint);
+  text-transform: uppercase; letter-spacing: 0.1em; margin-top: 3px;
+}
+.axeous-collect-profile .stat-mini-soon {
+  font-size: 10.5px; color: var(--ink-faint); margin-top: 4px;
+}
+
+/* ── Section title ───────────────────────────────────────── */
+.axeous-collect-profile .section-title {
+  font-size: 18px; font-weight: 500;
+  margin: 28px 0 14px; color: var(--ink);
+}
+.axeous-collect-profile .section-title.danger { color: var(--coral); }
+
+.axeous-collect-profile .section-card { padding: 0; }
+
+/* ── Row items ───────────────────────────────────────────── */
+.axeous-collect-profile .row-item {
+  display: flex; align-items: center; gap: 16px;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--line);
+  transition: background .2s;
+  text-decoration: none;
+  color: inherit;
+}
+.axeous-collect-profile .row-item:last-child { border-bottom: none; }
+.axeous-collect-profile .row-item:hover { background: color-mix(in oklab, var(--ink) 2%, transparent); }
+
+.axeous-collect-profile .row-icon {
+  width: 40px; height: 40px; border-radius: var(--radius-md);
+  display: grid; place-items: center; flex-shrink: 0;
+}
+.axeous-collect-profile .row-info { flex: 1; min-width: 0; }
+.axeous-collect-profile .row-title {
+  font-size: 14.5px; font-weight: 500; margin-bottom: 2px;
+  color: var(--ink);
+}
+.axeous-collect-profile .row-sub { font-size: 12.5px; color: var(--ink-faint); }
+
+.axeous-collect-profile .row-action {
+  padding: 8px 16px; border-radius: var(--radius-full);
+  font-size: 12.5px; font-weight: 500;
+  background: var(--glass); border: 1px solid var(--line-strong);
+  color: var(--ink-dim);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .2s;
+}
+.axeous-collect-profile .row-action:hover {
+  background: rgba(255, 180, 90, 0.08);
+  border-color: rgba(255, 180, 90, 0.35);
+  color: var(--ink);
+}
+
+.axeous-collect-profile .danger-row .row-title { color: var(--coral); }
+.axeous-collect-profile .danger-action {
+  padding: 8px 16px; border-radius: var(--radius-full);
+  font-size: 12.5px; font-weight: 500;
+  background: rgba(255, 72, 88, 0.06);
+  border: 1px solid rgba(255, 72, 88, 0.2);
+  color: var(--coral);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .2s;
+}
+.axeous-collect-profile .danger-action:hover {
+  background: rgba(255, 72, 88, 0.12);
+  border-color: rgba(255, 72, 88, 0.4);
+}
+.axeous-collect-profile .danger-confirm {
+  padding: 8px 14px; border-radius: var(--radius-full);
+  font-size: 12.5px; font-weight: 500;
+  background: var(--coral); color: #fff;
+  border: none; cursor: pointer;
+  transition: opacity .15s;
+}
+.axeous-collect-profile .danger-confirm:hover { opacity: 0.9; }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .axeous-collect-profile .wrap { padding: 0 20px; }
+  .axeous-collect-profile .stats-strip { grid-template-columns: repeat(2, 1fr); }
+  .axeous-collect-profile .profile-hero {
+    flex-direction: column; text-align: center; padding: 24px;
+  }
+  .axeous-collect-profile .profile-badges { justify-content: center; }
+  .axeous-collect-profile .row-item { padding: 14px 18px; }
+}

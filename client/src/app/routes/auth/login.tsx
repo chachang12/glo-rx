@@ -1,10 +1,14 @@
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { paths } from '@/config/paths'
 import { LoginForm } from '@/features/shared/auth'
 import AxeousLogo from '@/components/ui/AxeousLogo'
 import { ThemeToggle } from '@/components/theme-provider'
 
 export const LoginPage = () => {
+  const [searchParams] = useSearchParams()
+  const redirectTo = searchParams.get('redirectTo') ?? ''
+  const product = redirectTo.startsWith('/app/collect') ? 'Collect' : 'Learn'
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-surface text-ink">
       {/* Aurora backdrop — mirrors the landing's layered gradient + noise + grid */}
@@ -62,7 +66,7 @@ export const LoginPage = () => {
             </div>
             <div className="space-y-1.5">
               <h1 className="text-2xl font-medium tracking-tight sm:text-3xl">Welcome back</h1>
-              <p className="text-sm text-ink-dim">Sign in to continue to Axeous Learn.</p>
+              <p className="text-sm text-ink-dim">Sign in to continue to Axeous {product}.</p>
             </div>
           </div>
 

@@ -59,8 +59,23 @@ app.route('/api/collect', collectRoutes)
 
 app.get('/health', (c) => c.json({ status: 'ok' }))
 
+function warnIfMissingEbayCreds() {
+  const missing = (['EBAY_APP_ID', 'EBAY_CERT_ID'] as const).filter((k) => !process.env[k])
+  if (missing.length > 0) {
+    console.warn(
+      `[collect/ebay] ${missing.join(', ')} not set — /api/collect/ebay/* will return 500 until configured.`
+    )
+  }
+  if (!process.env.EBAY_EPN_CAMPAIGN_ID) {
+    console.warn(
+      '[collect/ebay] EBAY_EPN_CAMPAIGN_ID not set — itemAffiliateWebUrl will be absent from responses (no commission).'
+    )
+  }
+}
+
 connectDB().then(async () => {
   await seedExams()
+  warnIfMissingEbayCreds()
   serve({ fetch: app.fetch, port: 3001 }, () => {
     console.log('Server running on http://localhost:3001')
   })
