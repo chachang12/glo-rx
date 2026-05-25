@@ -4,7 +4,11 @@ import { WatchModel } from './watch.model.js'
 import { dispatchMatches } from './watch.dispatcher.js'
 import { emit } from './watch.sse-registry.js'
 
-const OVERLAP_MS = 60_000
+// eBay Browse API indexing lag can be 2-10 minutes between listing creation
+// and appearance in search results. The overlap buffer is sized to cover that
+// — every poll asks for items since (lastPoll - OVERLAP_MS). seenItemIds
+// dedup ensures we don't re-emit items across overlapping windows.
+const OVERLAP_MS = 5 * 60_000
 const FANOUT_PER_TICK = 5
 const QUOTA_HARD_STOP_RATIO = 0.95
 
@@ -151,6 +155,12 @@ async function pollOneWatch(watch: InstanceType<typeof WatchModel>) {
   watch.nextPollAt = new Date(Date.now() + pollIntervalMs() + jitterMs())
   watch.lastError = null
   await watch.save()
+
+  const durationMs = Date.now() - pollStart
+  console.log(
+    `[scheduler] poll #${watch.pollCount} watch=${watch._id} q="${filters.q ?? ''}" ` +
+      `new=${newItems.length} since=${sinceISO} took=${durationMs}ms`
+  )
 
   await emit(String(watch._id), 'heartbeat', {
     pollCount: watch.pollCount,

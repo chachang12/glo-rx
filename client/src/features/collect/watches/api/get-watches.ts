@@ -25,9 +25,10 @@ export const useGetWatches = () =>
 export const getWatch = (id: string, signal?: AbortSignal): Promise<Watch> =>
   apiClient.get(`/api/collect/watches/${encodeURIComponent(id)}`, WatchSchema, { signal })
 
-export const useGetWatch = (id: string | undefined) =>
+export const useGetWatch = (id: string | undefined, opts?: { refetchInterval?: number }) =>
   useQuery({
     queryKey: id ? watchKeys.detail(id) : ['collect', 'watches', '__idle__'],
     queryFn: ({ signal }) => getWatch(id!, signal),
     enabled: !!id,
+    refetchInterval: opts?.refetchInterval,
   })

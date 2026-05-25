@@ -27,6 +27,17 @@ const STATUS_DOT: Record<WatchStatus, string> = {
   error: 'bg-brand-coral',
 }
 
+function fmtRelative(iso: string | null): string {
+  if (!iso) return 'never'
+  const t = Date.parse(iso)
+  if (!Number.isFinite(t)) return 'never'
+  const s = Math.max(1, Math.round((Date.now() - t) / 1000))
+  if (s < 60) return `${s}s ago`
+  if (s < 3600) return `${Math.round(s / 60)}m ago`
+  if (s < 86400) return `${Math.round(s / 3600)}h ago`
+  return `${Math.round(s / 86400)}d ago`
+}
+
 const NOTIFY_OPTIONS: { value: NotifyMode; label: string; sub: string }[] = [
   { value: 'sse_only', label: 'App only', sub: 'See matches only on this page' },
   { value: 'telegram_only', label: 'Telegram only', sub: 'Quiet UI, alerts to your phone' },
@@ -36,7 +47,10 @@ const NOTIFY_OPTIONS: { value: NotifyMode; label: string; sub: string }[] = [
 export const CollectWatchDetail = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { data: watch, isLoading, error } = useGetWatch(id)
+  // Refetch the watch doc every 30s so pollCount / lastPolledAt / lastError
+  // stay current without relying on SSE heartbeats (which only fire when the
+  // scheduler actually polls).
+  const { data: watch, isLoading, error } = useGetWatch(id, { refetchInterval: 30_000 })
   const { data: matches = [] } = useGetWatchMatches(id)
   const { data: me } = useGetMe()
   const update = useUpdateWatch(id ?? '')
@@ -98,6 +112,14 @@ export const CollectWatchDetail = () => {
             <span>{STATUS_LABEL[watch.status]}</span>
             <span>·</span>
             <span>{watch.matchCount} match{watch.matchCount === 1 ? '' : 'es'}</span>
+            <span>·</span>
+            <span>poll #{watch.pollCount}</span>
+            {watch.lastPolledAt && (
+              <>
+                <span>·</span>
+                <span>polled {fmtRelative(watch.lastPolledAt)}</span>
+              </>
+            )}
             {watch.lastError && (
               <>
                 <span>·</span>

@@ -1,5 +1,6 @@
 import { getAccessToken } from './ebay.auth.js'
 import { buildQueryParams, cacheKey } from './ebay.filters.js'
+import { RateCounterModel, todayUtcKey } from './rate-counter.model.js'
 import type {
   AspectDistribution,
   CompactItem,
@@ -93,11 +94,30 @@ interface CallStats {
   resetAt: number
 }
 const stats: CallStats = { dailyCalls: 0, resetAt: nextUtcMidnight() }
+let counterLoaded = false
 
 function nextUtcMidnight(): number {
   const now = new Date()
   const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1))
   return next.getTime()
+}
+
+/**
+ * Loads today's call count from MongoDB into the in-memory counter so the
+ * dashboard quota gauge survives server restarts. Idempotent. Safe to call
+ * at boot before any traffic arrives.
+ */
+export async function loadCallStatsFromDB(): Promise<void> {
+  if (counterLoaded) return
+  try {
+    const doc = await RateCounterModel.findOne({ dateKey: todayUtcKey(), scope: 'browse' }).lean()
+    if (doc) stats.dailyCalls = doc.count
+    counterLoaded = true
+    console.log(`[ebay/quota] counter loaded from DB: ${stats.dailyCalls} calls today`)
+  } catch (err) {
+    console.warn('[ebay/quota] failed to load counter from DB', err)
+    counterLoaded = true // don't keep retrying forever
+  }
 }
 
 export function getCallStats(): { dailyCalls: number; resetAt: number; limit: number } {
@@ -114,6 +134,17 @@ function recordCall() {
     stats.resetAt = nextUtcMidnight()
   }
   stats.dailyCalls += 1
+
+  // Fire-and-forget persist so we don't block the search call. Mongo's
+  // $inc is atomic, so concurrent calls don't race. If the write fails
+  // (network, etc.) we still get the correct count on next boot via
+  // loadCallStatsFromDB — at worst we lose visibility of the failed write.
+  const dateKey = todayUtcKey()
+  RateCounterModel.findOneAndUpdate(
+    { dateKey, scope: 'browse' },
+    { $inc: { count: 1 }, $setOnInsert: { dateKey, scope: 'browse' } },
+    { upsert: true }
+  ).catch((err) => console.warn('[ebay/quota] persist failed', err))
 }
 
 async function rawSearch(

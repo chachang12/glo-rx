@@ -42,6 +42,7 @@ export const WatchSchema = z.object({
   lastPolledAt: z.string().nullable(),
   nextPollAt: z.string().nullable(),
   matchCount: z.number(),
+  pollCount: z.number().default(0),
   lastError: z
     .object({
       message: z.string(),

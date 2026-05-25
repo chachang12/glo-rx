@@ -22,6 +22,7 @@ import { customPlanRoutes } from './features/learn/custom-plan/index.js'
 import { ebayDeletionRoutes } from './features/collect/ebay-deletion/index.js'
 import { collectRoutes } from './features/collect/index.js'
 import { startScheduler } from './features/collect/watch/index.js'
+import { loadCallStatsFromDB } from './features/collect/ebay/ebay.client.js'
 import { seedExams } from './config/exams.js'
 
 const app = new Hono()
@@ -89,6 +90,7 @@ connectDB().then(async () => {
   await seedExams()
   warnIfMissingEbayCreds()
   warnIfMissingTelegramCreds()
+  await loadCallStatsFromDB()
   if (process.env.EBAY_APP_ID && process.env.EBAY_CERT_ID) {
     startScheduler()
   } else {
