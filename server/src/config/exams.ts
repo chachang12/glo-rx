@@ -1,4 +1,4 @@
-import { ExamModel } from '../features/exam/exam.model.js'
+import { ExamModel } from '../features/learn/exam/exam.model.js'
 
 // ── Seed data (used for initial DB population) ──────────────────────────────
 

@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { paths } from '@/config/paths'
-import { LoginForm } from '@/features/auth'
+import { LoginForm } from '@/features/shared/auth'
 import AxeousLogo from '@/components/ui/AxeousLogo'
 import { ThemeToggle } from '@/components/theme-provider'
 

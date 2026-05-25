@@ -3,9 +3,9 @@ import { createBrowserRouter, Navigate } from 'react-router'
 import { RouterProvider } from 'react-router/dom'
 
 import { paths } from '@/config/paths'
-import { ProtectedRoute, AdminRoute } from '@/features/auth'
+import { ProtectedRoute, AdminRoute } from '@/features/shared/auth'
 
-import AppRoot from './routes/app/root'
+import AppRoot from './routes/learn/root'
 
 export const createAppRouter = () =>
   createBrowserRouter(
@@ -47,119 +47,119 @@ export const createAppRouter = () =>
               {
                 path: paths.app.dashboard.path,
                 lazy: () =>
-                  import('./routes/app/dashboard').then((m) => ({
+                  import('./routes/learn/dashboard').then((m) => ({
                     Component: m.Dashboard,
                   })),
               },
               {
                 path: paths.app.test.path,
                 lazy: () =>
-                  import('./routes/app/test').then((m) => ({
+                  import('./routes/learn/test').then((m) => ({
                     Component: m.Test,
                   })),
               },
               {
                 path: paths.app.abg.path,
                 lazy: () =>
-                  import('./routes/app/abg').then((m) => ({
+                  import('./routes/learn/abg').then((m) => ({
                     Component: m.abg,
                   })),
               },
               {
                 path: paths.app.plans.path,
                 lazy: () =>
-                  import('./routes/app/plans').then((m) => ({
+                  import('./routes/learn/plans').then((m) => ({
                     Component: m.Plans,
                   })),
               },
               {
                 path: paths.app.customPlanCreate.path,
                 lazy: () =>
-                  import('./routes/app/custom-plan-create').then((m) => ({
+                  import('./routes/learn/custom-plan-create').then((m) => ({
                     Component: m.CustomPlanCreate,
                   })),
               },
               {
                 path: paths.app.customPlanSetup.path,
                 lazy: () =>
-                  import('./routes/app/custom-plan-setup').then((m) => ({
+                  import('./routes/learn/custom-plan-setup').then((m) => ({
                     Component: m.CustomPlanSetup,
                   })),
               },
               {
                 path: paths.app.customPlanSettings.path,
                 lazy: () =>
-                  import('./routes/app/custom-plan-settings').then((m) => ({
+                  import('./routes/learn/custom-plan-settings').then((m) => ({
                     Component: m.CustomPlanSettings,
                   })),
               },
               {
                 path: paths.app.customPlanDetail.path,
                 lazy: () =>
-                  import('./routes/app/plan-detail').then((m) => ({
+                  import('./routes/learn/plan-detail').then((m) => ({
                     Component: m.CustomPlanDetail,
                   })),
               },
               {
                 path: paths.app.sharedPlan.path,
                 lazy: () =>
-                  import('./routes/app/shared-plan').then((m) => ({
+                  import('./routes/learn/shared-plan').then((m) => ({
                     Component: m.SharedPlan,
                   })),
               },
               {
                 path: paths.app.plan.path,
                 lazy: () =>
-                  import('./routes/app/plan-detail').then((m) => ({
+                  import('./routes/learn/plan-detail').then((m) => ({
                     Component: m.PlanDetail,
                   })),
               },
               {
                 path: paths.app.planSettings.path,
                 lazy: () =>
-                  import('./routes/app/plan-settings').then((m) => ({
+                  import('./routes/learn/plan-settings').then((m) => ({
                     Component: m.PlanSettings,
                   })),
               },
               {
                 path: paths.app.planFlashcards.path,
                 lazy: () =>
-                  import('./routes/app/plan-flashcards').then((m) => ({
+                  import('./routes/learn/plan-flashcards').then((m) => ({
                     Component: m.PlanFlashcards,
                   })),
               },
               {
                 path: paths.app.leaderboard.path,
                 lazy: () =>
-                  import('./routes/app/leaderboard').then((m) => ({
+                  import('./routes/learn/leaderboard').then((m) => ({
                     Component: m.Leaderboard,
                   })),
               },
               {
                 path: paths.app.marketplace.path,
                 lazy: () =>
-                  import('./routes/app/marketplace').then((m) => ({
+                  import('./routes/learn/marketplace').then((m) => ({
                     Component: m.Marketplace,
                   })),
               },
               {
                 path: paths.app.results.path,
                 lazy: () =>
-                  import('./routes/app/results').then((m) => ({
+                  import('./routes/learn/results').then((m) => ({
                     Component: m.Results,
                   })),
               },
               {
                 path: paths.app.profile.path,
                 lazy: () =>
-                  import('./routes/app/profile').then((m) => ({
+                  import('./routes/learn/profile').then((m) => ({
                     Component: m.Profile,
                   })),
               },
               {
                 path: paths.app.settings.path,
                 lazy: () =>
-                  import('./routes/app/settings').then((m) => ({
+                  import('./routes/learn/settings').then((m) => ({
                     Component: m.Settings,
                   })),
               },
@@ -169,15 +169,37 @@ export const createAppRouter = () =>
                   {
                     path: paths.app.admin.path,
                     lazy: () =>
-                      import('./routes/app/admin').then((m) => ({
+                      import('./routes/learn/admin').then((m) => ({
                         Component: m.AdminDashboard,
                       })),
                   },
                   {
                     path: paths.app.adminExam.path,
                     lazy: () =>
-                      import('./routes/app/admin-exam').then((m) => ({
+                      import('./routes/learn/admin-exam').then((m) => ({
                         Component: m.AdminExamEditor,
+                      })),
+                  },
+                ],
+              },
+
+              // ── Collect (placeholder) ────────────────────────────────
+              {
+                path: paths.app.collect.root.path,
+                lazy: () =>
+                  import('./routes/collect/root').then((m) => ({
+                    Component: m.default,
+                  })),
+                children: [
+                  {
+                    index: true,
+                    element: <Navigate to={paths.app.collect.dashboard.getHref()} replace />,
+                  },
+                  {
+                    path: 'dashboard',
+                    lazy: () =>
+                      import('./routes/collect/dashboard').then((m) => ({
+                        Component: m.CollectDashboard,
                       })),
                   },
                 ],

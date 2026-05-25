@@ -103,5 +103,15 @@ export const paths = {
       path: 'admin/exams/:code',
       getHref: (code: string) => `/app/admin/exams/${code}`,
     },
+    collect: {
+      root: {
+        path: 'collect',
+        getHref: () => '/app/collect',
+      },
+      dashboard: {
+        path: 'collect/dashboard',
+        getHref: () => '/app/collect/dashboard',
+      },
+    },
   },
 } as const

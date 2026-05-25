@@ -1,6 +1,6 @@
 import { createMiddleware } from 'hono/factory'
 import type { AuthEnv } from '../types.js'
-import { PlanModel } from '../features/plan/plan.model.js'
+import { PlanModel } from '../features/learn/plan/plan.model.js'
 import { getLimitsForTier } from '../config/usage.js'
 
 /**

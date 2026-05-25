@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import { paths } from '@/config/paths'
 import AxeousLogo from '@/components/ui/AxeousLogo'
 import { ThemeToggle } from '@/components/theme-provider'
-import { RoadmapTrack, type RoadmapDay } from '@/features/roadmap'
+import { RoadmapTrack, type RoadmapDay } from '@/features/learn/roadmap'
 import './landing.css'
 
 const ArrowIcon = ({ size = 14 }: { size?: number }) => (

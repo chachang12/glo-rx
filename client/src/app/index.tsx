@@ -1,10 +1,10 @@
-import { ThemeProvider } from '@/components/theme-provider'
+import { AppProvider } from './provider'
 import { AppRouter } from './router'
 
 export const App = () => {
   return (
-    <ThemeProvider>
+    <AppProvider>
       <AppRouter />
-    </ThemeProvider>
+    </AppProvider>
   )
 }

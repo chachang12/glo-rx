@@ -1,6 +1,6 @@
 import { createMiddleware } from 'hono/factory'
 import type { AuthEnv } from '../types.js'
-import { UserModel } from '../features/user/user.model.js'
+import { UserModel } from '../features/shared/user/user.model.js'
 
 type LicenseKey = 'aiGeneration' | 'customPlans'
 

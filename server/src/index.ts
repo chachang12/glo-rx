@@ -4,17 +4,23 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { connectDB } from './config/db.js'
 import { auth } from './lib/auth.js'
-import { abgRoutes } from './features/abg/index.js'
-import { userRoutes } from './features/user/index.js'
-import { examRoutes } from './features/exam/index.js'
-import { sessionRoutes } from './features/session/index.js'
-import { planRoutes } from './features/plan/index.js'
-import { testRoutes } from './features/test/index.js'
-import { flashcardRoutes } from './features/flashcard/index.js'
-import { friendshipRoutes } from './features/friendship/index.js'
-import { customPlanRoutes } from './features/custom-plan/index.js'
-import { adminRoutes } from './features/admin/index.js'
-import { ebayDeletionRoutes } from './features/ebay-deletion/index.js'
+// Shared
+import { userRoutes } from './features/shared/user/index.js'
+import { friendshipRoutes } from './features/shared/friendship/index.js'
+import { adminRoutes } from './features/shared/admin/index.js'
+
+// Learn
+import { abgRoutes } from './features/learn/abg/index.js'
+import { examRoutes } from './features/learn/exam/index.js'
+import { sessionRoutes } from './features/learn/session/index.js'
+import { planRoutes } from './features/learn/plan/index.js'
+import { testRoutes } from './features/learn/test/index.js'
+import { flashcardRoutes } from './features/learn/flashcard/index.js'
+import { customPlanRoutes } from './features/learn/custom-plan/index.js'
+
+// Collect
+import { ebayDeletionRoutes } from './features/collect/ebay-deletion/index.js'
+import { collectRoutes } from './features/collect/index.js'
 import { seedExams } from './config/exams.js'
 
 const app = new Hono()
@@ -33,18 +39,23 @@ app.use(
 // Auth routes — Better Auth handles all /api/auth/* automatically
 app.all('/api/auth/*', (c) => auth.handler(c.req.raw))
 
-// Feature routes
+// Shared routes
 app.route('/api/admin', adminRoutes)
-app.route('/api/ebay-deletion', ebayDeletionRoutes)
+app.route('/api/friends', friendshipRoutes)
+app.route('/api/user', userRoutes)
+
+// Learn routes
 app.route('/api/abg', abgRoutes)
 app.route('/api/exams', examRoutes)
 app.route('/api/flashcards', flashcardRoutes)
-app.route('/api/friends', friendshipRoutes)
 app.route('/api/plans', planRoutes)
 app.route('/api/custom-plans', customPlanRoutes)
 app.route('/api/sessions', sessionRoutes)
 app.route('/api/tests', testRoutes)
-app.route('/api/user', userRoutes)
+
+// Collect routes
+app.route('/api/ebay-deletion', ebayDeletionRoutes)
+app.route('/api/collect', collectRoutes)
 
 app.get('/health', (c) => c.json({ status: 'ok' }))
 
