@@ -106,7 +106,10 @@ async function flipActiveToRateLimited() {
 async function pollOneWatch(watch: InstanceType<typeof WatchModel>) {
   const sinceMs = computeSinceMs(watch)
   const sinceISO = new Date(sinceMs).toISOString()
-  const filters = watch.filters as SearchFilters
+  // Mongoose embedded subdoc → plain object. Spreading the subdoc directly
+  // loses field values because data lives on _doc behind getters.
+  const filters = (watch.filters as unknown as { toObject?: () => SearchFilters })
+    .toObject?.() ?? (watch.filters as unknown as SearchFilters)
   const pollStart = Date.now()
 
   let newItems
