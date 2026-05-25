@@ -2,7 +2,7 @@ import type { CompactItem } from '../ebay/ebay.types.js'
 
 const MAX_ITEMS_PER_MESSAGE = 5
 
-function htmlEscape(s: string): string {
+export function htmlEscape(s: string): string {
   return s.replace(/[&<>"']/g, (c) => {
     switch (c) {
       case '&': return '&amp;'
@@ -62,4 +62,14 @@ export function formatBatchMessage(watchName: string, items: CompactItem[]): str
   }
 
   return lines.join('\n')
+}
+
+/**
+ * One-shot confirmation when Telegram becomes the active delivery channel
+ * for a `both`-mode watch (i.e. the user closed the page). Lets the user
+ * know notifications are now flowing to this chat without waiting for a
+ * match to confirm wiring.
+ */
+export function formatHandoffMessage(watchName: string): string {
+  return `🛎️ Picked up watch: <b>${htmlEscape(watchName)}</b>\nI'll ping you here when new matches come in.`
 }

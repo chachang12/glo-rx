@@ -1,8 +1,8 @@
 import type { CompactItem } from '../ebay/ebay.types.js'
 import { UserModel } from '../../shared/user/user.model.js'
 import { sendMessage, TelegramApiError } from '../telegram/telegram.client.js'
-import { formatBatchMessage } from '../telegram/telegram.formatter.js'
-import { WatchMatchModel, type Watch } from './watch.model.js'
+import { formatBatchMessage, formatHandoffMessage } from '../telegram/telegram.formatter.js'
+import { WatchMatchModel, WatchModel, type Watch } from './watch.model.js'
 import { emit, hasSubscribers } from './watch.sse-registry.js'
 
 /**
@@ -51,6 +51,35 @@ export async function dispatchMatches(
       notified: { sse: wantsSse, telegram: tgSent },
     }))
   )
+}
+
+/**
+ * Fired by the SSE registry when the last subscriber for a watch leaves
+ * and doesn't return within the debounce window. Sends a one-line
+ * confirmation message to Telegram if the watch is in `both` mode and the
+ * user is linked. Silent in all other configurations.
+ *
+ * Registered as the abandon handler at server boot in server/src/index.ts.
+ */
+export async function notifyHandoff(watchId: string): Promise<void> {
+  const watch = await WatchModel.findById(watchId).lean()
+  if (!watch) return
+  if (watch.status !== 'active') return
+  if (watch.notifyMode !== 'both') return
+
+  const user = await UserModel.findOne({ authId: watch.authId })
+    .select('telegramChatId')
+    .lean()
+  if (!user?.telegramChatId) return
+
+  try {
+    await sendMessage(user.telegramChatId, formatHandoffMessage(watch.name), {
+      parseMode: 'HTML',
+      disableNotification: true,
+    })
+  } catch (err) {
+    console.warn('[dispatcher] handoff message failed', err)
+  }
 }
 
 async function sendTelegramBatch(

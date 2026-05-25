@@ -21,7 +21,7 @@ import { customPlanRoutes } from './features/learn/custom-plan/index.js'
 // Collect
 import { ebayDeletionRoutes } from './features/collect/ebay-deletion/index.js'
 import { collectRoutes } from './features/collect/index.js'
-import { startScheduler } from './features/collect/watch/index.js'
+import { startScheduler, notifyHandoff, setAbandonHandler } from './features/collect/watch/index.js'
 import { loadCallStatsFromDB } from './features/collect/ebay/ebay.client.js'
 import { seedExams } from './config/exams.js'
 
@@ -91,6 +91,7 @@ connectDB().then(async () => {
   warnIfMissingEbayCreds()
   warnIfMissingTelegramCreds()
   await loadCallStatsFromDB()
+  setAbandonHandler(notifyHandoff)
   if (process.env.EBAY_APP_ID && process.env.EBAY_CERT_ID) {
     startScheduler()
   } else {
