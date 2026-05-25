@@ -1,8 +1,10 @@
 import { ResultCard } from '@/features/collect/ebay/components/ResultCard'
+import { useKnownPurchasedItems } from '@/features/collect/purchases'
 import { useWatchStream, type StreamStatus } from '../hooks/use-watch-stream'
 
 interface Props {
   watchId: string | null
+  watchName?: string
 }
 
 const STATUS_LABEL: Record<StreamStatus, string> = {
@@ -28,8 +30,12 @@ function fmtClock(d: Date | null): string {
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
-export function WatchFeed({ watchId }: Props) {
+export function WatchFeed({ watchId, watchName }: Props) {
   const stream = useWatchStream(watchId)
+  const { set: purchasedSet } = useKnownPurchasedItems()
+  const purchaseContext = watchId
+    ? { watchId, watchName: watchName ?? undefined }
+    : undefined
 
   if (!watchId) {
     return (
@@ -74,6 +80,8 @@ export function WatchFeed({ watchId }: Props) {
               key={item.itemId}
               item={item}
               highlight={idx === 0 && stream.newItemsInLastPoll > 0}
+              purchaseContext={purchaseContext}
+              alreadyPurchased={purchasedSet.has(item.itemId)}
             />
           ))}
         </div>

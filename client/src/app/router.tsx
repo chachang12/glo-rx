@@ -237,6 +237,18 @@ export const createAppRouter = () =>
                         Component: m.CollectProfile,
                       })),
                   },
+                  {
+                    element: <AdminRoute />,
+                    children: [
+                      {
+                        path: 'admin/purchases',
+                        lazy: () =>
+                          import('./routes/collect/admin-purchases').then((m) => ({
+                            Component: m.CollectAdminPurchases,
+                          })),
+                      },
+                    ],
+                  },
                 ],
               },
             ],

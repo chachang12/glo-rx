@@ -132,6 +132,10 @@ export const paths = {
         path: 'collect/profile',
         getHref: () => '/app/collect/profile',
       },
+      adminPurchases: {
+        path: 'collect/admin/purchases',
+        getHref: () => '/app/collect/admin/purchases',
+      },
     },
   },
 } as const

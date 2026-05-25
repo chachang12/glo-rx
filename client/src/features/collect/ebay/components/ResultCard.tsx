@@ -1,8 +1,16 @@
 import type { CompactItem } from '../types/ebay.schema'
+import { ItemMenu } from '@/features/collect/purchases'
+
+export interface PurchaseContext {
+  watchId?: string
+  watchName?: string
+}
 
 interface Props {
   item: CompactItem
   highlight?: boolean
+  purchaseContext?: PurchaseContext
+  alreadyPurchased?: boolean
 }
 
 function formatPrice(p: { value: string; currency: string }): string {
@@ -22,7 +30,7 @@ function relativeTime(iso: string | null): string | null {
   return `${Math.round(seconds / 86400)}d ago`
 }
 
-export function ResultCard({ item, highlight }: Props) {
+export function ResultCard({ item, highlight, purchaseContext, alreadyPurchased }: Props) {
   const url = item.affiliateUrl ?? item.webUrl
   const listed = relativeTime(item.itemOriginDate)
   const isAuction = item.buyingOptions.includes('AUCTION')
@@ -30,53 +38,72 @@ export function ResultCard({ item, highlight }: Props) {
     ? formatPrice(item.currentBidPrice)
     : formatPrice(item.price)
 
+  const cardStateClasses = alreadyPurchased
+    ? 'border-brand-teal/40 bg-glass opacity-70'
+    : highlight
+    ? 'border-brand-teal/40 bg-glass-strong'
+    : 'border-line bg-glass hover:border-line-strong hover:bg-glass-strong'
+
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer sponsored"
-      className={`flex gap-4 rounded-lg border p-3 transition-colors ${
-        highlight
-          ? 'border-brand-teal/40 bg-glass-strong'
-          : 'border-line bg-glass hover:border-line-strong hover:bg-glass-strong'
-      }`}
-    >
-      <div className="h-20 w-20 shrink-0 overflow-hidden rounded-md bg-surface-2">
-        {item.imageUrl ? (
-          <img
-            src={item.imageUrl}
-            alt=""
-            className="h-full w-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-xs text-ink-faint">
-            No image
+    <div className="relative">
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer sponsored"
+        className={`flex gap-4 rounded-lg border p-3 transition-colors ${cardStateClasses}`}
+      >
+        <div className="h-20 w-20 shrink-0 overflow-hidden rounded-md bg-surface-2">
+          {item.imageUrl ? (
+            <img
+              src={item.imageUrl}
+              alt=""
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-xs text-ink-faint">
+              No image
+            </div>
+          )}
+        </div>
+
+        <div className={`flex min-w-0 flex-1 flex-col gap-1 ${purchaseContext ? 'pr-8' : ''}`}>
+          <div className="line-clamp-2 text-sm font-medium text-ink">{item.title}</div>
+
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+            <span className="text-base font-semibold text-ink">{displayPrice}</span>
+            {isAuction && item.bidCount !== null && (
+              <span className="text-xs text-ink-dim">{item.bidCount} bid{item.bidCount === 1 ? '' : 's'}</span>
+            )}
+            {item.shippingCost && Number(item.shippingCost.value) === 0 && (
+              <span className="text-xs text-brand-teal">Free shipping</span>
+            )}
+            {alreadyPurchased && (
+              <span className="rounded-sm bg-brand-teal/15 px-1.5 py-0.5 text-[10px] uppercase tracking-widest text-brand-teal">
+                Purchased
+              </span>
+            )}
           </div>
-        )}
-      </div>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div className="line-clamp-2 text-sm font-medium text-ink">{item.title}</div>
-
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-          <span className="text-base font-semibold text-ink">{displayPrice}</span>
-          {isAuction && item.bidCount !== null && (
-            <span className="text-xs text-ink-dim">{item.bidCount} bid{item.bidCount === 1 ? '' : 's'}</span>
-          )}
-          {item.shippingCost && Number(item.shippingCost.value) === 0 && (
-            <span className="text-xs text-brand-teal">Free shipping</span>
-          )}
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-faint">
+            {item.condition && <span>{item.condition}</span>}
+            {item.seller && <span>@{item.seller.username} · {item.seller.feedbackPct}%</span>}
+            {item.itemLocation && <span>{[item.itemLocation.city, item.itemLocation.country].filter(Boolean).join(', ')}</span>}
+            {listed && <span>{listed}</span>}
+            {!item.affiliateUrl && <span className="text-brand-coral/70">no affiliate</span>}
+          </div>
         </div>
-
-        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-faint">
-          {item.condition && <span>{item.condition}</span>}
-          {item.seller && <span>@{item.seller.username} · {item.seller.feedbackPct}%</span>}
-          {item.itemLocation && <span>{[item.itemLocation.city, item.itemLocation.country].filter(Boolean).join(', ')}</span>}
-          {listed && <span>{listed}</span>}
-          {!item.affiliateUrl && <span className="text-brand-coral/70">no affiliate</span>}
+      </a>
+      {purchaseContext && (
+        <div className="absolute right-2 top-2 z-10">
+          <ItemMenu
+            item={item}
+            watchId={purchaseContext.watchId}
+            watchName={purchaseContext.watchName}
+            alreadyPurchased={alreadyPurchased}
+          />
         </div>
-      </div>
-    </a>
+      )}
+    </div>
   )
 }

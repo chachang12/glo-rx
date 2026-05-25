@@ -51,7 +51,10 @@ export const CollectWatchDetail = () => {
   // stay current without relying on SSE heartbeats (which only fire when the
   // scheduler actually polls).
   const { data: watch, isLoading, error } = useGetWatch(id, { refetchInterval: 30_000 })
-  const { data: matches = [] } = useGetWatchMatches(id)
+  const isPaused = watch?.status === 'paused'
+  // Only fetch the REST match history when the watch is paused — when
+  // active, the SSE stream replays the same data plus delivers live items.
+  const { data: pausedMatches = [] } = useGetWatchMatches(isPaused ? id : undefined)
   const { data: me } = useGetMe()
   const update = useUpdateWatch(id ?? '')
   const del = useDeleteWatch()
@@ -183,28 +186,27 @@ export const CollectWatchDetail = () => {
         <FiltersSummary watch={watch} />
       </section>
 
-      {/* Live stream */}
-      <h2 className="mb-3 text-sm uppercase tracking-widest text-ink-faint">Live</h2>
-      {watch.status === 'paused' ? (
-        <div className="rounded-lg border border-dashed border-line bg-glass p-8 text-center text-sm text-ink-dim">
-          Watch is paused. Resume to start streaming.
-        </div>
+      {/* Matches — live stream when active, persisted history when paused */}
+      <h2 className="mb-3 text-sm uppercase tracking-widest text-ink-faint">Matches</h2>
+      {isPaused ? (
+        <>
+          <div className="mb-3 rounded-md border border-line bg-glass px-4 py-2 text-sm text-ink-dim">
+            Watch is paused. Showing previous matches — resume to receive new ones.
+          </div>
+          {pausedMatches.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-line bg-glass p-8 text-center text-sm text-ink-dim">
+              No matches in history yet.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {pausedMatches.map((m) => (
+                <ResultCard key={m.id} item={m.item} />
+              ))}
+            </div>
+          )}
+        </>
       ) : (
-        <WatchFeed watchId={watch.id} />
-      )}
-
-      {/* History */}
-      <h2 className="mt-8 mb-3 text-sm uppercase tracking-widest text-ink-faint">Recent matches</h2>
-      {matches.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-line bg-glass p-8 text-center text-sm text-ink-dim">
-          No matches yet. The scheduler will populate this list as new listings come in.
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {matches.map((m) => (
-            <ResultCard key={m.id} item={m.item} />
-          ))}
-        </div>
+        <WatchFeed watchId={watch.id} watchName={watch.name} />
       )}
     </main>
   )

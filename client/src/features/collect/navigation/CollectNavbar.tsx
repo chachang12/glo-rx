@@ -1,10 +1,11 @@
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router'
 import { paths } from '@/config/paths'
 import { useUser, UserAvatar } from '@/features/shared/auth'
+import { useGetMe } from '@/features/shared/user'
 import AxeousLogo from '@/components/ui/AxeousLogo'
 
-const NAV_ITEMS = [
+const BASE_NAV = [
   { label: 'Dashboard', href: paths.app.collect.dashboard.getHref() },
   { label: 'Search', href: paths.app.collect.search.getHref() },
   { label: 'Watches', href: paths.app.collect.watches.getHref() },
@@ -12,6 +13,14 @@ const NAV_ITEMS = [
 
 export const CollectNavbar = () => {
   const { user } = useUser()
+  const { data: me } = useGetMe()
+  const NAV_ITEMS = useMemo(
+    () =>
+      me?.role === 'admin'
+        ? [...BASE_NAV, { label: 'Admin', href: paths.app.collect.adminPurchases.getHref() }]
+        : BASE_NAV,
+    [me?.role]
+  )
   const location = useLocation()
   const navRef = useRef<HTMLDivElement>(null)
   const mobileWrapRef = useRef<HTMLDivElement>(null)

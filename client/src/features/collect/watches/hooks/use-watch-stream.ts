@@ -13,6 +13,11 @@ export type StreamStatus =
   | 'rate_limited'
   | 'closed'
 
+// Bound the in-memory item buffer so long-running streams on busy watches
+// don't accumulate thousands of DOM nodes. Older items remain queryable via
+// /api/collect/watches/:id/matches (REST) if a user paginates.
+const MAX_ITEMS = 200
+
 interface State {
   items: CompactItem[]
   status: StreamStatus
@@ -74,7 +79,11 @@ export function useWatchStream(watchId: string | null) {
         // Dedup by itemId — replay + live can overlap during connect race.
         setState((s) => {
           if (s.items.some((i) => i.itemId === parsed.data.itemId)) return s
-          return { ...s, items: [parsed.data, ...s.items] }
+          const next = [parsed.data, ...s.items]
+          return {
+            ...s,
+            items: next.length > MAX_ITEMS ? next.slice(0, MAX_ITEMS) : next,
+          }
         })
       } catch (err) {
         console.warn('[useWatchStream] item parse failed', err)
