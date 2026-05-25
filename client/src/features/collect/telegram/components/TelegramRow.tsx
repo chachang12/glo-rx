@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useGetMe } from '@/features/shared/user'
 import { useLinkTelegram } from '../api/link'
 import { useUnlinkTelegram } from '../api/unlink'
@@ -71,8 +72,9 @@ export function TelegramRow() {
         )}
       </div>
 
-      {modalOpen && (
-        <ConnectModal onClose={() => setModalOpen(false)} />
+      {modalOpen && createPortal(
+        <ConnectModal onClose={() => setModalOpen(false)} />,
+        document.body
       )}
     </>
   )
