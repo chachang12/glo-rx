@@ -6,8 +6,12 @@ const AppRoot = () => {
   // Ensures the app user record exists in our DB on first visit.
   useGetMe()
   const location = useLocation()
-  // Collect renders its own navbar; suppress the Learn nav while inside Collect.
   const isCollect = location.pathname.startsWith('/app/collect')
+
+  // Collect renders its own chrome (navbar, backgrounds, padding). Bail out
+  // of the Learn shell entirely so we don't stack two min-h-screen wrappers
+  // or doubled top padding.
+  if (isCollect) return <Outlet />
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-surface text-ink">
@@ -46,7 +50,7 @@ const AppRoot = () => {
       />
 
       <div className="relative z-10 pt-3">
-        {!isCollect && <Navbar />}
+        <Navbar />
         <Outlet />
       </div>
     </div>

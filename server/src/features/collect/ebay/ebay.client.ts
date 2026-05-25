@@ -143,10 +143,42 @@ async function rawSearch(
   }
 
   if (!res.ok) {
-    throw new EbayApiError(`eBay search failed: ${res.status}`, res.status, parsed)
+    const ebayMessage = extractEbayErrorMessage(parsed)
+    const message = ebayMessage
+      ? `eBay ${res.status}: ${ebayMessage}`
+      : `eBay search failed: ${res.status}`
+    console.error('[ebay/search]', message, {
+      params: params.toString(),
+      body: parsed,
+    })
+    throw new EbayApiError(message, res.status, parsed)
   }
 
   return (parsed ?? {}) as RawSearchResponse
+}
+
+interface EbayErrorBody {
+  errors?: Array<{
+    errorId?: number
+    message?: string
+    longMessage?: string
+    parameters?: Array<{ name?: string; value?: string }>
+  }>
+}
+
+function extractEbayErrorMessage(body: unknown): string | null {
+  if (!body || typeof body !== 'object') return null
+  const errors = (body as EbayErrorBody).errors
+  if (!Array.isArray(errors) || errors.length === 0) return null
+  return errors
+    .map((e) => {
+      const base = e.longMessage ?? e.message
+      if (!base) return null
+      const params = e.parameters?.map((p) => `${p.name}=${p.value}`).join(', ')
+      return params ? `${base} (${params})` : base
+    })
+    .filter(Boolean)
+    .join('; ')
 }
 
 export interface SearchOptions {
