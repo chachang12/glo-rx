@@ -116,9 +116,17 @@ export const paths = {
         path: 'collect/search',
         getHref: () => '/app/collect/search',
       },
-      watch: {
-        path: 'collect/watch',
-        getHref: () => '/app/collect/watch',
+      watches: {
+        path: 'collect/watches',
+        getHref: () => '/app/collect/watches',
+      },
+      watchNew: {
+        path: 'collect/watches/new',
+        getHref: () => '/app/collect/watches/new',
+      },
+      watchDetail: {
+        path: 'collect/watches/:id',
+        getHref: (id: string) => `/app/collect/watches/${id}`,
       },
       profile: {
         path: 'collect/profile',

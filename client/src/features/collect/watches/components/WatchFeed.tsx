@@ -1,13 +1,11 @@
-import { useEbayWatch, type WatchStatus } from '../hooks/use-ebay-watch'
-import type { SearchFilters } from '../types/ebay.schema'
-import { ResultCard } from './ResultCard'
+import { ResultCard } from '@/features/collect/ebay/components/ResultCard'
+import { useWatchStream, type StreamStatus } from '../hooks/use-watch-stream'
 
 interface Props {
-  filters: SearchFilters | null
-  onStop: () => void
+  watchId: string | null
 }
 
-const STATUS_LABEL: Record<WatchStatus, string> = {
+const STATUS_LABEL: Record<StreamStatus, string> = {
   idle: 'Idle',
   connecting: 'Connecting…',
   open: 'Live',
@@ -16,7 +14,7 @@ const STATUS_LABEL: Record<WatchStatus, string> = {
   closed: 'Closed',
 }
 
-const STATUS_DOT: Record<WatchStatus, string> = {
+const STATUS_DOT: Record<StreamStatus, string> = {
   idle: 'bg-ink-faint',
   connecting: 'bg-brand-amber animate-pulse',
   open: 'bg-brand-teal animate-pulse',
@@ -30,13 +28,13 @@ function fmtClock(d: Date | null): string {
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
-export function WatchFeed({ filters, onStop }: Props) {
-  const watch = useEbayWatch(filters)
+export function WatchFeed({ watchId }: Props) {
+  const stream = useWatchStream(watchId)
 
-  if (!filters) {
+  if (!watchId) {
     return (
       <div className="rounded-lg border border-dashed border-line bg-glass p-8 text-center text-sm text-ink-dim">
-        Configure filters and start a watch to stream new listings as they post.
+        No active stream.
       </div>
     )
   }
@@ -45,42 +43,38 @@ export function WatchFeed({ filters, onStop }: Props) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-glass px-4 py-3">
         <div className="flex items-center gap-3">
-          <span className={`h-2 w-2 rounded-full ${STATUS_DOT[watch.status]}`} />
-          <span className="text-sm font-medium text-ink">{STATUS_LABEL[watch.status]}</span>
+          <span className={`h-2 w-2 rounded-full ${STATUS_DOT[stream.status]}`} />
+          <span className="text-sm font-medium text-ink">{STATUS_LABEL[stream.status]}</span>
           <span className="text-xs text-ink-faint">
-            poll #{watch.pollCount} · last {fmtClock(watch.lastHeartbeatAt)}
-            {watch.startedAt && ` · started ${fmtClock(watch.startedAt)}`}
+            poll #{stream.pollCount} · last {fmtClock(stream.lastHeartbeatAt)}
           </span>
         </div>
-        <button
-          type="button"
-          onClick={onStop}
-          className="rounded-full border border-line bg-glass px-3 py-1 text-xs text-ink-dim hover:text-ink"
-        >
-          Stop
-        </button>
       </div>
 
-      {watch.error && (
+      {stream.error && (
         <div className="rounded-md border border-brand-coral/40 bg-brand-coral/5 px-4 py-2 text-sm text-brand-coral">
-          {watch.error}
+          {stream.error}
         </div>
       )}
 
-      {watch.rateLimit && (
+      {stream.rateLimit && (
         <div className="rounded-md border border-brand-amber/40 bg-brand-amber/5 px-4 py-2 text-sm text-brand-amber">
-          eBay quota is nearly exhausted ({watch.rateLimit.remaining} calls left).
+          eBay quota nearly exhausted ({stream.rateLimit.remaining} calls left).
         </div>
       )}
 
-      {watch.items.length === 0 ? (
+      {stream.items.length === 0 ? (
         <div className="rounded-lg border border-dashed border-line bg-glass p-8 text-center text-sm text-ink-dim">
-          Watching for new listings… nothing yet.
+          Watching for new listings… nothing yet this session.
         </div>
       ) : (
         <div className="space-y-2">
-          {watch.items.map((item, idx) => (
-            <ResultCard key={item.itemId} item={item} highlight={idx === 0 && watch.newItemsInLastPoll > 0} />
+          {stream.items.map((item, idx) => (
+            <ResultCard
+              key={item.itemId}
+              item={item}
+              highlight={idx === 0 && stream.newItemsInLastPoll > 0}
+            />
           ))}
         </div>
       )}

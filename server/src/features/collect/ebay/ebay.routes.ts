@@ -1,5 +1,4 @@
 import { Hono } from 'hono'
-import { streamSSE } from 'hono/streaming'
 import { requireAuth } from '../../../middleware/auth.js'
 import type { AuthEnv } from '../../../types.js'
 import {
@@ -8,7 +7,7 @@ import {
   getCallStats,
   searchItems,
 } from './ebay.client.js'
-import { canStartWatch, activeWatchCount, runWatch } from './ebay.watch.js'
+import { WatchModel } from '../watch/watch.model.js'
 import type {
   EbayBuyingOption,
   EbayCondition,
@@ -130,46 +129,12 @@ ebayRoutes.get('/aspects', async (c) => {
   }
 })
 
-ebayRoutes.get('/quota', (c) => {
+ebayRoutes.get('/quota', async (c) => {
   const stats = getCallStats()
-  return c.json({
-    ...stats,
-    activeWatches: activeWatchCount(),
+  const activeWatches = await WatchModel.countDocuments({
+    status: { $in: ['active', 'rate_limited'] },
   })
-})
-
-ebayRoutes.get('/watch', (c) => {
-  if (!canStartWatch()) {
-    return c.json(
-      { error: 'Concurrent watch limit reached. Try again later.', activeWatches: activeWatchCount() },
-      429
-    )
-  }
-
-  const user = c.get('user')
-  const url = new URL(c.req.url)
-  const filters = parseFilters(url.searchParams)
-
-  return streamSSE(c, async (stream) => {
-    const controller = new AbortController()
-    stream.onAbort(() => controller.abort())
-
-    const send = async (event: string, data: unknown) => {
-      if (stream.aborted) return
-      try {
-        await stream.writeSSE({ event, data: JSON.stringify(data) })
-      } catch {
-        controller.abort()
-      }
-    }
-
-    try {
-      await runWatch(user.id, filters, send, controller.signal)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error'
-      await send('error', { message, fatal: true })
-    }
-  })
+  return c.json({ ...stats, activeWatches })
 })
 
 export default ebayRoutes

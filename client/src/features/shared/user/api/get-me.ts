@@ -12,8 +12,9 @@ export const userKeys = {
 export const getMe = (signal?: AbortSignal): Promise<AppUser> =>
   apiClient.get('/api/user/me', AppUserSchema, { signal })
 
-export const useGetMe = () =>
+export const useGetMe = (opts?: { refetchInterval?: number }) =>
   useQuery({
     queryKey: userKeys.me(),
     queryFn: ({ signal }) => getMe(signal),
+    refetchInterval: opts?.refetchInterval,
   })

@@ -21,6 +21,9 @@ export const AppUserSchema = z.object({
     .optional(),
   role: z.enum(['user', 'admin']).default('user'),
   onboardingComplete: z.boolean().default(false),
+  telegramChatId: z.string().nullable().optional(),
+  telegramUsername: z.string().nullable().optional(),
+  telegramLinkedAt: z.string().datetime({ offset: true }).nullable().optional(),
   createdAt: z.string().datetime({ offset: true }).optional(),
   updatedAt: z.string().datetime({ offset: true }).optional(),
 })

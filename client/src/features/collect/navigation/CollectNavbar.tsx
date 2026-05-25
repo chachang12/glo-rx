@@ -7,7 +7,7 @@ import AxeousLogo from '@/components/ui/AxeousLogo'
 const NAV_ITEMS = [
   { label: 'Dashboard', href: paths.app.collect.dashboard.getHref() },
   { label: 'Search', href: paths.app.collect.search.getHref() },
-  { label: 'Watch', href: paths.app.collect.watch.getHref() },
+  { label: 'Watches', href: paths.app.collect.watches.getHref() },
 ] as const
 
 export const CollectNavbar = () => {

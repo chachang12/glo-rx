@@ -210,10 +210,24 @@ export const createAppRouter = () =>
                       })),
                   },
                   {
-                    path: 'watch',
+                    path: 'watches',
                     lazy: () =>
-                      import('./routes/collect/watch').then((m) => ({
-                        Component: m.CollectWatch,
+                      import('./routes/collect/watches').then((m) => ({
+                        Component: m.CollectWatches,
+                      })),
+                  },
+                  {
+                    path: 'watches/new',
+                    lazy: () =>
+                      import('./routes/collect/watch-new').then((m) => ({
+                        Component: m.CollectWatchNew,
+                      })),
+                  },
+                  {
+                    path: 'watches/:id',
+                    lazy: () =>
+                      import('./routes/collect/watch-detail').then((m) => ({
+                        Component: m.CollectWatchDetail,
                       })),
                   },
                   {

@@ -5,6 +5,7 @@ import { useUser } from '@/features/shared/auth'
 import { paths } from '@/config/paths'
 import { useGetMe, useDeleteMe } from '@/features/shared/user'
 import { useGetEbayQuota } from '@/features/collect/ebay'
+import { TelegramRow } from '@/features/collect/telegram'
 import './profile.css'
 
 export const CollectProfile = () => {
@@ -95,6 +96,12 @@ export const CollectProfile = () => {
             <div className="stat-mini-label">Items clicked</div>
             <div className="stat-mini-soon">click tracking coming</div>
           </div>
+        </div>
+
+        {/* NOTIFICATIONS */}
+        <h3 className="section-title">Notifications</h3>
+        <div className="card section-card">
+          <TelegramRow />
         </div>
 
         {/* ACCOUNT */}

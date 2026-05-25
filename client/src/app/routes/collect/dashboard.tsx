@@ -38,13 +38,13 @@ export const CollectDashboard = () => {
         </Link>
 
         <Link
-          to={paths.app.collect.watch.getHref()}
+          to={paths.app.collect.watches.getHref()}
           className="rounded-lg border border-line bg-glass p-6 transition-colors hover:border-line-strong hover:bg-glass-strong"
         >
           <div className="text-xs uppercase tracking-widest text-ink-faint">Live</div>
-          <div className="mt-2 text-lg font-medium text-ink">Start a watch</div>
+          <div className="mt-2 text-lg font-medium text-ink">Manage watches</div>
           <p className="mt-1 text-sm text-ink-dim">
-            Stream new listings the moment they appear on eBay. Up to 3 concurrent.
+            Saved searches that poll eBay and notify you when something new lists.
           </p>
         </Link>
       </div>

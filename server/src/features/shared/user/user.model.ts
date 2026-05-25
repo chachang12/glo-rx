@@ -54,6 +54,11 @@ const userSchema = new Schema(
       default: 'user',
     },
     onboardingComplete: { type: Boolean, default: false },
+
+    // ── Telegram (Axeous Collect notifications) ─────────────────────────
+    telegramChatId: { type: String, default: null, index: true, sparse: true },
+    telegramUsername: { type: String, default: null },
+    telegramLinkedAt: { type: Date, default: null },
   },
   {
     timestamps: true,

@@ -21,6 +21,7 @@ import { customPlanRoutes } from './features/learn/custom-plan/index.js'
 // Collect
 import { ebayDeletionRoutes } from './features/collect/ebay-deletion/index.js'
 import { collectRoutes } from './features/collect/index.js'
+import { startScheduler } from './features/collect/watch/index.js'
 import { seedExams } from './config/exams.js'
 
 const app = new Hono()
@@ -73,9 +74,26 @@ function warnIfMissingEbayCreds() {
   }
 }
 
+function warnIfMissingTelegramCreds() {
+  const missing = (['TELEGRAM_BOT_TOKEN', 'TELEGRAM_BOT_USERNAME', 'TELEGRAM_WEBHOOK_SECRET'] as const).filter(
+    (k) => !process.env[k]
+  )
+  if (missing.length > 0) {
+    console.warn(
+      `[collect/telegram] ${missing.join(', ')} not set — Telegram notifications disabled until configured.`
+    )
+  }
+}
+
 connectDB().then(async () => {
   await seedExams()
   warnIfMissingEbayCreds()
+  warnIfMissingTelegramCreds()
+  if (process.env.EBAY_APP_ID && process.env.EBAY_CERT_ID) {
+    startScheduler()
+  } else {
+    console.warn('[scheduler] not started — eBay credentials missing')
+  }
   serve({ fetch: app.fetch, port: 3001 }, () => {
     console.log('Server running on http://localhost:3001')
   })

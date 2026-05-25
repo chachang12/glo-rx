@@ -1,75 +1,62 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { API_URL } from '@/lib/api/client'
 import {
   CompactItemSchema,
-  filtersToQuery,
   type CompactItem,
-  type SearchFilters,
-} from '../types/ebay.schema'
+} from '@/features/collect/ebay/types/ebay.schema'
 
-export type WatchStatus = 'idle' | 'connecting' | 'open' | 'error' | 'rate_limited' | 'closed'
+export type StreamStatus =
+  | 'idle'
+  | 'connecting'
+  | 'open'
+  | 'error'
+  | 'rate_limited'
+  | 'closed'
 
-interface WatchState {
+interface State {
   items: CompactItem[]
-  status: WatchStatus
+  status: StreamStatus
   lastHeartbeatAt: Date | null
   newItemsInLastPoll: number
   pollCount: number
-  watchId: string | null
   startedAt: Date | null
   error: string | null
   rateLimit: { remaining: number; resetAt: number } | null
 }
 
-const initialState: WatchState = {
+const initialState: State = {
   items: [],
   status: 'idle',
   lastHeartbeatAt: null,
   newItemsInLastPoll: 0,
   pollCount: 0,
-  watchId: null,
   startedAt: null,
   error: null,
   rateLimit: null,
 }
 
-// Stable identity for the filters object so the effect doesn't re-fire on
-// every render. JSON.stringify is fine here — filter shapes are small.
-function filtersKey(f: SearchFilters | null): string | null {
-  return f ? JSON.stringify(f) : null
-}
-
-export function useEbayWatch(filters: SearchFilters | null) {
-  const [state, setState] = useState<WatchState>(initialState)
+export function useWatchStream(watchId: string | null) {
+  const [state, setState] = useState<State>(initialState)
   const [nonce, setNonce] = useState(0)
-  const filtersRef = useRef(filters)
-  filtersRef.current = filters
-
-  const key = useMemo(() => filtersKey(filters), [filters])
 
   useEffect(() => {
-    if (!filters || !key) {
+    if (!watchId) {
       setState(initialState)
       return
     }
 
     setState({ ...initialState, status: 'connecting' })
 
-    const qs = filtersToQuery(filters).toString()
-    const url = `${API_URL}/api/collect/ebay/watch?${qs}`
+    const url = `${API_URL}/api/collect/watches/${encodeURIComponent(watchId)}/stream`
     const es = new EventSource(url, { withCredentials: true })
 
     es.addEventListener('connected', (e) => {
       try {
-        const payload = JSON.parse((e as MessageEvent).data) as {
-          watchId: string
-          startedAt: string
-        }
+        const payload = JSON.parse((e as MessageEvent).data) as { startedAt?: string }
         setState((s) => ({
           ...s,
           status: 'open',
-          watchId: payload.watchId,
-          startedAt: new Date(payload.startedAt),
+          startedAt: payload.startedAt ? new Date(payload.startedAt) : new Date(),
         }))
       } catch {
         setState((s) => ({ ...s, status: 'open' }))
@@ -81,12 +68,16 @@ export function useEbayWatch(filters: SearchFilters | null) {
         const raw = JSON.parse((e as MessageEvent).data)
         const parsed = CompactItemSchema.safeParse(raw)
         if (!parsed.success) {
-          console.warn('[useEbayWatch] item failed schema', parsed.error.issues)
+          console.warn('[useWatchStream] item failed schema', parsed.error.issues)
           return
         }
-        setState((s) => ({ ...s, items: [parsed.data, ...s.items] }))
+        // Dedup by itemId — replay + live can overlap during connect race.
+        setState((s) => {
+          if (s.items.some((i) => i.itemId === parsed.data.itemId)) return s
+          return { ...s, items: [parsed.data, ...s.items] }
+        })
       } catch (err) {
-        console.warn('[useEbayWatch] item parse failed', err)
+        console.warn('[useWatchStream] item parse failed', err)
       }
     })
 
@@ -129,12 +120,11 @@ export function useEbayWatch(filters: SearchFilters | null) {
           setState((s) => ({
             ...s,
             status: payload.fatal ? 'error' : s.status,
-            error: payload.message ?? 'eBay API error',
+            error: payload.message ?? 'stream error',
           }))
           return
         }
       } catch { /* fall through */ }
-      // Native EventSource error (network / proxy close). Browser will auto-reconnect.
       setState((s) => (s.status === 'open' ? { ...s, status: 'connecting' } : s))
     })
 
@@ -142,7 +132,7 @@ export function useEbayWatch(filters: SearchFilters | null) {
       es.close()
       setState((s) => ({ ...s, status: 'closed' }))
     }
-  }, [key, nonce]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [watchId, nonce])
 
   return {
     ...state,
