@@ -24,6 +24,7 @@ export const AppUserSchema = z.object({
   telegramChatId: z.string().nullable().optional(),
   telegramUsername: z.string().nullable().optional(),
   telegramLinkedAt: z.string().datetime({ offset: true }).nullable().optional(),
+  advancedCollectMode: z.boolean().optional().default(false),
   createdAt: z.string().datetime({ offset: true }).optional(),
   updatedAt: z.string().datetime({ offset: true }).optional(),
 })

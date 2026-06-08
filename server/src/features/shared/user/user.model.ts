@@ -59,6 +59,9 @@ const userSchema = new Schema(
     telegramChatId: { type: String, default: null, index: true, sparse: true },
     telegramUsername: { type: String, default: null },
     telegramLinkedAt: { type: Date, default: null },
+
+    // ── Axeous Collect: advanced mode (faster polls + more watches) ─────
+    advancedCollectMode: { type: Boolean, default: false },
   },
   {
     timestamps: true,

@@ -10,6 +10,8 @@ import type {
 } from '../ebay/ebay.types.js'
 import { WatchMatchModel, WatchModel } from './watch.model.js'
 import { subscribe } from './watch.sse-registry.js'
+import { UserModel } from '../../shared/user/user.model.js'
+import { ADVANCED_MAX_WATCHES_PER_USER } from '../advanced/index.js'
 
 const CONDITIONS: readonly EbayCondition[] = ['NEW', 'USED', 'UNSPECIFIED']
 const BUYING_OPTIONS: readonly EbayBuyingOption[] = ['FIXED_PRICE', 'AUCTION', 'BEST_OFFER']
@@ -17,7 +19,8 @@ const SORTS: readonly EbaySort[] = ['newlyListed', 'endingSoonest', 'price', '-p
 const NOTIFY_MODES = ['sse_only', 'telegram_only', 'both'] as const
 const STATUSES = ['active', 'paused', 'rate_limited', 'error'] as const
 
-function maxPerUser(): number {
+function maxPerUser(advanced: boolean): number {
+  if (advanced) return ADVANCED_MAX_WATCHES_PER_USER
   const v = Number(process.env.WATCH_MAX_PER_USER)
   return Number.isFinite(v) && v > 0 ? Math.floor(v) : 1
 }
@@ -153,14 +156,17 @@ watchRoutes.post('/', async (c) => {
   const rawName = typeof body.name === 'string' ? body.name.trim() : ''
   const name = rawName.length > 0 ? rawName.slice(0, 80) : defaultWatchName(filters)
 
-  // Per-user cap
+  // Per-user cap (advanced mode raises the ceiling)
+  const me = await UserModel.findOne({ authId: authUser.id }).select('advancedCollectMode').lean()
+  const advanced = !!me?.advancedCollectMode
+  const userCap = maxPerUser(advanced)
   const userActive = await WatchModel.countDocuments({
     authId: authUser.id,
     status: { $in: ['active', 'rate_limited'] },
   })
-  if (userActive >= maxPerUser()) {
+  if (userActive >= userCap) {
     return c.json(
-      { error: `Reached the per-user limit of ${maxPerUser()} active watch(es). Pause or delete an existing watch first.` },
+      { error: `Reached the per-user limit of ${userCap} active watch(es). Pause or delete an existing watch first.` },
       429
     )
   }

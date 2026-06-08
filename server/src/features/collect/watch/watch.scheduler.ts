@@ -3,6 +3,8 @@ import type { SearchFilters } from '../ebay/ebay.types.js'
 import { WatchModel } from './watch.model.js'
 import { dispatchMatches } from './watch.dispatcher.js'
 import { emit } from './watch.sse-registry.js'
+import { UserModel } from '../../shared/user/user.model.js'
+import { ADVANCED_POLL_INTERVAL_MS } from '../advanced/index.js'
 
 // eBay Browse API indexing lag can be 2-10 minutes between listing creation
 // and appearance in search results. The overlap buffer is sized to cover that
@@ -20,9 +22,12 @@ function tickIntervalMs(): number {
   return Number.isFinite(v) && v >= 5000 ? Math.floor(v) : 15000
 }
 
-function pollIntervalMs(): number {
+// Advanced users get the floor (ADVANCED_POLL_INTERVAL_MS). Everyone else
+// uses the env value (clamped to >= ADVANCED_POLL_INTERVAL_MS) or 60s default.
+function pollIntervalMs(advanced = false): number {
+  if (advanced) return ADVANCED_POLL_INTERVAL_MS
   const v = Number(process.env.WATCH_POLL_INTERVAL_MS)
-  return Number.isFinite(v) && v >= 15000 ? Math.floor(v) : 60000
+  return Number.isFinite(v) && v >= ADVANCED_POLL_INTERVAL_MS ? Math.floor(v) : 60000
 }
 
 function jitterMs(): number {
@@ -115,6 +120,8 @@ async function pollOneWatch(watch: InstanceType<typeof WatchModel>) {
   const filters = (watch.filters as unknown as { toObject?: () => SearchFilters })
     .toObject?.() ?? (watch.filters as unknown as SearchFilters)
   const pollStart = Date.now()
+  const owner = await UserModel.findOne({ authId: watch.authId }).select('advancedCollectMode').lean()
+  const advanced = !!owner?.advancedCollectMode
 
   let newItems
   try {
@@ -133,7 +140,7 @@ async function pollOneWatch(watch: InstanceType<typeof WatchModel>) {
     }
     if (isFatalEbayError(err)) watch.status = 'error'
     watch.lastPolledAt = new Date(pollStart)
-    watch.nextPollAt = new Date(Date.now() + pollIntervalMs() + jitterMs())
+    watch.nextPollAt = new Date(Date.now() + pollIntervalMs(advanced) + jitterMs())
     await watch.save()
 
     await emit(String(watch._id), 'error', {

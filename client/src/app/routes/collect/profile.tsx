@@ -6,6 +6,7 @@ import { paths } from '@/config/paths'
 import { useGetMe, useDeleteMe } from '@/features/shared/user'
 import { useGetEbayQuota } from '@/features/collect/ebay'
 import { TelegramRow } from '@/features/collect/telegram'
+import { AdvancedModeRow } from '@/features/collect/advanced'
 import './profile.css'
 
 export const CollectProfile = () => {
@@ -56,6 +57,15 @@ export const CollectProfile = () => {
                 />
                 Collect Beta
               </div>
+              {appUser?.advancedCollectMode && (
+                <div className="profile-badge">
+                  <span
+                    className="badge-dot"
+                    style={{ background: 'var(--amber)', boxShadow: '0 0 6px var(--amber)' }}
+                  />
+                  Advanced
+                </div>
+              )}
               {isAdmin && (
                 <div className="profile-badge">
                   <span
@@ -102,6 +112,12 @@ export const CollectProfile = () => {
         <h3 className="section-title">Notifications</h3>
         <div className="card section-card">
           <TelegramRow />
+        </div>
+
+        {/* SETTINGS */}
+        <h3 className="section-title">Settings</h3>
+        <div className="card section-card">
+          <AdvancedModeRow />
         </div>
 
         {/* ACCOUNT */}
