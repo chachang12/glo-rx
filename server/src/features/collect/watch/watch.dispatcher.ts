@@ -1,7 +1,11 @@
 import type { CompactItem } from '../ebay/ebay.types.js'
 import { UserModel } from '../../shared/user/user.model.js'
-import { sendMessage, TelegramApiError } from '../telegram/telegram.client.js'
-import { formatBatchMessage, formatHandoffMessage } from '../telegram/telegram.formatter.js'
+import { sendMessage, sendPhoto, TelegramApiError } from '../telegram/telegram.client.js'
+import {
+  formatBatchMessage,
+  formatHandoffMessage,
+  formatPhotoCaption,
+} from '../telegram/telegram.formatter.js'
 import { WatchMatchModel, WatchModel, type Watch } from './watch.model.js'
 import { emit, hasSubscribers } from './watch.sse-registry.js'
 
@@ -91,17 +95,44 @@ async function sendTelegramBatch(
     .lean()
   if (!user?.telegramChatId) return false
 
-  const text = formatBatchMessage(watch.name, items)
+  const chatId = user.telegramChatId
+  // A single item with an image goes out as a photo card (the high-value case);
+  // everything else stays the scannable text list. Preview is left on for the
+  // multi-item list so the top item still renders a thumbnail.
+  const single = items.length === 1 ? items[0] : null
+
   try {
-    const ok = await sendMessage(user.telegramChatId, text, {
-      parseMode: 'HTML',
-      disableWebPagePreview: true,
-    })
+    let ok: boolean
+    if (single?.imageUrl) {
+      try {
+        ok = await sendPhoto(chatId, single.imageUrl, {
+          caption: formatPhotoCaption(watch.name, single),
+          parseMode: 'HTML',
+        })
+      } catch (err) {
+        // A bad/oversized/unreachable image shouldn't swallow the alert — fall
+        // back to the text message (re-thrown 429s etc. are caught below).
+        if (err instanceof TelegramApiError && err.status === 429) throw err
+        console.warn('[dispatcher] sendPhoto failed, falling back to text', err)
+        ok = await sendMessage(chatId, formatBatchMessage(watch.name, items), {
+          parseMode: 'HTML',
+          disableWebPagePreview: true,
+        })
+      }
+    } else {
+      ok = await sendMessage(chatId, formatBatchMessage(watch.name, items), {
+        parseMode: 'HTML',
+        // Single item with no image: nothing to preview. Multi-item: let the
+        // top link render a thumbnail.
+        disableWebPagePreview: items.length === 1,
+      })
+    }
+
     if (!ok) {
       // 403 — user blocked the bot, chat deactivated, etc. Detach so we
       // stop trying on subsequent polls. The user can re-link from profile.
       console.warn(
-        `[dispatcher] Telegram chat ${user.telegramChatId} unreachable — detaching link for ${watch.authId}`
+        `[dispatcher] Telegram chat ${chatId} unreachable — detaching link for ${watch.authId}`
       )
       await UserModel.updateOne(
         { authId: watch.authId },

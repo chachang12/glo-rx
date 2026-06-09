@@ -21,6 +21,41 @@ function fmtPrice(p: { value: string; currency: string }): string {
   return n >= 1000 ? `$${Math.round(n).toLocaleString()}` : `$${n.toFixed(2).replace(/\.00$/, '')}`
 }
 
+/** Best link for an item — affiliate when we have one, else the public URL. */
+function itemUrl(item: CompactItem): string {
+  return item.affiliateUrl ?? item.webUrl
+}
+
+/** "price · condition · @seller (99%)" metadata line shared by both formats. */
+function itemMeta(item: CompactItem): string {
+  const isAuction = item.buyingOptions.includes('AUCTION')
+  const priceStr =
+    isAuction && item.currentBidPrice
+      ? `${fmtPrice(item.currentBidPrice)} bid`
+      : fmtPrice(item.price)
+
+  const meta: string[] = [priceStr]
+  if (item.condition) meta.push(htmlEscape(item.condition))
+  if (item.seller) {
+    meta.push(`@${htmlEscape(item.seller.username)} (${htmlEscape(item.seller.feedbackPct)}%)`)
+  } else if (item.itemLocation?.country) {
+    meta.push(htmlEscape(item.itemLocation.country))
+  }
+  return meta.join(' · ')
+}
+
+/**
+ * Caption for a single-item photo notification. Kept short — Telegram caps
+ * photo captions at 1024 chars, and a single item is nowhere near that.
+ */
+export function formatPhotoCaption(watchName: string, item: CompactItem): string {
+  return [
+    `🔔 <b>${htmlEscape(watchName)}</b> — 1 new`,
+    `<a href="${htmlEscape(itemUrl(item))}">${htmlEscape(item.title)}</a>`,
+    itemMeta(item),
+  ].join('\n')
+}
+
 /**
  * Builds the per-poll Telegram batch message. One message regardless of
  * match count, capped at MAX_ITEMS_PER_MESSAGE inline with a "+N more" tail.
@@ -37,23 +72,8 @@ export function formatBatchMessage(watchName: string, items: CompactItem[]): str
   ]
 
   shown.forEach((item, idx) => {
-    const url = item.affiliateUrl ?? item.webUrl
-    const isAuction = item.buyingOptions.includes('AUCTION')
-    const priceStr =
-      isAuction && item.currentBidPrice
-        ? `${fmtPrice(item.currentBidPrice)} bid`
-        : fmtPrice(item.price)
-
-    const meta: string[] = [priceStr]
-    if (item.condition) meta.push(htmlEscape(item.condition))
-    if (item.seller) {
-      meta.push(`@${htmlEscape(item.seller.username)} (${htmlEscape(item.seller.feedbackPct)}%)`)
-    } else if (item.itemLocation?.country) {
-      meta.push(htmlEscape(item.itemLocation.country))
-    }
-
-    lines.push(`${idx + 1}. <a href="${htmlEscape(url)}">${htmlEscape(item.title)}</a>`)
-    lines.push(`   ${meta.join(' · ')}`)
+    lines.push(`${idx + 1}. <a href="${htmlEscape(itemUrl(item))}">${htmlEscape(item.title)}</a>`)
+    lines.push(`   ${itemMeta(item)}`)
   })
 
   if (total > MAX_ITEMS_PER_MESSAGE) {
