@@ -50,10 +50,60 @@ const userSchema = new Schema(
     // ── Account ──────────────────────────────────────────────────────────
     role: {
       type: String,
-      enum: ['user', 'admin'],
+      enum: ['user', 'contributor', 'admin'],
       default: 'user',
     },
     onboardingComplete: { type: Boolean, default: false },
+
+    // ── Official Plan Program: contributor (SME reviewer) profile ────────
+    // null for non-contributors. Populated on invite acceptance.
+    contributor: {
+      type: {
+        scopes: {
+          type: [
+            new Schema(
+              {
+                examCode: { type: String, required: true },
+                rateCents: { type: Number, required: true, min: 0 },
+                grantedAt: { type: Date, default: () => new Date() },
+                grantedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+              },
+              { _id: false }
+            ),
+          ],
+          default: [],
+        },
+        dailyCap: { type: Number, default: 200, min: 0 },
+        reliabilityScore: { type: Number, default: 1, min: 0, max: 1 },
+        invitedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+        acceptedInviteId: { type: Schema.Types.ObjectId, ref: 'ContributorInvite', default: null },
+      },
+      default: null,
+    },
+
+    // ── Official Plan Program: per-exam access entitlement ───────────────
+    // Source of truth for "can this user start a session for examCode?"
+    // Stripe-sourced entries mirror subscription state; admin-grant and
+    // contributor-courtesy entries are manually managed.
+    examAccess: {
+      type: [
+        new Schema(
+          {
+            examCode: { type: String, required: true },
+            source: {
+              type: String,
+              enum: ['stripe', 'admin-grant', 'contributor-courtesy'],
+              required: true,
+            },
+            grantedAt: { type: Date, default: () => new Date() },
+            expiresAt: { type: Date, default: null },
+            stripeSubscriptionId: { type: String, default: null },
+          },
+          { _id: false }
+        ),
+      ],
+      default: [],
+    },
 
     // ── Telegram (Axeous Collect notifications) ─────────────────────────
     telegramChatId: { type: String, default: null, index: true, sparse: true },

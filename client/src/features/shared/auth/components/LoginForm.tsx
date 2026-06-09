@@ -4,7 +4,9 @@ import { authClient } from '@/lib/auth-client'
 
 export const LoginForm = () => {
   const [searchParams] = useSearchParams()
-  const redirectTo = searchParams.get('redirectTo') ?? '/app/dashboard'
+  // No `redirectTo` → /app, which renders <PostLoginRedirect /> and sends
+  // contributors to their queue and everyone else to the dashboard.
+  const redirectTo = searchParams.get('redirectTo') ?? '/app'
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 

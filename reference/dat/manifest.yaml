@@ -1,0 +1,36 @@
+# Official Plan Program corpus manifest for the DAT.
+#
+# Bump corpusVersion whenever ANY file in this corpus changes. Loaded chunks
+# are anchored to (examCode, corpusVersion, fileHash); previously-generated
+# questions retain citations against the version they were generated under.
+#
+# File roles:
+#   reference     — markdown reference material chunked into PlanDocumentModel
+#                   for AI question generation. Loader processes these.
+#   official-test — canonical mock exam authored for the platform. The v1
+#                   loader skips these; future work will parse into
+#                   OfficialTestModel for direct serving.
+
+exam: dat
+corpusVersion: 2026.06.01
+
+files:
+  - path: biology/overview.md
+    role: reference
+  - path: gen-chem/overview.md
+    role: reference
+  - path: org-chem/overview.md
+    role: reference
+  - path: pat/overview.md
+    role: reference
+  - path: rc/overview.md
+    role: reference
+  - path: qr/overview.md
+    role: reference
+  - path: official-tests/mock-dat-tutor.md
+    role: official-test
+
+generation:
+  defaultTypeWeights:
+    mcq: 1.0
+  defaultDifficulty: medium

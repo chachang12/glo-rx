@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { Link } from 'react-router'
 import { paths } from '@/config/paths'
+import { isOfficialPlanProgramPhaseAtLeast } from '@/config/feature-flags'
 import { PageLoader } from '@/features/shared/ui/PageLoader'
 import {
   useGetAdminStats,
@@ -53,6 +54,45 @@ export const AdminDashboard = () => {
           <h1 className="text-2xl font-bold tracking-tight text-[#e8e6f0]">
             Admin Dashboard
           </h1>
+          {isOfficialPlanProgramPhaseAtLeast(1) && (
+            <div className="flex items-center gap-3 pt-2 text-[11px]">
+              <Link
+                to={paths.app.adminCorpus.getHref()}
+                className="text-[#4f8ef7] font-semibold hover:underline"
+              >
+                Corpus
+              </Link>
+              <span className="text-[#333]">·</span>
+              <Link
+                to={paths.app.adminGeneration.getHref()}
+                className="text-[#4f8ef7] font-semibold hover:underline"
+              >
+                Generation
+              </Link>
+              {isOfficialPlanProgramPhaseAtLeast(2) && (
+                <>
+                  <span className="text-[#333]">·</span>
+                  <Link
+                    to={paths.app.adminContributors.getHref()}
+                    className="text-[#4f8ef7] font-semibold hover:underline"
+                  >
+                    Contributors
+                  </Link>
+                </>
+              )}
+              {isOfficialPlanProgramPhaseAtLeast(3) && (
+                <>
+                  <span className="text-[#333]">·</span>
+                  <Link
+                    to={paths.app.adminReleases.getHref()}
+                    className="text-[#4f8ef7] font-semibold hover:underline"
+                  >
+                    Releases
+                  </Link>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Tabs */}

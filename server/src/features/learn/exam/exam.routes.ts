@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { requireAuth } from '../../../middleware/auth.js'
 import type { AuthEnv } from '../../../types.js'
 import { ExamModel, OfficialTestModel, QuestionBankModel, QuestionExposureModel } from './exam.model.js'
+import { publishedQuestionFilter } from './question-visibility.js'
 
 const examRoutes = new Hono<AuthEnv>()
 
@@ -52,7 +53,7 @@ examRoutes.get('/:code/questions', requireAuth, async (c) => {
   const { topic, limit } = c.req.query()
   const maxResults = limit ? parseInt(limit) : 50
 
-  const filter: Record<string, unknown> = { examCode: code }
+  const filter: Record<string, unknown> = await publishedQuestionFilter(code)
   if (topic) filter.topics = topic
 
   // Get all candidate questions
@@ -161,10 +162,11 @@ examRoutes.get('/exposure/stats', requireAuth, async (c) => {
   const authUser = c.get('user')
   const { examCode } = c.req.query()
 
-  // Get all question IDs for the exam
+  // Get all question IDs for the exam (restricted to user-visible questions).
   const filter: Record<string, unknown> = {}
   if (examCode) {
-    const questions = await QuestionBankModel.find({ examCode }).select('_id').lean()
+    const visibilityFilter = await publishedQuestionFilter(examCode)
+    const questions = await QuestionBankModel.find(visibilityFilter).select('_id').lean()
     const ids = questions.map((q) => String(q._id))
     filter.questionId = { $in: ids }
   }

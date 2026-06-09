@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Official Plan Program — Design</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #6a6a6a;
+    --bg: #fafaf7;
+    --card: #ffffff;
+    --border: #e5e3dc;
+    --accent: #2d5fdb;
+    --code-bg: #f3f2ec;
+    --warn: #b3641a;
+    --good: #2a7a4f;
+    --kbd-bg: #ebeae3;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 6rem;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.62;
+    font-size: 16px;
+  }
+  header.doc-header { margin-bottom: 2rem; }
+  h1 { font-size: 2.1rem; margin: 0 0 .25rem; line-height: 1.2; }
+  .subtitle { color: var(--muted); font-size: 1.05rem; margin: 0 0 .5rem; }
+  .meta {
+    display: flex; gap: 1.5rem; flex-wrap: wrap;
+    color: var(--muted); font-size: .88rem; margin-top: .5rem;
+  }
+  .meta span strong { color: var(--ink); font-weight: 600; margin-right: .3rem; }
+
+  h2 {
+    font-size: 1.45rem;
+    margin: 3rem 0 .75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+    line-height: 1.3;
+  }
+  h3 { font-size: 1.12rem; margin: 1.8rem 0 .5rem; }
+  h4 {
+    font-size: .82rem; margin: 1.5rem 0 .35rem;
+    text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+  }
+
+  p { margin: .75rem 0; }
+  ul, ol { padding-left: 1.4rem; margin: .5rem 0; }
+  li { margin: .35rem 0; }
+
+  code {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    font-size: .9em;
+    background: var(--code-bg);
+    padding: .12em .42em;
+    border-radius: 4px;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    line-height: 1.55;
+    font-size: .87rem;
+  }
+  pre code { background: none; padding: 0; }
+
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .93em; }
+  th, td { text-align: left; padding: .6rem .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-weight: 600; background: var(--code-bg); font-size: .82em; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+
+  .toc {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin: 1.5rem 0 2.5rem;
+  }
+  .toc-title { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 .5rem; }
+  .toc ol { margin: 0; padding-left: 1.5rem; columns: 2; column-gap: 2rem; }
+  .toc li { margin: .2rem 0; break-inside: avoid; }
+  .toc a { color: var(--ink); text-decoration: none; }
+  .toc a:hover { color: var(--accent); text-decoration: underline; }
+
+  .callout {
+    background: var(--card);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    margin: 1.5rem 0;
+  }
+  .callout strong.label { display: block; font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); margin-bottom: .35rem; }
+  .callout.warn { border-left-color: var(--warn); }
+  .callout.warn strong.label { color: var(--warn); }
+  .callout.good { border-left-color: var(--good); }
+  .callout.good strong.label { color: var(--good); }
+
+  .tag {
+    display: inline-block;
+    background: var(--code-bg);
+    padding: .14em .6em;
+    border-radius: 999px;
+    font-size: .78em;
+    color: var(--muted);
+    margin: 0 .3em .25em 0;
+  }
+
+  kbd {
+    background: var(--kbd-bg);
+    border: 1px solid var(--border);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: .1em .45em;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: .82em;
+  }
+
+  .state-flow {
+    display: flex; gap: .5rem; flex-wrap: wrap; align-items: center;
+    margin: 1rem 0; padding: 1rem; background: var(--card);
+    border: 1px solid var(--border); border-radius: 8px;
+    font-family: ui-monospace, SFMono-Regular, monospace; font-size: .85rem;
+  }
+  .state {
+    padding: .35rem .7rem; border-radius: 6px;
+    background: var(--code-bg); border: 1px solid var(--border);
+  }
+  .state.approved { background: #e7f4ec; border-color: #b9dec7; color: var(--good); }
+  .state.rejected { background: #f5e5d3; border-color: #e3c79a; color: var(--warn); }
+  .state.published { background: #e2eafb; border-color: #b9ccf2; color: var(--accent); }
+  .arrow { color: var(--muted); }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  hr.section-break { border: 0; border-top: 1px dashed var(--border); margin: 2rem 0; }
+
+  .file-tree {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: .85rem;
+    line-height: 1.6;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  @media (max-width: 700px) {
+    .toc ol { columns: 1; }
+    body { padding: 1.5rem 1rem 4rem; }
+  }
+  @media print {
+    body { background: white; padding: 1rem; max-width: 100%; font-size: 11pt; }
+    h2 { break-before: avoid; }
+    .toc { break-after: page; }
+  }
+</style>
+</head>
+<body>
+
+<header class="doc-header">
+  <h1>Official Plan Program — Design</h1>
+  <p class="subtitle">Technical design for the contributor-reviewed, release-published, subscription-gated content pipeline.</p>
+  <div class="meta">
+    <span><strong>Status</strong>Draft</span>
+    <span><strong>Author</strong>Jack</span>
+    <span><strong>Date</strong>2026-06-08</span>
+    <span><strong>Pilot exam</strong>DAT</span>
+    <span><strong>Companion doc</strong><a href="./official-plan-program-proposal.html">Proposal</a></span>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Table of contents">
+  <p class="toc-title">Contents</p>
+  <ol>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#architecture">System architecture</a></li>
+    <li><a href="#corpus">Reference corpus conventions</a></li>
+    <li><a href="#data-model">Data model</a></li>
+    <li><a href="#lifecycle">Question lifecycle</a></li>
+    <li><a href="#voting">Voting &amp; anti-gaming</a></li>
+    <li><a href="#releases">Release &amp; versioning</a></li>
+    <li><a href="#api">API surface</a></li>
+    <li><a href="#ui">UI surfaces</a></li>
+    <li><a href="#stripe">Stripe integration</a></li>
+    <li><a href="#topics">DAT topic seed</a></li>
+    <li><a href="#migration">Migration plan</a></li>
+    <li><a href="#open">Open questions</a></li>
+  </ol>
+</nav>
+
+<h2 id="overview">1. Overview</h2>
+
+<p>This document specifies the engineering work required to deliver the <a href="./official-plan-program-proposal.html">Official Plan Program</a>. It defines repo conventions for reference material, the database schema changes, the question lifecycle state machine, the contributor and admin API surfaces, the release model, and the Stripe subscription integration. The DAT is the pilot exam, but every component is designed to generalize across exams.</p>
+
+<p>The high-level shape: reference material remains under git; generated content, expert votes, releases, payouts, and subscription state live in MongoDB; the React client gains two new role-scoped surfaces (admin extensions and a contributor app); Stripe gates per-exam access via webhooks.</p>
+
+<h2 id="architecture">2. System architecture</h2>
+
+<h3>Boundaries</h3>
+
+<table>
+  <thead>
+    <tr><th>Concern</th><th>Lives in</th><th>Why</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Canonical reference material</td>
+      <td>Git, under <code>reference/&lt;exam-code&gt;/</code></td>
+      <td>Authoritative; needs PR review, diff-able history, content-addressed citation stability.</td>
+    </tr>
+    <tr>
+      <td>Loaded reference chunks</td>
+      <td>MongoDB (<code>PlanDocumentModel</code>, extended)</td>
+      <td>Generation pipeline needs random access; chunk hashes anchor citations.</td>
+    </tr>
+    <tr>
+      <td>Generated questions</td>
+      <td>MongoDB (<code>QuestionBankModel</code>)</td>
+      <td>Production at scale; lifecycle state changes; per-user exposure tracking.</td>
+    </tr>
+    <tr>
+      <td>Review votes &amp; billing events</td>
+      <td>MongoDB (<code>ReviewEvent</code>, new)</td>
+      <td>Immutable per-event records; audit and payout source of truth.</td>
+    </tr>
+    <tr>
+      <td>Releases</td>
+      <td>MongoDB (<code>Release</code>, new)</td>
+      <td>Operational artifact managed by non-engineers; needs rollback.</td>
+    </tr>
+    <tr>
+      <td>Subscription &amp; access</td>
+      <td>MongoDB (<code>user.examAccess</code>) mirrored from Stripe</td>
+      <td>Stripe is source of truth for billing; we mirror entitlement for query speed.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Data flow</h3>
+
+<pre><code>repo (reference/dat/*.md, manifest.yaml)
+  → loader (sha256 per file, chunked into PlanDocumentModel with corpusVersion)
+  → admin generation console
+  → Claude Sonnet 4.6 (via existing generate-questions.service.ts)
+  → QuestionBankModel (status: 'draft', stamped with corpusVersion + citation hashes)
+  → admin promotes batch to 'pending'
+  → contributor review queue (ReviewEvent records per vote, billable flag computed)
+  → 2 approvals → status: 'approved'  |  2 rejections → status: 'rejected'
+  → admin assembles approved questions into a Release (status: 'draft')
+  → admin publishes Release (status: 'live'); included questions → 'published'
+  → test sessions for subscribed users serve questions where releaseId ∈ live releases
+</code></pre>
+
+<h2 id="corpus">3. Reference corpus conventions</h2>
+
+<h3>Directory layout</h3>
+
+<div class="file-tree">reference/
+├── dat/
+│   ├── manifest.yaml
+│   ├── biology/
+│   │   ├── cell-biology.md
+│   │   └── genetics.md
+│   ├── gen-chem/
+│   │   └── stoichiometry.md
+│   ├── org-chem/
+│   ├── pat/
+│   │   ├── apertures.md
+│   │   └── paper-folding.md
+│   ├── rc/
+│   ├── qr/
+│   └── official-tests/
+│       └── mock-dat-tutor.md
+└── nclex/
+    └── ...</div>
+
+<h3>Per-file frontmatter</h3>
+
+<p>Every <code>.md</code> file under <code>reference/&lt;exam&gt;/</code> opens with YAML frontmatter:</p>
+
+<pre><code>---
+exam: dat
+section: biology              # maps to a top-level topic code
+sourceTitle: "DAT Biology — Cell Structure"
+authoritative: true           # vs supplemental reference
+license: proprietary
+contributors: [jack@axeous.com]
+---
+
+# Markdown content follows...</code></pre>
+
+<h3>Manifest</h3>
+
+<p><code>reference/&lt;exam&gt;/manifest.yaml</code> is the loader's entry point:</p>
+
+<pre><code>exam: dat
+corpusVersion: 2026.06.01     # bump on any content change
+files:
+  - path: biology/cell-biology.md
+    role: reference
+  - path: biology/genetics.md
+    role: reference
+  - path: pat/apertures.md
+    role: reference
+  - path: official-tests/mock-dat-tutor.md
+    role: official-test       # parsed by a different loader path
+generation:
+  defaultTypeWeights:
+    mcq: 1.0                  # DAT is MCQ-only on the real exam
+  defaultDifficulty: medium</code></pre>
+
+<h3>Loader behavior</h3>
+
+<p>A new server-side script <code>server/src/scripts/load-corpus.ts</code> handles ingestion. Invocation: <code>npm run load-corpus -- --exam dat</code>.</p>
+
+<ol>
+  <li>Read <code>reference/&lt;exam&gt;/manifest.yaml</code>; resolve <code>corpusVersion</code>.</li>
+  <li>For each <code>role: reference</code> file: read, validate frontmatter, compute <code>sha256(fileBytes)</code>, chunk text (existing chunker from custom-plan pipeline), upsert into <code>PlanDocumentModel</code> keyed by <code>(examCode, corpusVersion, fileHash)</code>.</li>
+  <li>For each <code>role: official-test</code> file: parse using the existing official-test importer; upsert into <code>OfficialTestModel</code>.</li>
+  <li>Write a <code>CorpusVersion</code> registry document recording the version, file list, hashes, and load timestamp. Subsequent loads with the same version are idempotent; a version bump triggers fresh inserts side-by-side with old chunks (old chunks are retained because they may still be cited by existing questions).</li>
+</ol>
+
+<p>The loader does <em>not</em> mutate or delete prior corpus versions. Garbage collection of unreferenced chunks is a manual admin action, not a load-time side effect.</p>
+
+<h2 id="data-model">4. Data model</h2>
+
+<h3>Extensions to existing models</h3>
+
+<h4>User (<code>server/src/features/shared/user/user.model.ts</code>)</h4>
+
+<pre><code>role: 'user' | 'contributor' | 'admin'   // was 'user' | 'admin'
+
+contributor: {
+  scopes: [{
+    examCode: string,
+    rateCents: number,        // per-billable-review rate for this exam
+    grantedAt: Date,
+    grantedBy: ObjectId
+  }],
+  dailyCap: number,           // billable reviews per UTC day; default 200
+  reliabilityScore: number,   // 0..1; derived nightly, denormalized for sort
+  invitedBy: ObjectId,
+  acceptedInviteId: ObjectId
+}
+
+examAccess: [{
+  examCode: string,
+  source: 'stripe' | 'admin-grant' | 'contributor-courtesy',
+  grantedAt: Date,
+  expiresAt: Date | null,     // null = no expiry; Stripe-sourced uses subscription.current_period_end
+  stripeSubscriptionId: string | null
+}]</code></pre>
+
+<p>The existing <code>licenses</code> object (<code>aiGeneration</code>, <code>customPlans</code>) stays unchanged; it controls feature access, not catalog access.</p>
+
+<h4>QuestionBankModel (<code>server/src/features/learn/exam/exam.model.ts</code>)</h4>
+
+<pre><code>status: 'draft' | 'pending' | 'approved' | 'rejected' | 'published'
+    // was implicitly live the moment it was inserted
+
+corpusVersion: string         // e.g., "2026.06.01"
+
+sourceCitations: [{           // extended; existing field tightened
+  fileHash: string,           // sha256 of the source file at generation time
+  filePath: string,           // for human readability, denormalized
+  chunkIndex: number,
+  excerpt: string             // denormalized so reviewers see it without a join
+}]
+
+votes: [{                     // denormalized read-side; ReviewEvent is source of truth
+  reviewerId: ObjectId,
+  vote: 'approve' | 'reject',
+  comment: string | null,
+  at: Date
+}]
+
+approvalCount: number         // denormalized count of approval votes
+rejectionCount: number        // denormalized count of rejection votes
+rejectionReason: string | null
+
+releaseId: ObjectId | null    // set when status = 'published'
+publishedAt: Date | null</code></pre>
+
+<p>Indexes (new):</p>
+<ul>
+  <li><code>(examCode, status, createdAt)</code> — review queue queries.</li>
+  <li><code>(releaseId)</code> — release composition queries.</li>
+</ul>
+
+<h3>New models</h3>
+
+<h4>CorpusVersion</h4>
+
+<pre><code>{
+  examCode: string,
+  version: string,                  // matches manifest.yaml corpusVersion
+  files: [{
+    path: string,
+    role: 'reference' | 'official-test',
+    fileHash: string,
+    chunkCount: number
+  }],
+  loadedAt: Date,
+  loadedBy: ObjectId
+}
+// Unique index: (examCode, version)</code></pre>
+
+<h4>Release</h4>
+
+<pre><code>{
+  examCode: string,
+  version: string,                  // semver-ish, monotonic per exam: "2026.06"
+  name: string,                     // "DAT Summer 2026"
+  notes: string,                    // markdown; shown as release notes
+  status: 'draft' | 'live' | 'archived',
+  questionIds: ObjectId[],          // snapshot at publish time
+  corpusVersion: string,            // pinned at publish
+  publishedBy: ObjectId,
+  publishedAt: Date | null,
+  archivedAt: Date | null,
+  archivedBy: ObjectId | null
+}
+// Unique index: (examCode, version)
+// Index: (examCode, status)</code></pre>
+
+<h4>ReviewEvent — billing source of truth, immutable</h4>
+
+<pre><code>{
+  reviewerId: ObjectId,
+  questionId: ObjectId,
+  examCode: string,
+  vote: 'approve' | 'reject',
+  comment: string | null,
+  dwellMs: number,
+  rateCents: number,                // locked at event time
+  billable: boolean,
+  notBillableReason: 'below-dwell' | 'over-cap' | 'duplicate' | 'admin-flagged' | null,
+  adminFlaggedBy: ObjectId | null,
+  adminFlaggedAt: Date | null,
+  at: Date
+}
+// Unique compound index: (reviewerId, questionId)
+// Index: (reviewerId, at) for payout aggregation
+// Index: (examCode, at) for per-exam analytics</code></pre>
+
+<p>Vote revisions are handled by inserting a <em>new</em> event with <code>billable: false</code> and <code>notBillableReason: 'duplicate'</code>, alongside an update to the prior event's vote field. The prior billable event stays billable. (Alternative considered: rewrite the prior event. Rejected because it breaks the immutability invariant that makes the payout aggregation trustworthy.)</p>
+
+<h4>ContributorPayout</h4>
+
+<pre><code>{
+  reviewerId: ObjectId,
+  periodStart: Date,                // first of month UTC
+  periodEnd: Date,                  // last of month UTC
+  perExamBreakdown: [{
+    examCode: string,
+    reviewCount: number,
+    rateCents: number,              // weighted average if rate changed mid-period
+    amountCents: number
+  }],
+  reviewCount: number,              // total billable
+  amountCents: number,              // total
+  status: 'pending' | 'paid' | 'reversed',
+  paidAt: Date | null,
+  externalRef: string | null,       // wire id, check number, Stripe Connect id
+  notes: string | null,
+  generatedAt: Date,
+  generatedBy: ObjectId
+}
+// Unique compound index: (reviewerId, periodStart)</code></pre>
+
+<h4>ContributorInvite</h4>
+
+<pre><code>{
+  email: string,
+  scopes: [{                        // mirrors User.contributor.scopes
+    examCode: string,
+    rateCents: number
+  }],
+  dailyCap: number,
+  token: string,                    // signed JWT, 7-day expiry
+  invitedBy: ObjectId,
+  expiresAt: Date,
+  acceptedAt: Date | null,
+  acceptedByUserId: ObjectId | null
+}
+// Index: (email)
+// Index: (token) unique</code></pre>
+
+<h2 id="lifecycle">5. Question lifecycle</h2>
+
+<div class="state-flow">
+  <span class="state">draft</span>
+  <span class="arrow">→</span>
+  <span class="state">pending</span>
+  <span class="arrow">→</span>
+  <span class="state approved">approved</span>
+  <span class="arrow">→</span>
+  <span class="state published">published</span>
+  <span class="arrow" style="margin-left:1rem">↘</span>
+  <span class="state rejected">rejected</span>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Transition</th><th>Trigger</th><th>Guard</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>(new) → <code>draft</code></td><td>Generation completes</td><td>Question passes validation tool-use schema</td></tr>
+    <tr><td><code>draft</code> → <code>pending</code></td><td>Admin clicks "Promote to review"</td><td>Admin role; bulk-allowed</td></tr>
+    <tr><td><code>pending</code> → <code>approved</code></td><td>2nd approval vote without prior rejection</td><td>Default threshold; admin-configurable per exam</td></tr>
+    <tr><td><code>pending</code> → <code>rejected</code></td><td>2nd rejection vote</td><td>Each rejection must include a comment</td></tr>
+    <tr><td><code>pending</code> → admin escalation</td><td>Mixed votes (1 approve, 1 reject)</td><td>Surfaced on admin dashboard, not a status change</td></tr>
+    <tr><td><code>approved</code> → <code>published</code></td><td>Included release transitions to <code>live</code></td><td>Release publish action; sets <code>releaseId</code></td></tr>
+    <tr><td><code>published</code> → <code>approved</code></td><td>Release archived</td><td>Rollback; question becomes inventory again</td></tr>
+    <tr><td>any → <code>rejected</code></td><td>Admin manual reject</td><td>Admin role; preserves audit trail</td></tr>
+  </tbody>
+</table>
+
+<p>Only <code>published</code> questions are served to test sessions. <code>approved</code> questions are inventory.</p>
+
+<h2 id="voting">6. Voting &amp; anti-gaming</h2>
+
+<h3>Vote submission flow</h3>
+
+<ol>
+  <li>Contributor views a question; client starts a dwell timer on first render.</li>
+  <li>Contributor presses <kbd>A</kbd> / <kbd>R</kbd> / <kbd>S</kbd> (or clicks button).</li>
+  <li>Client POSTs <code>{ questionId, vote, comment?, dwellMs }</code> to <code>/api/contributor/review</code>.</li>
+  <li>Server validates: role + scope, no prior event for <code>(reviewer, question)</code>, comment present on reject, dwell ≥ threshold, daily cap not exceeded.</li>
+  <li>Server inserts <code>ReviewEvent</code> with computed <code>billable</code> and <code>notBillableReason</code>.</li>
+  <li>If event is recorded (regardless of billable), server updates <code>QuestionBankModel.votes</code>, recomputes <code>approvalCount</code> / <code>rejectionCount</code>, and transitions <code>status</code> if threshold met.</li>
+  <li>Server responds with next question in the queue.</li>
+</ol>
+
+<h3>Billable determination</h3>
+
+<table>
+  <thead><tr><th>Condition</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td><code>dwellMs &lt; minDwellMs</code> (default 5000)</td><td>Vote recorded, <code>billable: false</code>, reason <code>below-dwell</code>; status update <strong>still applies</strong> (we count the vote, we just don't pay for it).</td></tr>
+    <tr><td>Reviewer's billable count this UTC day &gt;= <code>dailyCap</code></td><td>Vote recorded, <code>billable: false</code>, reason <code>over-cap</code>.</td></tr>
+    <tr><td>Vote on a question the reviewer has already voted on</td><td>Insert rejected (unique index violation); admin path exists to revise.</td></tr>
+    <tr><td>Admin spot-audit flags after the fact</td><td><code>billable</code> set to <code>false</code>, reason <code>admin-flagged</code>; next payout shows a negative adjustment line.</td></tr>
+    <tr><td>Skip (vote == null in UI)</td><td>No <code>ReviewEvent</code> created at all; question is hidden from this reviewer's queue for the session.</td></tr>
+  </tbody>
+</table>
+
+<div class="callout warn">
+  <strong class="label">Design decision</strong>
+  Below-dwell votes still count toward question state transitions. The reasoning: if a reviewer can correctly approve a question in 3 seconds, the vote is probably right; we just don't want to pay for that level of effort. This may be wrong — if we see below-dwell votes correlating with bad outcomes, switch to "below-dwell votes recorded but do not affect state."
+</div>
+
+<h3>Reliability score</h3>
+
+<p>Nightly job:</p>
+
+<pre><code>reliability = 1 - (overturned_approvals / total_approvals)
+
+overturned = approval where the question was later:
+  - rejected by another reviewer, OR
+  - removed via flagged-question admin action, OR
+  - rejected in admin spot-audit, OR
+  - reported by users at &gt;= 5x baseline rate post-publish</code></pre>
+
+<p>Score is denormalized to <code>user.contributor.reliabilityScore</code> for sort. No automated action is taken on low scores; admin sees them on the Contributors screen and decides.</p>
+
+<h2 id="releases">7. Release &amp; versioning</h2>
+
+<h3>Versioning scheme</h3>
+
+<p>Releases use a calendar-based version per exam: <code>YYYY.MM</code>, optionally suffixed with <code>.N</code> for multiple releases in a month. Examples: <code>2026.06</code>, <code>2026.06.2</code>, <code>2026.07</code>. The version is decoupled from the corpus version; a single release may pull from one corpus version, but a corpus version may produce many releases.</p>
+
+<h3>Release composition flow</h3>
+
+<ol>
+  <li>Admin opens the Releases screen for an exam; clicks "New release".</li>
+  <li>Admin picks from <code>approved</code> questions, filtered by topic / corpus version / date approved.</li>
+  <li>Admin sets <code>name</code>, <code>version</code>, and <code>notes</code>. Saves as <code>status: 'draft'</code>.</li>
+  <li>Admin previews (renders sample of questions as they will appear).</li>
+  <li>Admin clicks "Publish". Server:
+    <ul>
+      <li>Validates no other release for this exam is in mid-transition.</li>
+      <li>Bulk-updates included questions to <code>status: 'published'</code>, sets <code>releaseId</code> and <code>publishedAt</code>.</li>
+      <li>Updates the release to <code>status: 'live'</code>.</li>
+    </ul>
+  </li>
+</ol>
+
+<h3>Multiple live releases per exam</h3>
+
+<p>An exam can have <strong>multiple live releases simultaneously</strong>. Test sessions query <code>{ examCode, status: 'published', releaseId: { $in: liveReleaseIds } }</code>. This lets us ship incremental releases without retiring prior content.</p>
+
+<h3>Rollback &amp; archive</h3>
+
+<p>"Archive" a release: set <code>status: 'archived'</code>, set <code>archivedAt</code> / <code>archivedBy</code>. The included questions revert to <code>status: 'approved'</code> and have <code>releaseId</code> cleared. They become inventory again. Subscribers stop seeing those questions immediately.</p>
+
+<p>Archive is the rollback mechanism. There is no "edit a live release in place" path — to swap content, archive the current release and publish a new one.</p>
+
+<h2 id="api">8. API surface</h2>
+
+<p>New routes are mounted under existing feature folders per project convention.</p>
+
+<h3>Admin (<code>requireAdmin</code>)</h3>
+
+<table>
+  <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>POST</td><td><code>/api/admin/corpus/:examCode/load</code></td><td>Trigger loader for an exam from the current repo state.</td></tr>
+    <tr><td>GET</td><td><code>/api/admin/corpus/:examCode</code></td><td>List loaded corpus versions with file hashes.</td></tr>
+    <tr><td>POST</td><td><code>/api/admin/generation/:examCode/batch</code></td><td>Start a generation job for a topic, count, type weights.</td></tr>
+    <tr><td>POST</td><td><code>/api/admin/questions/promote</code></td><td>Bulk transition <code>draft</code> → <code>pending</code>.</td></tr>
+    <tr><td>GET</td><td><code>/api/admin/questions/escalated</code></td><td>Questions with mixed votes awaiting admin decision.</td></tr>
+    <tr><td>POST</td><td><code>/api/admin/contributors/invite</code></td><td>Create an invite; emails token to invitee.</td></tr>
+    <tr><td>GET</td><td><code>/api/admin/contributors</code></td><td>List contributors with stats.</td></tr>
+    <tr><td>PATCH</td><td><code>/api/admin/contributors/:id</code></td><td>Update scopes, rates, daily cap, role downgrade.</td></tr>
+    <tr><td>POST</td><td><code>/api/admin/review-events/:id/flag</code></td><td>Spot-audit flag (sets <code>billable: false</code>).</td></tr>
+    <tr><td>GET</td><td><code>/api/admin/releases/:examCode</code></td><td>List releases for an exam.</td></tr>
+    <tr><td>POST</td><td><code>/api/admin/releases</code></td><td>Create draft release.</td></tr>
+    <tr><td>POST</td><td><code>/api/admin/releases/:id/publish</code></td><td>Transition draft → live.</td></tr>
+    <tr><td>POST</td><td><code>/api/admin/releases/:id/archive</code></td><td>Transition live → archived; revert questions.</td></tr>
+    <tr><td>POST</td><td><code>/api/admin/payouts/:periodStart/generate</code></td><td>Run aggregation for a period.</td></tr>
+    <tr><td>POST</td><td><code>/api/admin/payouts/:id/mark-paid</code></td><td>Set paid + external reference.</td></tr>
+    <tr><td>GET</td><td><code>/api/admin/payouts/:periodStart/export.csv</code></td><td>CSV for accounting.</td></tr>
+    <tr><td>POST</td><td><code>/api/admin/users/:id/grant-exam-access</code></td><td>Manual access grant (comp / support).</td></tr>
+  </tbody>
+</table>
+
+<h3>Contributor (<code>requireContributor(examCode)</code>)</h3>
+
+<table>
+  <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>GET</td><td><code>/api/contributor/queue</code></td><td>Next batch of pending questions for the reviewer's scopes.</td></tr>
+    <tr><td>POST</td><td><code>/api/contributor/review</code></td><td>Submit a vote; returns next question.</td></tr>
+    <tr><td>POST</td><td><code>/api/contributor/skip</code></td><td>Skip the current question for this session (no event recorded).</td></tr>
+    <tr><td>GET</td><td><code>/api/contributor/earnings</code></td><td>Current period count, projected payout, prior payouts.</td></tr>
+    <tr><td>GET</td><td><code>/api/contributor/me</code></td><td>Scopes, rates, daily cap usage, reliability score (self).</td></tr>
+  </tbody>
+</table>
+
+<h3>User-facing</h3>
+
+<table>
+  <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>GET</td><td><code>/api/exams</code></td><td>Catalog; response now includes <code>gated: boolean</code> and <code>hasAccess: boolean</code>.</td></tr>
+    <tr><td>POST</td><td><code>/api/billing/checkout-session</code></td><td>Create a Stripe Checkout session for an examCode.</td></tr>
+    <tr><td>POST</td><td><code>/api/billing/portal-session</code></td><td>Create a Stripe Customer Portal session.</td></tr>
+    <tr><td>POST</td><td><code>/api/billing/webhook</code></td><td>Stripe webhook receiver (public, signature-verified).</td></tr>
+  </tbody>
+</table>
+
+<h3>Middleware additions</h3>
+
+<ul>
+  <li><code>requireContributor(examCode)</code> — mirrors <code>requireAdmin</code>, checks role <code>contributor</code> or <code>admin</code> and scope match.</li>
+  <li><code>requireExamAccess(examCode)</code> — checks <code>user.examAccess</code> contains the exam and (if applicable) is not past <code>expiresAt</code>. Applied to test session start, plan creation, and question fetch on gated exams. Custom plans bypass this — they're under <code>licenses.customPlans</code> as before.</li>
+</ul>
+
+<h2 id="ui">9. UI surfaces</h2>
+
+<h3>Admin extensions (<code>client/src/app/routes/learn/admin/</code>)</h3>
+
+<table>
+  <thead><tr><th>Screen</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Corpus</strong></td><td>Per-exam: list loaded corpus versions, files, hashes. Trigger reload from repo. Read-only; edits happen in git.</td></tr>
+    <tr><td><strong>Generation console</strong></td><td>Per-topic batch generate. Specify count, type weights, difficulty. Lands as <code>draft</code>. Sanity-review preview. Bulk promote to <code>pending</code>.</td></tr>
+    <tr><td><strong>Contributors</strong></td><td>List, invite, edit scopes / rates / cap. Per-contributor stats: total reviews, billable %, approval rate, reliability score, last review.</td></tr>
+    <tr><td><strong>Review escalations</strong></td><td>Questions with mixed votes; admin resolves manually.</td></tr>
+    <tr><td><strong>Releases</strong></td><td>Per-exam: draft / live / archived list. Compose, preview, publish, archive.</td></tr>
+    <tr><td><strong>Payouts</strong></td><td>Per-period: contributor table, mark paid, CSV export, spot-audit modal.</td></tr>
+  </tbody>
+</table>
+
+<h3>Contributor app (<code>client/src/app/routes/contribute/</code>)</h3>
+
+<p>New route tree mounted at <code>/contribute</code>. Wrapped in a <code>ContributorRoute</code> guard analogous to <code>AdminRoute</code>. Post-login redirect: if <code>role === 'contributor'</code> and <code>contributor.scopes.length &gt; 0</code>, default landing is <code>/contribute/queue</code>.</p>
+
+<table>
+  <thead><tr><th>Screen</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Queue</strong></td><td>Single-column card flow. Stem, options, correct answer, rationale, cited source excerpt inline. <kbd>A</kbd> approve, <kbd>R</kbd> reject (focuses comment), <kbd>S</kbd> skip. Dwell timer client-side. Confirmation toast on submit.</td></tr>
+    <tr><td><strong>My earnings</strong></td><td>This period: review count, billable count, projected payout, daily cap remaining. Prior payouts table.</td></tr>
+    <tr><td><strong>My scope</strong></td><td>Read-only: assigned exams + rates, reliability score, admin contact link.</td></tr>
+  </tbody>
+</table>
+
+<h3>User-facing changes</h3>
+
+<ul>
+  <li>Exam catalog cards show a lock icon and "Subscribe" CTA when <code>gated &amp;&amp; !hasAccess</code>.</li>
+  <li>Plan creation flow surfaces a subscription gate before the plan form for gated exams.</li>
+  <li>Test session 403 from <code>requireExamAccess</code> renders a subscription gate page, not an error.</li>
+  <li>New "Subscriptions" tab in user settings: list active subscriptions, link to Stripe Customer Portal.</li>
+</ul>
+
+<h2 id="stripe">10. Stripe integration</h2>
+
+<h3>Products</h3>
+
+<p>One Stripe Product per exam, with one monthly Price. Naming convention: <code>product_&lt;examCode&gt;</code> in metadata, <code>"Axeous Learn — DAT"</code> as display name. Product IDs are stored in a server-side config keyed by exam code (not in the database — they're deployment configuration).</p>
+
+<h3>Checkout flow</h3>
+
+<ol>
+  <li>User clicks "Subscribe" on a gated exam.</li>
+  <li>Client POSTs <code>/api/billing/checkout-session</code> with <code>{ examCode }</code>.</li>
+  <li>Server creates a Stripe Checkout Session with the matching Price, <code>customer_email</code> from the authed user, and <code>client_reference_id = userId</code>. Returns the session URL.</li>
+  <li>Client redirects to Stripe Checkout.</li>
+  <li>On success, Stripe redirects to <code>/billing/success?session_id={CHECKOUT_SESSION_ID}</code>. Webhook does the entitlement update (do not rely on the redirect).</li>
+</ol>
+
+<h3>Webhook events</h3>
+
+<table>
+  <thead><tr><th>Event</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td><code>checkout.session.completed</code></td><td>Resolve user from <code>client_reference_id</code>; resolve examCode from product metadata; upsert <code>examAccess</code> entry with <code>source: 'stripe'</code> and <code>expiresAt = subscription.current_period_end</code>.</td></tr>
+    <tr><td><code>customer.subscription.updated</code></td><td>Refresh <code>expiresAt</code> from <code>current_period_end</code>.</td></tr>
+    <tr><td><code>customer.subscription.deleted</code></td><td>Remove the matching <code>examAccess</code> entry.</td></tr>
+    <tr><td><code>invoice.payment_failed</code></td><td>No immediate access change; Stripe retries; eventual <code>subscription.deleted</code> handles termination.</td></tr>
+  </tbody>
+</table>
+
+<h3>Idempotency &amp; reconciliation</h3>
+
+<p>Webhook handler is idempotent on <code>event.id</code> via a <code>ProcessedStripeEvent</code> collection (insert with unique constraint; if duplicate, ack and skip). A nightly reconciliation job lists all active Stripe subscriptions, diffs against <code>user.examAccess</code> entries where <code>source: 'stripe'</code>, and reconciles any drift.</p>
+
+<h2 id="topics">11. DAT topic seed</h2>
+
+<p>Located at <code>server/src/config/exam-topics/dat.ts</code>, called from the existing exam seeder on first DAT seed:</p>
+
+<pre><code>export const DAT_EXAM = {
+  code: 'dat',
+  label: 'DAT',
+  category: 'dental',
+  description: 'Dental Admission Test — entrance exam for U.S. and Canadian dental schools.',
+  active: true,
+  visibility: 'live',
+  allowedQuestionTypes: ['mcq'],
+}
+
+export const DAT_TOPICS = [
+  { code: 'sns', label: 'Survey of Natural Sciences', questionCount: 100, children: [
+    { code: 'sns-bio', label: 'Biology', questionCount: 40, children: [
+      'Cell &amp; Molecular Biology',
+      'Diversity of Life',
+      'Vertebrate Anatomy &amp; Physiology',
+      'Developmental Biology',
+      'Genetics',
+      'Evolution, Ecology &amp; Behavior',
+    ]},
+    { code: 'sns-gc', label: 'General Chemistry', questionCount: 30, children: [
+      'Stoichiometry &amp; General Concepts',
+      'Gases',
+      'Liquids &amp; Solids',
+      'Solutions',
+      'Acids &amp; Bases',
+      'Chemical Equilibria',
+      'Thermodynamics &amp; Thermochemistry',
+      'Chemical Kinetics',
+      'Redox Reactions',
+      'Atomic &amp; Molecular Structure',
+      'Periodic Properties',
+      'Nuclear Reactions',
+      'Laboratory',
+    ]},
+    { code: 'sns-oc', label: 'Organic Chemistry', questionCount: 30, children: [
+      'Mechanisms',
+      'Chemical &amp; Physical Properties',
+      'Stereochemistry',
+      'Nomenclature',
+      'Reactions of Major Functional Groups',
+      'Acid-Base Chemistry',
+      'Aromatics &amp; Bonding',
+    ]},
+  ]},
+  { code: 'pat', label: 'Perceptual Ability Test', questionCount: 90, children: [
+    'Apertures (Keyholes)',
+    'View Recognition (Top-Front-End)',
+    'Angle Discrimination',
+    'Paper Folding',
+    'Cube Counting',
+    '3D Form Development (Pattern Folding)',
+  ]},
+  { code: 'rc', label: 'Reading Comprehension', questionCount: 50 },
+  { code: 'qr', label: 'Quantitative Reasoning', questionCount: 40, children: [
+    'Algebra',
+    'Numerical Calculations',
+    'Conversions',
+    'Probability &amp; Statistics',
+    'Geometry',
+    'Trigonometry',
+    'Applied Mathematics (Word Problems)',
+    'Data Analysis',
+  ]},
+]</code></pre>
+
+<p>Seed runs once per boot with a presence check on <code>(examCode, topicCode)</code> so re-runs are no-ops. Subsequent topic additions happen via the admin UI, not via re-seed.</p>
+
+<h2 id="migration">12. Migration plan</h2>
+
+<h3>Schema migration</h3>
+
+<p>All new fields on <code>User</code> and <code>QuestionBankModel</code> are nullable / default-valued, so Mongoose handles them implicitly on next write. The only explicit migration needed:</p>
+
+<ul>
+  <li>Backfill existing <code>QuestionBankModel</code> documents with <code>status: 'published'</code> so test sessions continue to serve them. Set <code>releaseId</code> to a synthetic "legacy" release per exam (created during migration) so the multi-live-release query model works uniformly.</li>
+  <li>Backfill existing users with <code>role: 'user'</code> (already the default), <code>examAccess: []</code>, <code>contributor: null</code>.</li>
+</ul>
+
+<p>Migration script: <code>server/src/scripts/migrate-official-plan-program.ts</code>. Idempotent — checks for the legacy release before creating one.</p>
+
+<h3>Phase ordering (mirrors the proposal phases)</h3>
+
+<ol>
+  <li><strong>Phase 0</strong>: Schemas + migration + DAT exam seed + topic seed + corpus loader.</li>
+  <li><strong>Phase 1</strong>: Admin generation console; questions land as <code>draft</code>; promote to <code>pending</code>.</li>
+  <li><strong>Phase 2</strong>: Contributor role, invite flow, contributor app, review queue, anti-gaming, reliability score job.</li>
+  <li><strong>Phase 3</strong>: Releases (compose, publish, archive); question fetch updates to filter by <code>releaseId</code>.</li>
+  <li><strong>Phase 4</strong>: Stripe integration, gating UI, payouts CSV export.</li>
+  <li><strong>Phase 5</strong>: Reconciliation, spot-audit UI, reliability score surfacing in admin, monitoring.</li>
+</ol>
+
+<h3>Feature flags</h3>
+
+<p>Each phase ships behind an env-var-driven flag (<code>OFFICIAL_PLAN_PROGRAM_PHASE</code>, integer) that gates route registration and UI rendering. This avoids long-lived feature branches per the project's <a href="../CONTRIBUTING.md">CONTRIBUTING</a> rules.</p>
+
+<h2 id="open">13. Open questions</h2>
+
+<table>
+  <thead><tr><th>#</th><th>Question</th><th>Default if unresolved</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Q1</td>
+      <td>Should rejection comments be visible to other reviewers, or only to admins?</td>
+      <td>Admin-only by default — avoids vote contagion. Revisit if reviewers ask for visibility.</td>
+    </tr>
+    <tr>
+      <td>Q2</td>
+      <td>Is the minimum dwell time per question (5 s) calibrated correctly across question types?</td>
+      <td>Single global threshold for v1. Per-type threshold if data warrants.</td>
+    </tr>
+    <tr>
+      <td>Q3</td>
+      <td>Do we allow a contributor to be both a reviewer and a subscriber on the same exam?</td>
+      <td>Allowed; courtesy <code>examAccess</code> grant with <code>source: 'contributor-courtesy'</code>. Excluded from gaming concerns because they don't pay.</td>
+    </tr>
+    <tr>
+      <td>Q4</td>
+      <td>Should the loader prevent generation against a corpus version that has been edited since last load (hash mismatch)?</td>
+      <td>Hard-fail with explicit message — forces an intentional version bump.</td>
+    </tr>
+    <tr>
+      <td>Q5</td>
+      <td>Stripe Connect for direct contributor payouts vs. CSV export to accounting?</td>
+      <td>CSV export for v1. Revisit when monthly payout volume exceeds ops bandwidth.</td>
+    </tr>
+    <tr>
+      <td>Q6</td>
+      <td>Do we need a per-release pricing model (e.g., one-time purchase of a specific release vs. monthly subscription)?</td>
+      <td>Monthly subscription only for v1. Per-release one-time purchase is a deliberate non-goal.</td>
+    </tr>
+    <tr>
+      <td>Q7</td>
+      <td>Should published questions be re-reviewable (e.g., post-launch corrections feed back into the queue)?</td>
+      <td>No formal flow for v1; corrections go through admin manual edits + flagged-question system. Add a "recall to review" path if needed.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <strong class="label">Next step</strong>
+  Resolve Q1–Q4 before Phase 0 implementation; Q5–Q7 can be deferred to their respective phases.
+</div>
+
+</body>
+</html>

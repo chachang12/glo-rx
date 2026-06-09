@@ -1,4 +1,5 @@
 import { ExamModel } from '../features/learn/exam/exam.model.js'
+import { DAT_FLAT_TOPICS } from './exam-topics/dat.js'
 
 // ── Seed data (used for initial DB population) ──────────────────────────────
 
@@ -51,6 +52,17 @@ export const SEED_EXAMS = [
     category: 'accounting',
     description: 'Certified public accountant',
     active: false,
+  },
+  {
+    code: 'dat',
+    label: 'DAT',
+    category: 'dental',
+    description: 'Dental Admission Test — entrance exam for U.S. and Canadian dental schools.',
+    active: true,
+    // Hidden until Phase 4 (subscription/gating) flips this to 'live'.
+    visibility: 'hidden',
+    topics: [...DAT_FLAT_TOPICS],
+    allowedQuestionTypes: ['mcq'],
   },
 ]
 

@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Official Plan Program — Proposal</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #6a6a6a;
+    --bg: #fafaf7;
+    --card: #ffffff;
+    --border: #e5e3dc;
+    --accent: #2d5fdb;
+    --code-bg: #f3f2ec;
+    --warn: #b3641a;
+    --good: #2a7a4f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 6rem;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.62;
+    font-size: 16px;
+  }
+  header.doc-header { margin-bottom: 2rem; }
+  h1 { font-size: 2.1rem; margin: 0 0 .25rem; line-height: 1.2; }
+  .subtitle { color: var(--muted); font-size: 1.05rem; margin: 0 0 .5rem; }
+  .meta {
+    display: flex; gap: 1.5rem; flex-wrap: wrap;
+    color: var(--muted); font-size: .88rem; margin-top: .5rem;
+  }
+  .meta span strong { color: var(--ink); font-weight: 600; margin-right: .3rem; }
+
+  h2 {
+    font-size: 1.45rem;
+    margin: 3rem 0 .75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+    line-height: 1.3;
+  }
+  h3 { font-size: 1.12rem; margin: 1.8rem 0 .5rem; }
+  h4 {
+    font-size: .82rem; margin: 1.5rem 0 .35rem;
+    text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+  }
+
+  p { margin: .75rem 0; }
+  ul, ol { padding-left: 1.4rem; margin: .5rem 0; }
+  li { margin: .35rem 0; }
+
+  code {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    font-size: .9em;
+    background: var(--code-bg);
+    padding: .12em .42em;
+    border-radius: 4px;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    line-height: 1.55;
+    font-size: .87rem;
+  }
+  pre code { background: none; padding: 0; }
+
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .94em; }
+  th, td { text-align: left; padding: .65rem .8rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-weight: 600; background: var(--code-bg); font-size: .85em; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+
+  .toc {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin: 1.5rem 0 2.5rem;
+  }
+  .toc-title { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 .5rem; }
+  .toc ol { margin: 0; padding-left: 1.5rem; columns: 2; column-gap: 2rem; }
+  .toc li { margin: .2rem 0; break-inside: avoid; }
+  .toc a { color: var(--ink); text-decoration: none; }
+  .toc a:hover { color: var(--accent); text-decoration: underline; }
+
+  .callout {
+    background: var(--card);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    margin: 1.5rem 0;
+  }
+  .callout strong.label { display: block; font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); margin-bottom: .35rem; }
+  .callout.warn { border-left-color: var(--warn); }
+  .callout.warn strong.label { color: var(--warn); }
+  .callout.good { border-left-color: var(--good); }
+  .callout.good strong.label { color: var(--good); }
+
+  .tag {
+    display: inline-block;
+    background: var(--code-bg);
+    padding: .14em .6em;
+    border-radius: 999px;
+    font-size: .78em;
+    color: var(--muted);
+    margin: 0 .3em .25em 0;
+  }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  hr.section-break { border: 0; border-top: 1px dashed var(--border); margin: 2rem 0; }
+
+  @media (max-width: 700px) {
+    .toc ol { columns: 1; }
+    body { padding: 1.5rem 1rem 4rem; }
+  }
+  @media print {
+    body { background: white; padding: 1rem; max-width: 100%; font-size: 11pt; }
+    h2 { break-before: avoid; }
+    .toc { break-after: page; }
+  }
+</style>
+</head>
+<body>
+
+<header class="doc-header">
+  <h1>Official Plan Program</h1>
+  <p class="subtitle">Proposal — Subject-matter-expert-reviewed exam prep, sold as a monthly subscription.</p>
+  <div class="meta">
+    <span><strong>Status</strong>Draft</span>
+    <span><strong>Author</strong>Jack</span>
+    <span><strong>Date</strong>2026-06-08</span>
+    <span><strong>Pilot exam</strong>DAT</span>
+    <span><strong>Companion doc</strong><a href="./official-plan-program-design.html">Design</a></span>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Table of contents">
+  <p class="toc-title">Contents</p>
+  <ol>
+    <li><a href="#summary">Executive summary</a></li>
+    <li><a href="#background">Background</a></li>
+    <li><a href="#problem">Problem statement</a></li>
+    <li><a href="#goals">Goals &amp; non-goals</a></li>
+    <li><a href="#solution">Solution overview</a></li>
+    <li><a href="#pilot">Pilot: DAT</a></li>
+    <li><a href="#roles">Roles &amp; permissions</a></li>
+    <li><a href="#contributor">Contributor program</a></li>
+    <li><a href="#lifecycle">Content lifecycle</a></li>
+    <li><a href="#subscription">Subscription model</a></li>
+    <li><a href="#risks">Risks &amp; mitigations</a></li>
+    <li><a href="#metrics">Success metrics</a></li>
+    <li><a href="#rollout">Phased rollout</a></li>
+  </ol>
+</nav>
+
+<h2 id="summary">1. Executive summary</h2>
+
+<p>Axeous Learn currently supports two kinds of plans: <strong>standard plans</strong> seeded into the catalog by the dev team, and <strong>custom plans</strong> that end users build from documents they upload. Standard plans are authoritative but hard to scale (every content edit is a deploy); custom plans scale infinitely but carry no quality guarantee.</p>
+
+<p>The Official Plan Program closes the gap. It introduces a curated, subject-matter-expert-reviewed content production pipeline whose output ships as <em>official plans</em> — durable, versioned, paid products that subscribers can trust. Reference materials live in the repository under version control. Question generation, expert audit, and release management live in the application database, surfaced through new admin and contributor interfaces. A new <strong>contributor role</strong> lets vetted experts (dentists, dental students, etc. for DAT; equivalents for other exams) review AI-generated questions for a per-review fee, with monthly payouts.</p>
+
+<p>The pilot is the DAT, for which authoritative reference material already exists in the repository (<code>reference/dat/Mock_DAT_Tutor_Edition.md</code>) and the canonical topic structure is well-defined. Subscriber access is gated by monthly Stripe subscriptions, configured per exam.</p>
+
+<h2 id="background">2. Background</h2>
+
+<p>Axeous Learn ships exam prep across multiple high-stakes credentialing exams. The platform today seeds exam metadata in <code>server/src/config/exams.ts</code> and stores all questions, plans, and user activity in MongoDB. Question generation is powered by Anthropic Claude (Haiku 4.5 for topic extraction, Sonnet 4.6 for question synthesis), already wired into the custom-plan flow.</p>
+
+<p>Two facts about today's system motivate this proposal:</p>
+
+<ol>
+  <li><strong>Generation infrastructure already exists, but is locked to custom plans.</strong> The same pipeline that turns a user's uploaded PDF into topics and questions could produce official content if pointed at a curated corpus and reviewed by experts.</li>
+  <li><strong>The only quality signal today is user complaint.</strong> Questions surface in test sessions immediately; quality issues are caught reactively via the <code>reportCount &gt;= 5</code> flag mechanism. There is no proactive review queue and no way for a domain expert to validate content before it reaches paying customers.</li>
+</ol>
+
+<p>The Official Plan Program builds on existing infrastructure rather than replacing it. Custom plans continue to work as they do; standard exam seeding continues to work as it does; the new program adds a third content path optimized for paid, expert-validated content.</p>
+
+<h2 id="problem">3. Problem statement</h2>
+
+<p>Axeous Learn needs a way to:</p>
+
+<ul>
+  <li>Produce large volumes of high-quality, exam-accurate questions for credentialing exams without expanding the engineering team.</li>
+  <li>Verify content quality through subject-matter experts who are not employees and do not work in the repository.</li>
+  <li>Bundle that content into named, versioned releases that can be marketed and sold.</li>
+  <li>Gate access to those releases via subscription, with clean rollback if a release has issues.</li>
+  <li>Pay contributors transparently and resist gaming of the review workflow.</li>
+</ul>
+
+<p>None of these are solved by the current standard or custom plan flows.</p>
+
+<h2 id="goals">4. Goals &amp; non-goals</h2>
+
+<h4>Goals</h4>
+<ul>
+  <li>Ship a first Official Plan for the DAT, generated from the existing reference corpus and reviewed by paid SMEs.</li>
+  <li>Establish a repeatable program model that generalizes to NCLEX, MCAT, USMLE, LSAT, CPA, and bar exam content.</li>
+  <li>Provide a contributor experience that a working clinician can use in 15-minute windows between patients.</li>
+  <li>Provide an admin experience that allows non-engineers to manage releases, payouts, and contributor scope.</li>
+  <li>Resist obvious gaming patterns (drive-by approvals, duplicate accounts, dwell-time evasion) without making the contributor flow feel punitive.</li>
+</ul>
+
+<h4>Non-goals</h4>
+<ul>
+  <li>Public contributor sign-up. Contributor onboarding is invite-only.</li>
+  <li>Real-time collaborative editing of reference content. Reference material is edited via git PRs.</li>
+  <li>Vector database for retrieval. The existing chunked-text + Claude context-window approach is sufficient at our current corpus sizes; revisit if a single exam's reference corpus exceeds ~50&nbsp;MB.</li>
+  <li>Replacing the standard or custom plan paths. They continue to exist and serve their respective audiences.</li>
+  <li>Self-serve contributor payout (Stripe Connect, 1099 automation). v1 uses a CSV export to accounting; revisit once payout volume justifies the integration cost.</li>
+</ul>
+
+<h2 id="solution">5. Solution overview</h2>
+
+<p>The Official Plan Program is a <strong>hybrid content system</strong>:</p>
+
+<ul>
+  <li><strong>Reference material lives in the repository</strong> under <code>reference/&lt;exam-code&gt;/</code>, with a per-exam <code>manifest.yaml</code> and per-file frontmatter. This material is edited via git pull requests and is authoritative.</li>
+  <li><strong>Generated content lives in the database.</strong> The existing Claude-based generation pipeline is extended to stamp each question with the corpus version it was generated against, plus stable citation handles (file hash + chunk index) into the reference material.</li>
+  <li><strong>Expert review lives in the database</strong>, surfaced through a new contributor UI. Reviewers approve or reject questions; votes are immutable events that drive both content state and per-review billing.</li>
+  <li><strong>Releases bundle approved questions into named, versioned units</strong> ("DAT Summer 2026") that admins promote to live. Subscribers see questions only from currently-live releases for exams they have purchased.</li>
+</ul>
+
+<div class="callout">
+  <strong class="label">Why hybrid</strong>
+  Repo-side gives us version control, PR review, and a single source of truth for the canonical corpus. DB-side gives us a workflow that non-engineers can use, a real audit trail of expert decisions, and the ability to ship content without redeploying. Each side gets what it's good at.
+</div>
+
+<h2 id="pilot">6. Pilot: DAT</h2>
+
+<p>The DAT is the pilot exam because:</p>
+
+<ul>
+  <li>The reference corpus already exists at <code>reference/dat/Mock_DAT_Tutor_Edition.md</code> (a tutor-edition mock exam authored for the platform).</li>
+  <li>The DAT topic structure is well-defined and stable: four sections (Survey of Natural Sciences, Perceptual Ability Test, Reading Comprehension, Quantitative Reasoning) with documented subsections and question counts.</li>
+  <li>The dental community (practicing dentists, dental students, faculty) is a tractable contributor pool with strong domain expertise and visible credentials.</li>
+  <li>It is not currently in the seeded exam list, so launching it as a paid product avoids disrupting any existing free users.</li>
+</ul>
+
+<p>The DAT pilot will validate the program model end-to-end: corpus loading, generation, contributor invite, review queue, release publishing, subscription checkout. Subsequent exams will reuse the same machinery with different reference corpora and contributor pools.</p>
+
+<h2 id="roles">7. Roles &amp; permissions</h2>
+
+<table>
+  <thead>
+    <tr><th>Role</th><th>Can</th><th>Cannot</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="tag">user</span></td>
+      <td>Take tests; build custom plans; subscribe to official plans</td>
+      <td>Review content; access admin; see contributor surfaces</td>
+    </tr>
+    <tr>
+      <td><span class="tag">contributor</span></td>
+      <td>Review questions for assigned exams; see own earnings and payout history</td>
+      <td>Manage other users; create or publish releases; edit reference corpus; see questions outside their assigned exams</td>
+    </tr>
+    <tr>
+      <td><span class="tag">admin</span></td>
+      <td>All of the above; invite contributors; configure rates; publish releases; manage payouts; override access</td>
+      <td>(no in-app restriction; full surface)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Contributor scope is per-exam: a contributor invited for DAT can review only DAT questions, even if other exams are later added. A single contributor can be scoped to multiple exams, each with its own per-review rate.</p>
+
+<h2 id="contributor">8. Contributor program</h2>
+
+<h3>Onboarding</h3>
+<p>Contributor onboarding is <strong>invite-only</strong>. Admin generates an invite token bound to an email address, a list of exam scopes, and per-exam rates. The invitee signs up through standard auth (Google OAuth via Better Auth), is upgraded to the <code>contributor</code> role, and lands on the review queue on next login.</p>
+
+<h3>Compensation</h3>
+<p>Contributors are paid <strong>per billable review</strong>, with rates configured per <code>(contributor, exam)</code> pair. This lets us pay a board-certified specialist more than a final-year student, and reflect domain difficulty (DAT review may pay differently than CPA review).</p>
+
+<p>A review is "billable" if and only if:</p>
+<ul>
+  <li>The reviewer's role and scope permit reviewing the question.</li>
+  <li>Dwell time on the question meets the minimum threshold (default: 5 seconds).</li>
+  <li>The reviewer has not previously voted on this question.</li>
+  <li>A rejection vote includes a non-empty comment.</li>
+  <li>The reviewer has not exceeded the configured daily cap (default: 200 billable reviews per day).</li>
+  <li>The review has not been retroactively flagged by admin spot-audit.</li>
+</ul>
+
+<p>Skipped questions, duplicate votes, and below-threshold dwell votes are recorded for audit but do not count toward earnings.</p>
+
+<h3>Payout</h3>
+<p>Payouts run on a <strong>monthly cycle</strong>. At month end, a job aggregates billable reviews per contributor, applies their per-exam rate, and creates a <code>ContributorPayout</code> record. Admins review the period, mark payouts paid (with an external reference: wire ID, check number, etc.), and export a CSV for accounting. Reversals are supported for retroactive flags.</p>
+
+<h3>Quality signals</h3>
+<p>Each contributor accumulates a <strong>reliability score</strong>: the percentage of their approvals that are later overturned (rejected by another reviewer, removed via the flagged-question system, or rejected in admin spot-audit). Low scores trigger an admin audit prompt — they do not automatically suspend the contributor. The intent is to surface problems for human judgment, not to police reviewers algorithmically.</p>
+
+<h2 id="lifecycle">9. Content lifecycle</h2>
+
+<p>Generated questions move through five states:</p>
+
+<table>
+  <thead>
+    <tr><th>State</th><th>Meaning</th><th>Visible to</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>draft</code></td><td>Just generated; not yet eligible for review</td><td>Admin only</td></tr>
+    <tr><td><code>pending</code></td><td>In the review queue, awaiting contributor votes</td><td>Admin + contributors with matching scope</td></tr>
+    <tr><td><code>approved</code></td><td>Met the approval threshold; eligible for inclusion in a release</td><td>Admin + contributors</td></tr>
+    <tr><td><code>rejected</code></td><td>Met the rejection threshold; preserved for audit and prompt-engineering feedback</td><td>Admin only</td></tr>
+    <tr><td><code>published</code></td><td>Included in a live release; served to subscribers</td><td>Everyone (rendered in tests)</td></tr>
+  </tbody>
+</table>
+
+<p>Approval and rejection thresholds (default: <strong>2 approvals with 0 rejections</strong>, or <strong>2 rejections</strong>) are configurable. Mixed votes (one approve, one reject) escalate to admin.</p>
+
+<p>The split between <code>approved</code> and <code>published</code> is deliberate. Approved questions are quality-cleared but not yet released — they wait in inventory until an admin includes them in a named release. This lets us ship content in coherent batches with marketing copy, and lets us roll back a release without touching question state.</p>
+
+<h2 id="subscription">10. Subscription model</h2>
+
+<p>Official plans are gated by <strong>monthly Stripe subscriptions</strong>, configured per exam. Each exam has its own Stripe product. The flow:</p>
+
+<ol>
+  <li>A signed-in user views a gated exam in the catalog. The exam shows a lock and a "Subscribe" CTA.</li>
+  <li>Checkout creates a Stripe subscription. On <code>checkout.session.completed</code>, our webhook appends the exam code to <code>user.examAccess</code>.</li>
+  <li>Subsequent test session, plan creation, and question fetch requests for that exam are gated by a <code>requireExamAccess(examCode)</code> middleware.</li>
+  <li>On subscription cancellation or payment failure, the webhook removes the exam code from <code>examAccess</code>. The user retains their progress and history; they just can't start new sessions until they resubscribe.</li>
+</ol>
+
+<p>Admins can grant <code>examAccess</code> manually for comp'd accounts, support cases, and contributor courtesy access. The custom-plan flow is unaffected — users who build their own plans continue to do so under their existing license entitlements.</p>
+
+<h2 id="risks">11. Risks &amp; mitigations</h2>
+
+<table>
+  <thead>
+    <tr><th>Risk</th><th>Mitigation</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Contributors game the per-review payment model (drive-by approvals, sock puppets, dwell-time evasion).</td>
+      <td>Min dwell time, daily cap, comment-required rejections, duplicate-vote guard, reliability scoring, admin spot-audit with retroactive billable flag.</td>
+    </tr>
+    <tr>
+      <td>Approved content turns out to be wrong; subscribers see bad questions.</td>
+      <td>2-of-2 approval default; reliability scoring on reviewers; question reports continue to work post-publish; release-level rollback flips bad content out without touching question state.</td>
+    </tr>
+    <tr>
+      <td>Reviewer churn — contributors get bored, throughput drops.</td>
+      <td>Keyboard-driven queue UI optimized for short sessions; clear per-period earnings dashboard; allow multiple exam scopes so contributors can switch subject matter.</td>
+    </tr>
+    <tr>
+      <td>Stripe webhook drops or arrives out of order; users lose access incorrectly.</td>
+      <td>Idempotent webhook handler keyed on Stripe event ID; nightly reconciliation job that syncs <code>examAccess</code> against Stripe's subscription state of record.</td>
+    </tr>
+    <tr>
+      <td>Reference corpus edit invalidates existing citations on already-published questions.</td>
+      <td>Corpus versioning: each release pins to a <code>corpusVersion</code>; published questions retain the citation hashes they were generated against; new generations target the new version.</td>
+    </tr>
+    <tr>
+      <td>Contributor scope sprawl as exams are added; admin overhead grows.</td>
+      <td>Bulk-invite and bulk-rate UI on day one; contributor self-service for profile and scope visibility; no admin involvement in routine review work.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="metrics">12. Success metrics</h2>
+
+<p>The pilot is successful if, six months after DAT launch:</p>
+
+<ul>
+  <li><strong>Content velocity</strong> — at least one named release shipped per month, each containing ≥&nbsp;100 published questions across DAT sections.</li>
+  <li><strong>Reviewer engagement</strong> — at least 5 active contributors with ≥&nbsp;50 billable reviews per month each.</li>
+  <li><strong>Content quality</strong> — published question report rate (user reports per 100 served impressions) below the baseline observed on standard-plan content.</li>
+  <li><strong>Commercial signal</strong> — subscription conversion rate from gated catalog view, and month-2 retention on DAT subscribers, both within the range we'd want to scale.</li>
+  <li><strong>Operational cost</strong> — contributor payout as a percentage of subscription revenue is sustainable at our target gross margin.</li>
+</ul>
+
+<h2 id="rollout">13. Phased rollout</h2>
+
+<table>
+  <thead>
+    <tr><th>Phase</th><th>Scope</th><th>Exit criteria</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Phase 0 — Foundations</strong></td>
+      <td>Schema changes (User role, QuestionBank fields, new models for Release / ReviewEvent / ContributorPayout / ContributorInvite). DAT exam seeded with canonical topic tree. Reference manifest loader.</td>
+      <td>Schemas deployed; DAT exam appears in admin panel; canonical topics seeded; reference loader can hash and chunk DAT corpus without errors.</td>
+    </tr>
+    <tr>
+      <td><strong>Phase 1 — Admin generation</strong></td>
+      <td>Admin generation console pointed at DAT corpus. Questions land as <code>draft</code> with corpus version and citation hashes.</td>
+      <td>Admin can generate, sanity-review, and bulk-promote drafts to <code>pending</code>.</td>
+    </tr>
+    <tr>
+      <td><strong>Phase 2 — Contributor surface</strong></td>
+      <td>Contributor role, invite flow, review queue, keyboard shortcuts, dwell-time tracking, anti-gaming logic, earnings dashboard.</td>
+      <td>An invited contributor can complete a review session end-to-end; billable events accumulate correctly; reliability score computes.</td>
+    </tr>
+    <tr>
+      <td><strong>Phase 3 — Releases</strong></td>
+      <td>Release model, admin release builder UI, publish / rollback / archive actions. Published questions served in test sessions.</td>
+      <td>First named DAT release published with ≥&nbsp;100 questions; test sessions correctly draw only from live releases.</td>
+    </tr>
+    <tr>
+      <td><strong>Phase 4 — Subscription</strong></td>
+      <td>Stripe product setup, gated catalog UI, checkout flow, webhook handler, <code>requireExamAccess</code> middleware, admin grant override, payout CSV export.</td>
+      <td>Real user can purchase DAT subscription and take a session; cancellation removes access; first contributor payout exported.</td>
+    </tr>
+    <tr>
+      <td><strong>Phase 5 — Hardening</strong></td>
+      <td>Reconciliation job; spot-audit UI; reliability score surfacing; monitoring dashboards.</td>
+      <td>Program operates without daily admin intervention; metrics are visible to the team.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Phases 0–2 can run in parallel with Phase 3 as long as no contributor is invited until Phase 2 is complete. Phase 4 should not ship publicly until Phase 3's first release is live.</p>
+
+<div class="callout good">
+  <strong class="label">Next step</strong>
+  Approve this proposal, then begin Phase 0 implementation per the <a href="./official-plan-program-design.html">Design Doc</a>.
+</div>
+
+</body>
+</html>

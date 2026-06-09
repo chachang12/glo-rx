@@ -103,6 +103,44 @@ export const paths = {
       path: 'admin/exams/:code',
       getHref: (code: string) => `/app/admin/exams/${code}`,
     },
+    adminCorpus: {
+      path: 'admin/corpus',
+      getHref: () => '/app/admin/corpus',
+    },
+    adminGeneration: {
+      path: 'admin/generation',
+      getHref: () => '/app/admin/generation',
+    },
+    adminContributors: {
+      path: 'admin/contributors',
+      getHref: () => '/app/admin/contributors',
+    },
+    adminReleases: {
+      path: 'admin/releases',
+      getHref: () => '/app/admin/releases',
+    },
+    contribute: {
+      root: {
+        path: 'contribute',
+        getHref: () => '/app/contribute',
+      },
+      queue: {
+        path: 'contribute/queue',
+        getHref: () => '/app/contribute/queue',
+      },
+      earnings: {
+        path: 'contribute/earnings',
+        getHref: () => '/app/contribute/earnings',
+      },
+      me: {
+        path: 'contribute/me',
+        getHref: () => '/app/contribute/me',
+      },
+      accept: {
+        path: 'contribute/accept/:token',
+        getHref: (token: string) => `/app/contribute/accept/${token}`,
+      },
+    },
     collect: {
       root: {
         path: 'collect',

@@ -4,10 +4,14 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { connectDB } from './config/db.js'
 import { auth } from './lib/auth.js'
+import { isOfficialPlanProgramPhaseAtLeast } from './config/feature-flags.js'
+import { registerJob, startJobs } from './lib/scheduler.js'
 // Shared
 import { userRoutes } from './features/shared/user/index.js'
 import { friendshipRoutes } from './features/shared/friendship/index.js'
 import { adminRoutes } from './features/shared/admin/index.js'
+import { contributorFeatureRoutes } from './features/shared/contributor/index.js'
+import { recomputeAllReliabilityScores } from './features/shared/contributor/reliability-score.service.js'
 
 // Learn
 import { abgRoutes } from './features/learn/abg/index.js'
@@ -45,6 +49,9 @@ app.all('/api/auth/*', (c) => auth.handler(c.req.raw))
 app.route('/api/admin', adminRoutes)
 app.route('/api/friends', friendshipRoutes)
 app.route('/api/user', userRoutes)
+if (isOfficialPlanProgramPhaseAtLeast(2)) {
+  app.route('/api/contributor', contributorFeatureRoutes)
+}
 
 // Learn routes
 app.route('/api/abg', abgRoutes)
@@ -96,6 +103,15 @@ connectDB().then(async () => {
     startScheduler()
   } else {
     console.warn('[scheduler] not started — eBay credentials missing')
+  }
+  if (isOfficialPlanProgramPhaseAtLeast(2)) {
+    // Nightly reliability recompute. setInterval cadence — every 24h from
+    // process start. Drift is acceptable here; cron would be over-engineering.
+    registerJob('contributor.reliabilityScore', 24 * 60 * 60 * 1000, async () => {
+      const { updated } = await recomputeAllReliabilityScores()
+      console.log(`[scheduler] reliability score recompute: updated ${updated}`)
+    })
+    startJobs()
   }
   serve({ fetch: app.fetch, port: 3001 }, () => {
     console.log('Server running on http://localhost:3001')

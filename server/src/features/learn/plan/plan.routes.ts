@@ -225,7 +225,10 @@ planRoutes.get('/:examCode/topics/:topicId/questions', async (c) => {
   const topic = await TopicModel.findOne({ _id: topicId, planId: plan._id }).lean()
   if (!topic) return c.json({ error: 'Topic not found' }, 404)
 
-  const questions = await QuestionBankModel.find({ topicId: topic._id })
+  const questions = await QuestionBankModel.find({
+    topicId: topic._id,
+    status: 'published',
+  })
     .sort({ createdAt: -1 })
     .lean()
 
@@ -266,7 +269,12 @@ planRoutes.get('/:examCode/readiness', async (c) => {
   )
 
   const counts = await QuestionBankModel.aggregate([
-    { $match: { topicId: { $in: topics.map((t) => t._id) } } },
+    {
+      $match: {
+        topicId: { $in: topics.map((t) => t._id) },
+        status: 'published',
+      },
+    },
     { $group: { _id: '$topicId', count: { $sum: 1 } } },
   ])
   const countByTopic = new Map(counts.map((c) => [String(c._id), c.count]))

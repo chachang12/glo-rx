@@ -9,14 +9,14 @@ import { ExamModel, OfficialTestModel, QuestionBankModel } from '../../learn/exa
 import { TestModel } from '../../learn/test/test.model.js'
 import { validateTest, validateQuestion, validateBulkQuestions } from '../../../config/schemas.js'
 
-const adminRoutes = new Hono<AuthEnv>()
+const baseAdminRoutes = new Hono<AuthEnv>()
 
-adminRoutes.use(requireAuth)
-adminRoutes.use(requireAdmin)
+baseAdminRoutes.use(requireAuth)
+baseAdminRoutes.use(requireAdmin)
 
 // ── Platform Stats ──────────────────────────────────────────────────────────
 
-adminRoutes.get('/stats', async (c) => {
+baseAdminRoutes.get('/stats', async (c) => {
   const [userCount, planCount, sessionCount, examCount] = await Promise.all([
     UserModel.countDocuments(),
     PlanModel.countDocuments(),
@@ -34,7 +34,7 @@ adminRoutes.get('/stats', async (c) => {
 
 // ── User Management ─────────────────────────────────────────────────────────
 
-adminRoutes.get('/users', async (c) => {
+baseAdminRoutes.get('/users', async (c) => {
   const users = await UserModel.find()
     .select('authId firstName lastName username role licenses createdAt')
     .sort({ createdAt: -1 })
@@ -43,7 +43,7 @@ adminRoutes.get('/users', async (c) => {
   return c.json(users)
 })
 
-adminRoutes.delete('/users/:userId', async (c) => {
+baseAdminRoutes.delete('/users/:userId', async (c) => {
   const { userId } = c.req.param()
 
   const user = await UserModel.findById(userId)
@@ -67,7 +67,7 @@ adminRoutes.delete('/users/:userId', async (c) => {
 
 // ── Exam Management ─────────────────────────────────────────────────────────
 
-adminRoutes.get('/exams', async (c) => {
+baseAdminRoutes.get('/exams', async (c) => {
   const exams = await ExamModel.find()
     .sort({ category: 1, label: 1 })
     .lean()
@@ -75,14 +75,14 @@ adminRoutes.get('/exams', async (c) => {
   return c.json(exams)
 })
 
-adminRoutes.get('/exams/:code', async (c) => {
+baseAdminRoutes.get('/exams/:code', async (c) => {
   const { code } = c.req.param()
   const exam = await ExamModel.findOne({ code }).lean()
   if (!exam) return c.json({ error: 'Exam not found' }, 404)
   return c.json(exam)
 })
 
-adminRoutes.post('/exams', async (c) => {
+baseAdminRoutes.post('/exams', async (c) => {
   const body = await c.req.json()
 
   if (!body.code || !body.label || !body.category) {
@@ -107,7 +107,7 @@ adminRoutes.post('/exams', async (c) => {
   return c.json(exam, 201)
 })
 
-adminRoutes.patch('/exams/:code', async (c) => {
+baseAdminRoutes.patch('/exams/:code', async (c) => {
   const { code } = c.req.param()
   const body = await c.req.json()
 
@@ -140,7 +140,7 @@ adminRoutes.patch('/exams/:code', async (c) => {
   return c.json(exam)
 })
 
-adminRoutes.delete('/exams/:code', async (c) => {
+baseAdminRoutes.delete('/exams/:code', async (c) => {
   const { code } = c.req.param()
 
   const exam = await ExamModel.findOneAndDelete({ code })
@@ -151,7 +151,7 @@ adminRoutes.delete('/exams/:code', async (c) => {
 
 // ── Exam Tests (admin can view all tests for an exam) ───────────────────────
 
-adminRoutes.get('/exams/:code/tests', async (c) => {
+baseAdminRoutes.get('/exams/:code/tests', async (c) => {
   const { code } = c.req.param()
 
   const tests = await TestModel.find({ examCode: code })
@@ -164,7 +164,7 @@ adminRoutes.get('/exams/:code/tests', async (c) => {
 
 // ── Official Tests ──────────────────────────────────────────────────────────
 
-adminRoutes.get('/exams/:code/official-tests', async (c) => {
+baseAdminRoutes.get('/exams/:code/official-tests', async (c) => {
   const { code } = c.req.param()
   const tests = await OfficialTestModel.find({ examCode: code })
     .select('title description questionCount createdAt')
@@ -173,14 +173,14 @@ adminRoutes.get('/exams/:code/official-tests', async (c) => {
   return c.json(tests)
 })
 
-adminRoutes.get('/official-tests/:testId', async (c) => {
+baseAdminRoutes.get('/official-tests/:testId', async (c) => {
   const { testId } = c.req.param()
   const test = await OfficialTestModel.findById(testId).lean()
   if (!test) return c.json({ error: 'Test not found' }, 404)
   return c.json(test)
 })
 
-adminRoutes.post('/exams/:code/official-tests', async (c) => {
+baseAdminRoutes.post('/exams/:code/official-tests', async (c) => {
   const { code } = c.req.param()
 
   const examExists = await ExamModel.exists({ code })
@@ -203,7 +203,7 @@ adminRoutes.post('/exams/:code/official-tests', async (c) => {
   return c.json(test, 201)
 })
 
-adminRoutes.delete('/official-tests/:testId', async (c) => {
+baseAdminRoutes.delete('/official-tests/:testId', async (c) => {
   const { testId } = c.req.param()
   const test = await OfficialTestModel.findByIdAndDelete(testId)
   if (!test) return c.json({ error: 'Test not found' }, 404)
@@ -212,7 +212,7 @@ adminRoutes.delete('/official-tests/:testId', async (c) => {
 
 // ── Question Bank ───────────────────────────────────────────────────────────
 
-adminRoutes.get('/exams/:code/questions', async (c) => {
+baseAdminRoutes.get('/exams/:code/questions', async (c) => {
   const { code } = c.req.param()
   const questions = await QuestionBankModel.find({ examCode: code })
     .sort({ createdAt: -1 })
@@ -220,7 +220,7 @@ adminRoutes.get('/exams/:code/questions', async (c) => {
   return c.json(questions)
 })
 
-adminRoutes.post('/exams/:code/questions', async (c) => {
+baseAdminRoutes.post('/exams/:code/questions', async (c) => {
   const { code } = c.req.param()
 
   const examExists = await ExamModel.exists({ code })
@@ -245,7 +245,7 @@ adminRoutes.post('/exams/:code/questions', async (c) => {
   return c.json(question, 201)
 })
 
-adminRoutes.post('/exams/:code/questions/bulk', async (c) => {
+baseAdminRoutes.post('/exams/:code/questions/bulk', async (c) => {
   const { code } = c.req.param()
 
   const examExists = await ExamModel.exists({ code })
@@ -271,7 +271,7 @@ adminRoutes.post('/exams/:code/questions/bulk', async (c) => {
   return c.json({ count: created.length }, 201)
 })
 
-adminRoutes.delete('/questions/:questionId', async (c) => {
+baseAdminRoutes.delete('/questions/:questionId', async (c) => {
   const { questionId } = c.req.param()
   const q = await QuestionBankModel.findByIdAndDelete(questionId)
   if (!q) return c.json({ error: 'Question not found' }, 404)
@@ -280,7 +280,7 @@ adminRoutes.delete('/questions/:questionId', async (c) => {
 
 // ── Flagged Questions ───────────────────────────────────────────────────────
 
-adminRoutes.get('/flagged-questions', async (c) => {
+baseAdminRoutes.get('/flagged-questions', async (c) => {
   const threshold = 5
 
   // Flagged question bank items
@@ -322,4 +322,5 @@ adminRoutes.get('/flagged-questions', async (c) => {
   return c.json([...bankMapped, ...testQuestions].sort((a, b) => b.reportCount - a.reportCount))
 })
 
-export default adminRoutes
+export default baseAdminRoutes
+

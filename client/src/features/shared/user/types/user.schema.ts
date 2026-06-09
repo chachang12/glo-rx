@@ -19,12 +19,41 @@ export const AppUserSchema = z.object({
       customPlans: z.boolean(),
     })
     .optional(),
-  role: z.enum(['user', 'admin']).default('user'),
+  role: z.enum(['user', 'contributor', 'admin']).default('user'),
   onboardingComplete: z.boolean().default(false),
   telegramChatId: z.string().nullable().optional(),
   telegramUsername: z.string().nullable().optional(),
   telegramLinkedAt: z.string().datetime({ offset: true }).nullable().optional(),
   advancedCollectMode: z.boolean().optional().default(false),
+  contributor: z
+    .object({
+      scopes: z.array(
+        z.object({
+          examCode: z.string(),
+          rateCents: z.number(),
+          grantedAt: z.string().datetime({ offset: true }).optional(),
+          grantedBy: z.string().nullable().optional(),
+        })
+      ),
+      dailyCap: z.number(),
+      reliabilityScore: z.number(),
+      invitedBy: z.string().nullable().optional(),
+      acceptedInviteId: z.string().nullable().optional(),
+    })
+    .nullable()
+    .optional(),
+  examAccess: z
+    .array(
+      z.object({
+        examCode: z.string(),
+        source: z.enum(['stripe', 'admin-grant', 'contributor-courtesy']),
+        grantedAt: z.string().datetime({ offset: true }).optional(),
+        expiresAt: z.string().datetime({ offset: true }).nullable().optional(),
+        stripeSubscriptionId: z.string().nullable().optional(),
+      })
+    )
+    .optional()
+    .default([]),
   createdAt: z.string().datetime({ offset: true }).optional(),
   updatedAt: z.string().datetime({ offset: true }).optional(),
 })

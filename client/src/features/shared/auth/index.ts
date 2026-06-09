@@ -1,5 +1,7 @@
 export { LoginForm } from './components/LoginForm'
 export { ProtectedRoute } from './components/ProtectedRoute'
 export { AdminRoute } from './components/AdminRoute'
+export { ContributorRoute } from './components/ContributorRoute'
+export { PostLoginRedirect } from './components/PostLoginRedirect'
 export { UserAvatar } from './components/UserAvatar'
 export { useUser } from './hooks/useUser'

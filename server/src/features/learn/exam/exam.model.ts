@@ -55,10 +55,26 @@ export const OfficialTestModel = mongoose.model('OfficialTest', officialTestSche
 
 // ── Question Bank ───────────────────────────────────────────────────────────
 
+// Union shape: legacy custom-plan citations use documentId; official corpus
+// citations use fileHash + filePath. At least one anchoring set is required;
+// validation lives in the generation pipeline, not the schema.
 const sourceCitationSchema = new Schema(
   {
-    documentId: { type: Schema.Types.ObjectId, ref: 'PlanDocument', required: true },
+    documentId: { type: Schema.Types.ObjectId, ref: 'PlanDocument', default: null },
+    fileHash: { type: String, default: null },
+    filePath: { type: String, default: null },
     chunkIndex: { type: Number, required: true },
+    excerpt: { type: String, default: '' },
+  },
+  { _id: false }
+)
+
+const questionVoteSchema = new Schema(
+  {
+    reviewerId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    vote: { type: String, enum: ['approve', 'reject'], required: true },
+    comment: { type: String, default: null },
+    at: { type: Date, default: () => new Date() },
   },
   { _id: false }
 )
@@ -94,11 +110,33 @@ const questionBankItemSchema = new Schema(
     },
     generatedAt: { type: Date, default: null },
     sourceCitations: { type: [sourceCitationSchema], default: [] },
+
+    // ── Official Plan Program: review lifecycle ──────────────────────────
+    // Default 'published' so backfilled legacy docs continue to serve.
+    status: {
+      type: String,
+      enum: ['draft', 'pending', 'approved', 'rejected', 'published'],
+      default: 'published',
+      index: true,
+    },
+    corpusVersion: { type: String, default: null },
+    votes: { type: [questionVoteSchema], default: [] },
+    approvalCount: { type: Number, default: 0 },
+    rejectionCount: { type: Number, default: 0 },
+    rejectionReason: { type: String, default: null },
+    releaseId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Release',
+      default: null,
+    },
+    publishedAt: { type: Date, default: null },
   },
   { timestamps: true }
 )
 
 questionBankItemSchema.index({ topicId: 1, generatedAt: -1 })
+questionBankItemSchema.index({ examCode: 1, status: 1, createdAt: -1 })
+questionBankItemSchema.index({ releaseId: 1 })
 
 export type QuestionBankItem = InferSchemaType<typeof questionBankItemSchema>
 export const QuestionBankModel = mongoose.model('QuestionBankItem', questionBankItemSchema)

@@ -3,7 +3,13 @@ import { createBrowserRouter, Navigate } from 'react-router'
 import { RouterProvider } from 'react-router/dom'
 
 import { paths } from '@/config/paths'
-import { ProtectedRoute, AdminRoute } from '@/features/shared/auth'
+import {
+  ProtectedRoute,
+  AdminRoute,
+  ContributorRoute,
+  PostLoginRedirect,
+} from '@/features/shared/auth'
+import { isOfficialPlanProgramPhaseAtLeast } from '@/config/feature-flags'
 
 import AppRoot from './routes/learn/root'
 
@@ -42,7 +48,7 @@ export const createAppRouter = () =>
             children: [
               {
                 index: true,
-                element: <Navigate to={paths.app.dashboard.getHref()} replace />,
+                element: <PostLoginRedirect />,
               },
               {
                 path: paths.app.dashboard.path,
@@ -180,8 +186,88 @@ export const createAppRouter = () =>
                         Component: m.AdminExamEditor,
                       })),
                   },
+                  ...(isOfficialPlanProgramPhaseAtLeast(1)
+                    ? [
+                        {
+                          path: paths.app.adminCorpus.path,
+                          lazy: () =>
+                            import('./routes/learn/admin/corpus').then((m) => ({
+                              Component: m.AdminCorpus,
+                            })),
+                        },
+                        {
+                          path: paths.app.adminGeneration.path,
+                          lazy: () =>
+                            import('./routes/learn/admin/generation').then((m) => ({
+                              Component: m.AdminGeneration,
+                            })),
+                        },
+                      ]
+                    : []),
+                  ...(isOfficialPlanProgramPhaseAtLeast(2)
+                    ? [
+                        {
+                          path: paths.app.adminContributors.path,
+                          lazy: () =>
+                            import('./routes/learn/admin/contributors').then((m) => ({
+                              Component: m.AdminContributors,
+                            })),
+                        },
+                      ]
+                    : []),
+                  ...(isOfficialPlanProgramPhaseAtLeast(3)
+                    ? [
+                        {
+                          path: paths.app.adminReleases.path,
+                          lazy: () =>
+                            import('./routes/learn/admin/releases').then((m) => ({
+                              Component: m.AdminReleases,
+                            })),
+                        },
+                      ]
+                    : []),
                 ],
               },
+
+              ...(isOfficialPlanProgramPhaseAtLeast(2)
+                ? [
+                    // Invite acceptance is open to any signed-in user — it's how
+                    // they become a contributor. Sits outside ContributorRoute.
+                    {
+                      path: paths.app.contribute.accept.path,
+                      lazy: () =>
+                        import('./routes/learn/contribute/accept').then((m) => ({
+                          Component: m.ContributorAccept,
+                        })),
+                    },
+                    {
+                      element: <ContributorRoute />,
+                      children: [
+                        {
+                          path: paths.app.contribute.queue.path,
+                          lazy: () =>
+                            import('./routes/learn/contribute/queue').then((m) => ({
+                              Component: m.ContributorQueue,
+                            })),
+                        },
+                        {
+                          path: paths.app.contribute.earnings.path,
+                          lazy: () =>
+                            import('./routes/learn/contribute/earnings').then((m) => ({
+                              Component: m.ContributorEarnings,
+                            })),
+                        },
+                        {
+                          path: paths.app.contribute.me.path,
+                          lazy: () =>
+                            import('./routes/learn/contribute/me').then((m) => ({
+                              Component: m.ContributorMe,
+                            })),
+                        },
+                      ],
+                    },
+                  ]
+                : []),
 
               // ── Collect ──────────────────────────────────────────────
               {

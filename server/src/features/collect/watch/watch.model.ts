@@ -83,7 +83,8 @@ const watchMatchSchema = new Schema(
     watchId: { type: Schema.Types.ObjectId, ref: 'Watch', required: true, index: true },
     authId: { type: String, required: true, index: true },
     item: { type: Schema.Types.Mixed, required: true },
-    matchedAt: { type: Date, default: () => new Date(), index: true },
+    // Index is declared below with TTL via schema.index({ matchedAt: 1 }, { expireAfterSeconds }).
+    matchedAt: { type: Date, default: () => new Date() },
     notified: {
       type: {
         sse: { type: Boolean, default: false },
