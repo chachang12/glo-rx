@@ -186,6 +186,13 @@ export const createAppRouter = () =>
                         Component: m.AdminExamEditor,
                       })),
                   },
+                  {
+                    path: paths.app.adminExamQuestions.path,
+                    lazy: () =>
+                      import('./routes/learn/admin/exam-questions').then((m) => ({
+                        Component: m.AdminExamQuestions,
+                      })),
+                  },
                   ...(isOfficialPlanProgramPhaseAtLeast(1)
                     ? [
                         {
@@ -345,7 +352,8 @@ export const createAppRouter = () =>
       // ── Catch-all ─────────────────────────────────────────────────────
       {
         path: '*',
-        lazy: () => import('./routes/not-found').then(),
+        lazy: () =>
+          import('./routes/not-found').then((m) => ({ Component: m.NotFound })),
       },
     ],
     { basename: '/' }

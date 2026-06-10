@@ -5,11 +5,10 @@ import { PageLoader } from '@/features/shared/ui/PageLoader'
 import {
   useGetAdminExam,
   useListExamOfficialTests,
-  useListExamQuestions,
+  useExamQuestionCount,
   useUpdateAdminExam,
   useDeleteAdminExam,
   useDeleteOfficialTest,
-  useDeleteAdminQuestion,
   useCreateOfficialTest,
   useBulkUpsertQuestions,
   type UpdateExamInput,
@@ -19,11 +18,10 @@ export const AdminExamEditor = () => {
   const { code } = useParams()
   const { data: remoteExam = null, isLoading: examLoading, isError: examError } = useGetAdminExam(code)
   const { data: officialTests = [], isLoading: officialLoading } = useListExamOfficialTests(code)
-  const { data: questions = [], isLoading: questionsLoading } = useListExamQuestions(code)
+  const { data: questionCount = 0, isLoading: questionsLoading } = useExamQuestionCount(code)
   const updateExamMutation = useUpdateAdminExam()
   const deleteExamMutation = useDeleteAdminExam()
   const deleteOfficialTestMutation = useDeleteOfficialTest()
-  const deleteQuestionMutation = useDeleteAdminQuestion()
   const createOfficialTestMutation = useCreateOfficialTest()
   const bulkUpsertMutation = useBulkUpsertQuestions()
 
@@ -411,37 +409,22 @@ export const AdminExamEditor = () => {
 
         {/* Question Bank */}
         <SectionWithAction
-          title={`Question Bank (${questions.length})`}
+          title={`Question Bank (${questionCount.toLocaleString()})`}
           action={
-            <button onClick={downloadQuestionSchema} className="text-[10px] font-semibold text-[#4f8ef7] hover:underline">
-              Download schema
-            </button>
+            <div className="flex items-center gap-4">
+              <Link
+                to={paths.app.adminExamQuestions.getHref(exam.code)}
+                className="text-[10px] font-semibold text-[#4f8ef7] hover:underline"
+              >
+                Browse questions →
+              </Link>
+              <button onClick={downloadQuestionSchema} className="text-[10px] font-semibold text-[#4f8ef7] hover:underline">
+                Download schema
+              </button>
+            </div>
           }
         >
           <div className="space-y-3">
-            {questions.slice(0, 20).map((q) => (
-              <div key={q._id} className="flex items-center justify-between gap-2 rounded-lg border border-white/[0.04] bg-white/[0.01] px-3 py-2">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm text-[#ddd] truncate">{q.stem}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] text-[#555]">{q.type}</span>
-                    {q.topics.slice(0, 3).map((t) => (
-                      <span key={t} className="text-[10px] text-[#4f8ef7] bg-[#4f8ef7]/10 px-1 rounded">{t}</span>
-                    ))}
-                  </div>
-                </div>
-                <button
-                  onClick={() => deleteQuestionMutation.mutate(q._id)}
-                  className="text-[#555] hover:text-[#ef4444] transition-colors text-lg leading-none px-1 flex-shrink-0"
-                >
-                  &times;
-                </button>
-              </div>
-            ))}
-            {questions.length > 20 && (
-              <p className="text-xs text-[#555] text-center">Showing 20 of {questions.length}</p>
-            )}
-
             <label className="block cursor-pointer">
               <div className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-white/[0.08] bg-white/[0.02] p-6 hover:border-[#4f8ef7]/30 transition-all">
                 <UploadIcon />

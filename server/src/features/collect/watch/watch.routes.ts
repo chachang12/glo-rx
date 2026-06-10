@@ -26,7 +26,7 @@ function maxPerUser(advanced: boolean): number {
 }
 function maxGlobal(): number {
   const v = Number(process.env.WATCH_MAX_GLOBAL)
-  return Number.isFinite(v) && v > 0 ? Math.floor(v) : 3
+  return Number.isFinite(v) && v > 0 ? Math.floor(v) : 10
 }
 
 function defaultWatchName(filters: SearchFilters): string {

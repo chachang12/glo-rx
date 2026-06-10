@@ -103,6 +103,10 @@ export const paths = {
       path: 'admin/exams/:code',
       getHref: (code: string) => `/app/admin/exams/${code}`,
     },
+    adminExamQuestions: {
+      path: 'admin/exams/:code/questions',
+      getHref: (code: string) => `/app/admin/exams/${code}/questions`,
+    },
     adminCorpus: {
       path: 'admin/corpus',
       getHref: () => '/app/admin/corpus',

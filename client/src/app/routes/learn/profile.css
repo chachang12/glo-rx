@@ -80,10 +80,6 @@
   padding: 4px 12px; border-radius: 999px; font-size: 12px;
   background: var(--glass); border: 1px solid var(--line);
   color: var(--ink-dim);
-  display: flex; align-items: center; gap: 6px;
-}
-.axeous-profile .profile-badge .badge-dot {
-  width: 6px; height: 6px; border-radius: 50%;
 }
 
 .axeous-profile .edit-btn {

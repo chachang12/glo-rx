@@ -1,19 +1,27 @@
-import { useRef, useEffect, useState } from 'react'
+import { useMemo, useRef, useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router'
 import { paths } from '@/config/paths'
 import { useUser, UserAvatar } from '@/features/shared/auth'
 import { useGetIncomingFriendRequests } from '@/features/shared/friends'
+import { useGetMe } from '@/features/shared/user'
+import { isOfficialPlanProgramPhaseAtLeast } from '@/config/feature-flags'
 import AxeousLogo from '@/components/ui/AxeousLogo'
 
-const NAV_ITEMS = [
+type NavItem = { label: string; href: string; matchPrefix?: string; hasBadge?: boolean }
+
+const matchesItem = (pathname: string, item: NavItem) =>
+  pathname.startsWith(item.matchPrefix ?? item.href)
+
+const BASE_NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: paths.app.dashboard.getHref() },
   { label: 'Plans', href: paths.app.plans.getHref() },
   { label: 'Leaderboard', href: paths.app.leaderboard.getHref(), hasBadge: true },
   { label: 'Marketplace', href: paths.app.marketplace.getHref() },
-] as const
+]
 
 export const Navbar = () => {
   const { user } = useUser()
+  const { data: appUser } = useGetMe()
   const location = useLocation()
   const navRef = useRef<HTMLDivElement>(null)
   const mobileWrapRef = useRef<HTMLDivElement>(null)
@@ -25,9 +33,27 @@ export const Navbar = () => {
   const requestCount = incomingRequests.length
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  const activeIndex = NAV_ITEMS.findIndex((item) =>
-    location.pathname.startsWith(item.href)
+  const showContribute =
+    isOfficialPlanProgramPhaseAtLeast(2) &&
+    appUser?.role === 'contributor' &&
+    !!appUser.contributor
+
+  const navItems = useMemo<NavItem[]>(
+    () =>
+      showContribute
+        ? [
+            ...BASE_NAV_ITEMS,
+            {
+              label: 'Contribute',
+              href: paths.app.contribute.queue.getHref(),
+              matchPrefix: paths.app.contribute.root.getHref(),
+            },
+          ]
+        : BASE_NAV_ITEMS,
+    [showContribute]
   )
+
+  const activeIndex = navItems.findIndex((item) => matchesItem(location.pathname, item))
 
   useEffect(() => {
     if (!navRef.current) return
@@ -95,9 +121,9 @@ export const Navbar = () => {
               />
             )}
 
-            {NAV_ITEMS.map((item) => {
-              const isActive = location.pathname.startsWith(item.href)
-              const showBadge = 'hasBadge' in item && item.hasBadge && requestCount > 0
+            {navItems.map((item) => {
+              const isActive = matchesItem(location.pathname, item)
+              const showBadge = !!item.hasBadge && requestCount > 0
               return (
                 <Link
                   key={item.href}
@@ -156,9 +182,9 @@ export const Navbar = () => {
           className="mx-auto mt-2 max-w-[1240px] overflow-hidden rounded-2xl border border-line bg-glass backdrop-blur-xl sm:hidden"
           style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)' }}
         >
-          {NAV_ITEMS.map((item) => {
-            const isActive = location.pathname.startsWith(item.href)
-            const showBadge = 'hasBadge' in item && item.hasBadge && requestCount > 0
+          {navItems.map((item) => {
+            const isActive = matchesItem(location.pathname, item)
+            const showBadge = !!item.hasBadge && requestCount > 0
             return (
               <Link
                 key={item.href}

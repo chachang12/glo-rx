@@ -11,7 +11,7 @@ import { ADVANCED_POLL_INTERVAL_MS } from '../advanced/index.js'
 // — every poll asks for items since (lastPoll - OVERLAP_MS). seenItemIds
 // dedup ensures we don't re-emit items across overlapping windows.
 const OVERLAP_MS = 5 * 60_000
-const FANOUT_PER_TICK = 5
+const FANOUT_PER_TICK = 10
 const QUOTA_HARD_STOP_RATIO = 0.95
 
 let timer: NodeJS.Timeout | null = null

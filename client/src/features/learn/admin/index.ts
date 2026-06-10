@@ -18,14 +18,17 @@ export {
   useDeleteAdminExam,
 } from './api/exams'
 export {
-  listExamQuestions,
-  useListExamQuestions,
+  listExamQuestionsPage,
+  useListExamQuestionsPaged,
+  useExamQuestionCount,
   listFlaggedQuestions,
   useListFlaggedQuestions,
   deleteAdminQuestion,
   useDeleteAdminQuestion,
   bulkUpsertQuestions,
   useBulkUpsertQuestions,
+  type QuestionsPage,
+  type QuestionFilters,
 } from './api/questions'
 export {
   listExamOfficialTests,

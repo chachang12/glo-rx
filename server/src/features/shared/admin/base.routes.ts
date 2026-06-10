@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import mongoose from 'mongoose'
 import { requireAuth } from '../../../middleware/auth.js'
 import { requireAdmin } from '../../../middleware/admin.js'
 import type { AuthEnv } from '../../../types.js'
@@ -214,11 +215,47 @@ baseAdminRoutes.delete('/official-tests/:testId', async (c) => {
 
 baseAdminRoutes.get('/exams/:code/questions', async (c) => {
   const { code } = c.req.param()
-  const questions = await QuestionBankModel.find({ examCode: code })
-    .sort({ createdAt: -1 })
-    .lean()
-  return c.json(questions)
+  const q = c.req.query('q')?.trim() ?? ''
+  const difficulty = c.req.query('difficulty')
+  const topic = c.req.query('topic')
+  const flagged = c.req.query('flagged')
+  const cursor = c.req.query('cursor')
+  const limitRaw = Number(c.req.query('limit') ?? '25')
+  const limit = Math.min(100, Math.max(1, Number.isFinite(limitRaw) ? limitRaw : 25))
+
+  const filter: Record<string, unknown> = { examCode: code }
+  if (q) filter.stem = { $regex: escapeRegex(q), $options: 'i' }
+  if (difficulty && ['easy', 'medium', 'hard'].includes(difficulty)) {
+    filter.difficulty = difficulty
+  }
+  if (topic) filter.topics = topic
+  if (flagged === 'true') filter.reportCount = { $gt: 0 }
+  else if (flagged === 'false') filter.reportCount = { $in: [0, null] }
+
+  // Keyset paginate on _id desc (matches createdAt desc since ObjectIds embed time).
+  const pageFilter: Record<string, unknown> = { ...filter }
+  if (cursor && mongoose.isValidObjectId(cursor)) {
+    pageFilter._id = { $lt: new mongoose.Types.ObjectId(cursor) }
+  }
+
+  const [items, total] = await Promise.all([
+    QuestionBankModel.find(pageFilter)
+      .sort({ _id: -1 })
+      .limit(limit + 1)
+      .lean(),
+    QuestionBankModel.countDocuments(filter),
+  ])
+
+  const hasMore = items.length > limit
+  const page = hasMore ? items.slice(0, limit) : items
+  const nextCursor = hasMore ? String(page[page.length - 1]._id) : null
+
+  return c.json({ items: page, nextCursor, total })
 })
+
+function escapeRegex(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
 
 baseAdminRoutes.post('/exams/:code/questions', async (c) => {
   const { code } = c.req.param()

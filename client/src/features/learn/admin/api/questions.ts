@@ -1,30 +1,77 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
 import { apiClient } from '@/lib/api/client'
 import {
   AdminQuestionSchema,
   FlaggedQuestionSchema,
-  type AdminQuestion,
   type FlaggedQuestion,
 } from '../types/admin.schema'
 import { adminKeys } from './get-stats'
 
-const QuestionsResponseSchema = z.array(AdminQuestionSchema)
+const QuestionsPageSchema = z.object({
+  items: z.array(AdminQuestionSchema),
+  nextCursor: z.string().nullable(),
+  total: z.number(),
+})
+export type QuestionsPage = z.infer<typeof QuestionsPageSchema>
 
-export const listExamQuestions = (
+export type QuestionFilters = {
+  q?: string
+  difficulty?: 'easy' | 'medium' | 'hard'
+  topic?: string
+  flagged?: 'flagged' | 'clean'
+}
+
+const buildQuery = (filters: QuestionFilters, cursor?: string, limit = 25) => {
+  const params = new URLSearchParams()
+  if (filters.q) params.set('q', filters.q)
+  if (filters.difficulty) params.set('difficulty', filters.difficulty)
+  if (filters.topic) params.set('topic', filters.topic)
+  if (filters.flagged === 'flagged') params.set('flagged', 'true')
+  else if (filters.flagged === 'clean') params.set('flagged', 'false')
+  if (cursor) params.set('cursor', cursor)
+  params.set('limit', String(limit))
+  return params.toString()
+}
+
+export const listExamQuestionsPage = (
   code: string,
+  filters: QuestionFilters,
+  cursor: string | undefined,
   signal?: AbortSignal
-): Promise<AdminQuestion[]> =>
+): Promise<QuestionsPage> =>
   apiClient.get(
-    `/api/admin/exams/${encodeURIComponent(code)}/questions`,
-    QuestionsResponseSchema,
+    `/api/admin/exams/${encodeURIComponent(code)}/questions?${buildQuery(filters, cursor)}`,
+    QuestionsPageSchema,
     { signal }
   )
 
-export const useListExamQuestions = (code: string | undefined) =>
+export const useListExamQuestionsPaged = (
+  code: string | undefined,
+  filters: QuestionFilters
+) =>
+  useInfiniteQuery({
+    queryKey: code
+      ? [...adminKeys.examQuestions(code), 'paged', filters]
+      : ['admin', '__noop_q__'],
+    queryFn: ({ pageParam, signal }) =>
+      listExamQuestionsPage(code!, filters, pageParam, signal),
+    enabled: !!code,
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+  })
+
+export const useExamQuestionCount = (code: string | undefined) =>
   useQuery({
-    queryKey: code ? adminKeys.examQuestions(code) : ['admin', '__noop_q__'],
-    queryFn: ({ signal }) => listExamQuestions(code!, signal),
+    queryKey: code ? [...adminKeys.examQuestions(code), 'count'] : ['admin', '__noop_q_count__'],
+    queryFn: ({ signal }) =>
+      apiClient
+        .get(
+          `/api/admin/exams/${encodeURIComponent(code!)}/questions?limit=1`,
+          QuestionsPageSchema,
+          { signal }
+        )
+        .then((r) => r.total),
     enabled: !!code,
   })
 

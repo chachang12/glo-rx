@@ -7,7 +7,6 @@ import { UserModel } from '../user/user.model.js'
 import { ExamModel } from '../../learn/exam/exam.model.js'
 import { ContributorInviteModel } from './contributor-invite.model.js'
 import { AdminAuditLogModel } from '../admin/admin-audit-log.model.js'
-import { sendMail } from '../../../lib/mail.js'
 
 const INVITE_TTL_MS = 14 * 24 * 60 * 60 * 1000 // 14 days
 
@@ -81,25 +80,7 @@ adminContributorInviteRoutes.post('/invite', async (c) => {
   })
 
   const clientUrl = process.env.CLIENT_URL ?? 'http://localhost:5173'
-  const acceptUrl = `${clientUrl}/contribute/accept/${token}`
-  const scopeSummary = scopes
-    .map((s) => `${s.examCode} ($${(s.rateCents / 100).toFixed(2)}/review)`)
-    .join(', ')
-
-  try {
-    await sendMail({
-      to: email,
-      subject: 'You\'ve been invited to contribute to Axeous',
-      html: `<p>You\'ve been invited as a subject-matter contributor on Axeous Learn.</p>
-        <p><strong>Exams:</strong> ${scopeSummary}<br/>
-        <strong>Daily cap:</strong> ${dailyCap} reviews</p>
-        <p><a href="${acceptUrl}">Accept invite</a> (expires in 14 days)</p>`,
-      text: `You\'ve been invited as a contributor on Axeous Learn.\nExams: ${scopeSummary}\nDaily cap: ${dailyCap}\nAccept: ${acceptUrl}`,
-    })
-  } catch (err) {
-    console.error('[invite] send failed:', err)
-    // Continue — the invite row exists and the link is still accessible to admins.
-  }
+  const acceptUrl = `${clientUrl}/app/contribute/accept/${token}`
 
   await AdminAuditLogModel.create({
     actorUserId: inviter._id,

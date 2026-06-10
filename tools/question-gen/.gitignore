@@ -1,0 +1,4 @@
+# Generated batches — uploaded via admin UI, not source-controlled.
+# Keep the directory itself via .gitkeep.
+*/output/*
+!*/output/.gitkeep

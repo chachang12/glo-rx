@@ -11,8 +11,12 @@ import {
 } from '@/features/learn/admin'
 
 type ScopeDraft = { examCode: string; rateCents: number }
+type CreatedInvite = { email: string; acceptUrl: string }
 
 const fmtUsd = (cents: number) => `$${(cents / 100).toFixed(2)}`
+
+const buildAcceptUrl = (token: string) =>
+  `${window.location.origin}${paths.app.contribute.accept.getHref(token)}`
 
 export const AdminContributors = () => {
   const { data: exams = [], isLoading: examsLoading } = useListAdminExams()
@@ -22,10 +26,24 @@ export const AdminContributors = () => {
   const [email, setEmail] = useState('')
   const [dailyCap, setDailyCap] = useState<number>(200)
   const [scopes, setScopes] = useState<ScopeDraft[]>([])
-  const [feedback, setFeedback] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [created, setCreated] = useState<CreatedInvite | null>(null)
+  const [copiedKey, setCopiedKey] = useState<string | null>(null)
 
   const create = useCreateContributorInvite()
   const remove = useDeleteContributorInvite()
+
+  const copyLink = async (key: string, url: string) => {
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopiedKey(key)
+      window.setTimeout(() => {
+        setCopiedKey((current) => (current === key ? null : current))
+      }, 1500)
+    } catch {
+      window.prompt('Copy this link:', url)
+    }
+  }
 
   const availableExams = useMemo(
     () => exams.filter((e) => !scopes.some((s) => s.examCode === e.code)),
@@ -43,13 +61,13 @@ export const AdminContributors = () => {
   }
 
   const handleInvite = async () => {
-    setFeedback(null)
+    setError(null)
     if (!email.trim()) {
-      setFeedback('Email is required.')
+      setError('Email is required.')
       return
     }
     if (scopes.length === 0) {
-      setFeedback('At least one scope is required.')
+      setError('At least one scope is required.')
       return
     }
     try {
@@ -58,11 +76,11 @@ export const AdminContributors = () => {
         scopes,
         dailyCap,
       })
-      setFeedback(`Invite sent. Accept URL: ${result.acceptUrl}`)
+      setCreated({ email: result.email, acceptUrl: result.acceptUrl })
       setEmail('')
       setScopes([])
     } catch (err) {
-      setFeedback(`Invite failed: ${(err as Error).message}`)
+      setError(`Invite failed: ${(err as Error).message}`)
     }
   }
 
@@ -81,22 +99,27 @@ export const AdminContributors = () => {
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-[#e8e6f0]">Contributors</h1>
           <p className="text-xs text-[#555]">
-            Subject-matter experts who review pending questions. Invite by email with one or more
-            scopes (exam + per-review rate).
+            Subject-matter experts who review pending questions. Generate an invite link tied to
+            their email and send it however you like — no email is sent from here.
           </p>
         </div>
 
         <section className="space-y-4 rounded-lg border border-white/[0.06] bg-white/[0.02] p-5">
-          <h2 className="text-sm font-semibold text-[#bbb]">Invite</h2>
+          <h2 className="text-sm font-semibold text-[#bbb]">Create invite link</h2>
 
           <Row label="Email">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="sme@example.com"
-              className="flex-1 max-w-md bg-white/[0.04] border border-white/[0.06] rounded-md px-3 py-1.5 text-xs text-[#ddd]"
-            />
+            <div className="flex-1 max-w-md space-y-1">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="sme@example.com"
+                className="w-full bg-white/[0.04] border border-white/[0.06] rounded-md px-3 py-1.5 text-xs text-[#ddd]"
+              />
+              <p className="text-[10px] text-[#555]">
+                Used to verify identity when they accept — invitee must sign in with this email.
+              </p>
+            </div>
           </Row>
 
           <Row label="Daily cap">
@@ -166,12 +189,46 @@ export const AdminContributors = () => {
               disabled={create.isPending}
               className="px-4 py-2 rounded-md bg-[#4f8ef7] text-xs font-semibold text-white disabled:opacity-50"
             >
-              {create.isPending ? 'Sending…' : 'Send invite'}
+              {create.isPending ? 'Creating…' : 'Create invite link'}
             </button>
-            {feedback && (
-              <span className="text-[10px] text-[#888] break-all">{feedback}</span>
-            )}
+            {error && <span className="text-[10px] text-[#ef4444]">{error}</span>}
           </div>
+
+          {created && (
+            <div className="rounded-md border border-[#4f8ef7]/40 bg-[#4f8ef7]/[0.06] p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase tracking-wide font-semibold text-[#4f8ef7]">
+                  Invite ready
+                </span>
+                <span className="text-[10px] text-[#888]">for {created.email}</span>
+                <button
+                  onClick={() => setCreated(null)}
+                  className="ml-auto text-[10px] text-[#555] hover:text-[#888]"
+                  aria-label="Dismiss"
+                >
+                  Dismiss
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  readOnly
+                  value={created.acceptUrl}
+                  onFocus={(e) => e.currentTarget.select()}
+                  className="flex-1 bg-black/30 border border-white/[0.06] rounded-md px-3 py-1.5 text-xs font-mono text-[#ddd]"
+                />
+                <button
+                  onClick={() => copyLink('created', created.acceptUrl)}
+                  className="px-3 py-1.5 rounded-md bg-white/[0.08] hover:bg-white/[0.12] text-xs font-semibold text-[#ddd]"
+                >
+                  {copiedKey === 'created' ? 'Copied' : 'Copy link'}
+                </button>
+              </div>
+              <p className="text-[10px] text-[#888]">
+                Send this link to {created.email} however you like (DM, text, etc.). It expires in
+                14 days and can only be accepted by someone signed in with that email.
+              </p>
+            </div>
+          )}
         </section>
 
         <section className="space-y-3">
@@ -197,15 +254,23 @@ export const AdminContributors = () => {
                     Exp {new Date(inv.expiresAt).toLocaleDateString()}
                   </span>
                   {!inv.acceptedAt && (
-                    <button
-                      onClick={async () => {
-                        if (!confirm(`Revoke invite to ${inv.email}?`)) return
-                        await remove.mutateAsync(inv._id)
-                      }}
-                      className="text-[10px] text-[#ef4444] hover:underline"
-                    >
-                      Revoke
-                    </button>
+                    <>
+                      <button
+                        onClick={() => copyLink(inv._id, buildAcceptUrl(inv.token))}
+                        className="text-[10px] text-[#4f8ef7] hover:underline"
+                      >
+                        {copiedKey === inv._id ? 'Copied' : 'Copy link'}
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!confirm(`Revoke invite to ${inv.email}?`)) return
+                          await remove.mutateAsync(inv._id)
+                        }}
+                        className="text-[10px] text-[#ef4444] hover:underline"
+                      >
+                        Revoke
+                      </button>
+                    </>
                   )}
                 </div>
               ))}

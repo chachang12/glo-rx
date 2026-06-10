@@ -4,6 +4,7 @@ import {
   useGetPurchasesByDate,
   downloadPurchasesCsv,
 } from '@/features/collect/purchases'
+import { useGetEbayQuota } from '@/features/collect/ebay'
 
 function todayIsoDate(): string {
   return new Date().toISOString().slice(0, 10)
@@ -22,6 +23,10 @@ function formatDay(iso: string): string {
 export const CollectAdminPurchases = () => {
   const [date, setDate] = useState(todayIsoDate())
   const { data: purchases = [], isLoading, error } = useGetPurchasesByDate(date)
+  const { data: quota } = useGetEbayQuota()
+  const callsPct = quota ? Math.min(100, Math.round((quota.dailyCalls / quota.limit) * 100)) : 0
+  const callsTone =
+    callsPct >= 90 ? 'text-brand-coral' : callsPct >= 70 ? 'text-brand-amber' : 'text-ink'
   const [exporting, setExporting] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
   const deleteMutation = useDeletePurchase()
@@ -64,6 +69,13 @@ export const CollectAdminPurchases = () => {
           <p className="mt-2 text-sm text-ink-dim">
             What every operator marked as purchased on {formatDay(date)}.
           </p>
+          {quota && (
+            <div className="mt-3 inline-flex items-center rounded-full border border-line bg-glass px-4 py-1.5 text-xs text-ink-faint">
+              <span className={callsTone}>{quota.dailyCalls.toLocaleString()}</span>
+              <span> / {quota.limit.toLocaleString()} eBay calls today</span>
+              <span> · {quota.activeWatches} active</span>
+            </div>
+          )}
         </div>
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1.5">

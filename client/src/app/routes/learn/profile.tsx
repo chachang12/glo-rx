@@ -17,6 +17,7 @@ export const Profile = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const isAdmin = appUser?.role === 'admin'
+  const isContributor = appUser?.role === 'contributor' && !!appUser.contributor
 
   const handleSignOut = async () => {
     await authClient.signOut()
@@ -53,30 +54,18 @@ export const Profile = () => {
             <h2 className="profile-name">{user.name ?? 'Axeous user'}</h2>
             <p className="profile-email">{user.email ?? ''}</p>
             <div className="profile-badges">
-              <div className="profile-badge">
-                <span
-                  className="badge-dot"
-                  style={{ background: 'var(--green)', boxShadow: '0 0 6px var(--green)' }}
-                />
-                Active
-              </div>
+              <div className="profile-badge" style={{ color: 'var(--green)' }}>Active</div>
+              {isAdmin && (
+                <div className="profile-badge" style={{ color: 'var(--violet)' }}>Admin</div>
+              )}
+              {isContributor && (
+                <div className="profile-badge" style={{ color: 'var(--blue)' }}>Contributor</div>
+              )}
               {stats?.nextExamLabel && (
-                <div className="profile-badge">
-                  <span
-                    className="badge-dot"
-                    style={{ background: 'var(--teal)', boxShadow: '0 0 6px var(--teal)' }}
-                  />
-                  {planLabel}
-                </div>
+                <div className="profile-badge">{planLabel}</div>
               )}
               {streak > 0 && (
-                <div className="profile-badge">
-                  <span
-                    className="badge-dot"
-                    style={{ background: 'var(--teal)', boxShadow: '0 0 6px var(--teal)' }}
-                  />
-                  {streak}d streak
-                </div>
+                <div className="profile-badge">{streak}d streak</div>
               )}
             </div>
           </div>
