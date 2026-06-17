@@ -1,6 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
 import { apiClient } from '@/lib/api/client'
+import { SuccessResponseSchema } from '@/lib/api/common-schemas'
+import { IDLE_QUERY_KEY, useDeleteMutation, useResourceQuery } from '@/lib/api/hooks'
 import {
   AdminOfficialTestSummarySchema,
   type AdminOfficialTestSummary,
@@ -20,8 +22,8 @@ export const listExamOfficialTests = (
   )
 
 export const useListExamOfficialTests = (code: string | undefined) =>
-  useQuery({
-    queryKey: code ? adminKeys.examOfficialTests(code) : ['admin', '__noop_ot__'],
+  useResourceQuery({
+    queryKey: code ? adminKeys.examOfficialTests(code) : IDLE_QUERY_KEY,
     queryFn: ({ signal }) => listExamOfficialTests(code!, signal),
     enabled: !!code,
   })
@@ -50,20 +52,14 @@ export const useCreateOfficialTest = () => {
   })
 }
 
-const DeleteResponseSchema = z.unknown()
-
 export const deleteOfficialTest = (testId: string) =>
   apiClient.del(
     `/api/admin/official-tests/${encodeURIComponent(testId)}`,
-    DeleteResponseSchema
+    SuccessResponseSchema
   )
 
-export const useDeleteOfficialTest = () => {
-  const queryClient = useQueryClient()
-  return useMutation({
+export const useDeleteOfficialTest = () =>
+  useDeleteMutation({
     mutationFn: deleteOfficialTest,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'exams'] })
-    },
+    invalidateKeys: [adminKeys.exams()],
   })
-}

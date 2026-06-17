@@ -1,6 +1,7 @@
 import { QuestionBankModel } from '../../learn/exam/exam.model.js'
 import { ReviewEventModel } from './review-event.model.js'
 import { UserModel } from '../user/user.model.js'
+import { runInTransaction } from '../../../config/db.js'
 
 export type VoteKind = 'approve' | 'reject'
 
@@ -45,6 +46,9 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
   if (question.status !== 'pending') {
     throw new ReviewError(`Question is ${question.status}, not pending`, 409)
   }
+  if (question.createdByAuthId && question.createdByAuthId === input.reviewerAuthId) {
+    throw new ReviewError('You cannot review your own question', 403)
+  }
 
   const examCode = question.examCode
   const scope = reviewer.contributor?.scopes?.find((s) => s.examCode === examCode) ?? null
@@ -83,22 +87,75 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
     capReached = true
   }
 
+  // Resolve the resulting consensus from the *original* counts + this vote, so
+  // the transaction callback can be retried safely (no cumulative in-memory
+  // mutation). The question update is conditional on this reviewer not already
+  // having a vote on the doc, so it applies at most once even across retries.
+  const incField = input.vote === 'approve' ? 'approvalCount' : 'rejectionCount'
+  const newApprovalCount = question.approvalCount + (input.vote === 'approve' ? 1 : 0)
+  const newRejectionCount = question.rejectionCount + (input.vote === 'reject' ? 1 : 0)
+
+  let questionStatus: 'pending' | 'approved' | 'rejected' = 'pending'
+  const statusSet: Record<string, unknown> = {}
+  if (newApprovalCount >= APPROVAL_THRESHOLD) {
+    questionStatus = 'approved'
+    statusSet.status = 'approved'
+  } else if (newRejectionCount >= REJECTION_THRESHOLD) {
+    questionStatus = 'rejected'
+    statusSet.status = 'rejected'
+    statusSet.rejectionReason =
+      question.rejectionReason || (input.comment ?? '').trim() || 'Rejected by review consensus'
+  }
+
+  // The ledger event and the question tally must move together: previously a
+  // crash between the two left a billed vote that never counted toward
+  // consensus (and the unique index then blocked it forever on retry). Commit
+  // both in one transaction.
   let event
   try {
-    event = await ReviewEventModel.create({
-      reviewerId: reviewer._id,
-      questionId: question._id,
-      examCode,
-      vote: input.vote,
-      comment: input.comment ?? null,
-      dwellMs: input.dwellMs,
-      rateCents,
-      billable,
-      notBillableReason,
-      at: new Date(),
+    event = await runInTransaction(async (session) => {
+      const opts = session ? { session } : {}
+
+      const [created] = await ReviewEventModel.create(
+        [
+          {
+            reviewerId: reviewer._id,
+            questionId: question._id,
+            examCode,
+            vote: input.vote,
+            comment: input.comment ?? null,
+            dwellMs: input.dwellMs,
+            rateCents,
+            billable,
+            notBillableReason,
+            at: new Date(),
+          },
+        ],
+        opts
+      )
+
+      await QuestionBankModel.updateOne(
+        { _id: question._id, 'votes.reviewerId': { $ne: reviewer._id } },
+        {
+          $push: {
+            votes: {
+              reviewerId: reviewer._id,
+              vote: input.vote,
+              comment: input.comment ?? null,
+              at: new Date(),
+            },
+          },
+          $inc: { [incField]: 1 },
+          ...(Object.keys(statusSet).length ? { $set: statusSet } : {}),
+        },
+        opts
+      )
+
+      return created
     })
   } catch (err: unknown) {
-    // Unique index (reviewerId, questionId) — duplicate vote.
+    // Unique index (reviewerId, questionId) — duplicate vote. The original
+    // vote already updated the question, so just echo the existing event.
     if (isDuplicateKeyError(err)) {
       const existing = await ReviewEventModel.findOne({
         reviewerId: reviewer._id,
@@ -115,30 +172,6 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
     }
     throw err
   }
-
-  // Append the vote to the question's audit trail and re-tally.
-  question.votes.push({
-    reviewerId: reviewer._id,
-    vote: input.vote,
-    comment: input.comment ?? null,
-    at: new Date(),
-  })
-  if (input.vote === 'approve') question.approvalCount += 1
-  if (input.vote === 'reject') question.rejectionCount += 1
-
-  let questionStatus: 'pending' | 'approved' | 'rejected' = 'pending'
-  if (question.approvalCount >= APPROVAL_THRESHOLD) {
-    question.status = 'approved'
-    questionStatus = 'approved'
-  } else if (question.rejectionCount >= REJECTION_THRESHOLD) {
-    question.status = 'rejected'
-    questionStatus = 'rejected'
-    if (!question.rejectionReason) {
-      question.rejectionReason = (input.comment ?? '').trim() || 'Rejected by review consensus'
-    }
-  }
-
-  await question.save()
 
   const remainingToday = Math.max(0, dailyCap - (billableToday + (billable ? 1 : 0)))
 

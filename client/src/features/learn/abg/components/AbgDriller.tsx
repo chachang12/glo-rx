@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { generateAbgVignette } from "../api/generate-vignette";
+import { useGenerateAbgVignette } from "../api/generate-vignette";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -168,17 +168,6 @@ function generateQuestion(): Omit<AbgQuestion, "vignette"> {
   return { values, imbalance, compensation, answer, choices };
 }
 
-// ── Vignette Fetch ─────────────────────────────────────────────────────────────
-
-async function fetchVignette(
-  values: AbgValues,
-  imbalance: ImbalanceType,
-  compensation: CompensationState
-): Promise<string> {
-  const data = await generateAbgVignette({ values, imbalance, compensation });
-  return data.vignette ?? "";
-}
-
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
 function AbgTable({ values }: { values: AbgValues }) {
@@ -288,6 +277,23 @@ export function AbgDriller() {
   const [loadingVignette, setLoadingVignette] = useState(false);
   const [vignetteError, setVignetteError] = useState(false);
 
+  const generateVignette = useGenerateAbgVignette();
+  const { mutateAsync: generateVignetteAsync } = generateVignette;
+
+  // Route the imperative prefetch/lazy-load flow through React Query so the
+  // request goes through the mutation's state/caching instead of a bare call.
+  const fetchVignette = useCallback(
+    async (
+      values: AbgValues,
+      imbalance: ImbalanceType,
+      compensation: CompensationState
+    ): Promise<string> => {
+      const data = await generateVignetteAsync({ values, imbalance, compensation });
+      return data.vignette ?? "";
+    },
+    [generateVignetteAsync]
+  );
+
   const currentQuestion = questions[currentIdx] ?? null;
   const revealed = selected !== null;
 
@@ -326,7 +332,7 @@ export function AbgDriller() {
     }
 
     setPhase("question");
-  }, [sessionLength]);
+  }, [sessionLength, fetchVignette]);
 
   // Pre-fetch next question's vignette in the background after answering
   const prefetchNext = useCallback(
@@ -345,7 +351,7 @@ export function AbgDriller() {
         // silently fail — question still works without vignette
       }
     },
-    [questions]
+    [questions, fetchVignette]
   );
 
   const handleSelect = (choice: string) => {
@@ -508,10 +514,17 @@ export function AbgDriller() {
               Loading vignette...
             </div>
           ) : (
-            <p className="text-[16px] leading-[1.7] text-[#ddd]">
-              A nurse is caring for a patient with the following arterial blood
-              gas results:
-            </p>
+            <>
+              <p className="text-[16px] leading-[1.7] text-[#ddd]">
+                A nurse is caring for a patient with the following arterial blood
+                gas results:
+              </p>
+              {vignetteError && (
+                <p className="mt-2 text-[13px] text-[#888]">
+                  Couldn’t generate a custom scenario — using a generic one.
+                </p>
+              )}
+            </>
           )}
         </div>
 

@@ -1,6 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
 import { apiClient } from '@/lib/api/client'
+import { IDLE_QUERY_KEY, useResourceQuery } from '@/lib/api/hooks'
 import {
   CorpusVersionSchema,
   LoadCorpusResultSchema,
@@ -25,8 +26,8 @@ export const listCorpusVersions = (
   )
 
 export const useListCorpusVersions = (examCode: string | undefined) =>
-  useQuery({
-    queryKey: examCode ? corpusKeys.list(examCode) : ['admin', '__noop_corpus__'],
+  useResourceQuery({
+    queryKey: examCode ? corpusKeys.list(examCode) : IDLE_QUERY_KEY,
     queryFn: ({ signal }) => listCorpusVersions(examCode!, signal),
     enabled: !!examCode,
   })

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { useGetMe } from '@/features/shared/user'
+import { Modal } from '@/features/shared/ui/Modal'
 import { useLinkTelegram } from '../api/link'
 import { useUnlinkTelegram } from '../api/unlink'
 
@@ -72,15 +72,17 @@ export function TelegramRow() {
         )}
       </div>
 
-      {modalOpen && createPortal(
-        <ConnectModal onClose={() => setModalOpen(false)} />,
-        document.body
-      )}
+      <ConnectModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
     </>
   )
 }
 
-function ConnectModal({ onClose }: { onClose: () => void }) {
+function ConnectModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  if (!isOpen) return null
+  return <ConnectModalBody onClose={onClose} />
+}
+
+function ConnectModalBody({ onClose }: { onClose: () => void }) {
   const link = useLinkTelegram()
   const [opened, setOpened] = useState(false)
 
@@ -94,81 +96,62 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
   const error = link.error
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-md rounded-lg border border-line bg-surface p-6"
-        style={{ background: 'var(--bg)' }}
-      >
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full text-ink-faint hover:text-ink"
-          aria-label="Close"
-        >
-          ✕
-        </button>
+    <Modal isOpen onClose={onClose} title="Connect Telegram">
+      <p className="mt-1 text-sm text-ink-dim">
+        One-tap link — uses Telegram's deep-link flow.
+      </p>
 
-        <h2 className="text-lg font-medium text-ink">Connect Telegram</h2>
-        <p className="mt-1 text-sm text-ink-dim">
-          One-tap link — uses Telegram's deep-link flow.
-        </p>
+      {link.isPending && (
+        <div className="mt-6 rounded-md border border-line bg-glass p-4 text-center text-sm text-ink-dim">
+          Generating link…
+        </div>
+      )}
 
-        {link.isPending && (
-          <div className="mt-6 rounded-md border border-line bg-glass p-4 text-center text-sm text-ink-dim">
-            Generating link…
-          </div>
-        )}
+      {error && (
+        <div className="mt-6 rounded-md border border-brand-coral/40 bg-brand-coral/5 px-4 py-3 text-sm text-brand-coral">
+          {error instanceof Error ? error.message : 'Could not start link flow.'}
+        </div>
+      )}
 
-        {error && (
-          <div className="mt-6 rounded-md border border-brand-coral/40 bg-brand-coral/5 px-4 py-3 text-sm text-brand-coral">
-            {error instanceof Error ? error.message : 'Could not start link flow.'}
-          </div>
-        )}
-
-        {data && (
-          <>
-            {data.botStartUrl ? (
-              <a
-                href={data.botStartUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setOpened(true)}
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-[#229ED9] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1d8cc2]"
-              >
-                <TelegramIcon color="#fff" />
-                Open Telegram and tap “Start”
-              </a>
-            ) : (
-              <div className="mt-6 rounded-md border border-brand-amber/40 bg-brand-amber/5 px-4 py-3 text-sm text-brand-amber">
-                Bot username not configured. Set TELEGRAM_BOT_USERNAME on the server.
-              </div>
-            )}
-
-            <div className="mt-5 rounded-md border border-line bg-glass p-4">
-              <div className="flex items-center gap-3 text-sm">
-                <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-brand-teal" />
-                <span className="text-ink">{opened ? 'Waiting for confirmation…' : 'Then come back here'}</span>
-              </div>
-              <p className="mt-2 text-xs text-ink-faint">
-                After you tap “Start” in Telegram, this page will detect the link
-                and close on its own. The link expires in 10 minutes.
-              </p>
+      {data && (
+        <>
+          {data.botStartUrl ? (
+            <a
+              href={data.botStartUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setOpened(true)}
+              className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-[#229ED9] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1d8cc2]"
+            >
+              <TelegramIcon color="#fff" />
+              Open Telegram and tap “Start”
+            </a>
+          ) : (
+            <div className="mt-6 rounded-md border border-brand-amber/40 bg-brand-amber/5 px-4 py-3 text-sm text-brand-amber">
+              Bot username not configured. Set TELEGRAM_BOT_USERNAME on the server.
             </div>
-          </>
-        )}
+          )}
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="mt-5 w-full rounded-full border border-line bg-glass px-4 py-2 text-sm text-ink-dim hover:text-ink"
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
+          <div className="mt-5 rounded-md border border-line bg-glass p-4">
+            <div className="flex items-center gap-3 text-sm">
+              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-brand-teal" />
+              <span className="text-ink">{opened ? 'Waiting for confirmation…' : 'Then come back here'}</span>
+            </div>
+            <p className="mt-2 text-xs text-ink-faint">
+              After you tap “Start” in Telegram, this page will detect the link
+              and close on its own. The link expires in 10 minutes.
+            </p>
+          </div>
+        </>
+      )}
+
+      <button
+        type="button"
+        onClick={onClose}
+        className="mt-5 w-full rounded-full border border-line bg-glass px-4 py-2 text-sm text-ink-dim hover:text-ink"
+      >
+        Cancel
+      </button>
+    </Modal>
   )
 }

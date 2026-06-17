@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { Link } from 'react-router'
 import { paths } from '@/config/paths'
+import { Modal } from '@/features/shared/ui/Modal'
 import {
   useGetWatches,
   type Watch,
@@ -178,75 +178,55 @@ interface PickerProps {
 }
 
 function WatchPicker({ watches, alreadySelected, onPick, onClose }: PickerProps) {
-  return createPortal(
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-md rounded-lg border border-line p-6"
-        style={{ background: 'var(--bg)' }}
+  return (
+    <Modal isOpen onClose={onClose} title="Select a watch">
+      <p className="mt-1 text-sm text-ink-dim">
+        Live-stream the chosen watch into this quadrant.
+      </p>
+
+      {watches.length === 0 ? (
+        <div className="mt-5 rounded-lg border border-dashed border-line bg-glass p-6 text-center text-sm text-ink-dim">
+          No watches yet.{' '}
+          <Link to={paths.app.collect.watchNew.getHref()} className="underline">
+            Create one
+          </Link>
+          .
+        </div>
+      ) : (
+        <div className="mt-5 max-h-[60vh] space-y-2 overflow-y-auto">
+          {watches.map((w) => {
+            const inUse = alreadySelected.has(w.id)
+            return (
+              <button
+                type="button"
+                key={w.id}
+                onClick={() => onPick(w.id)}
+                className="block w-full rounded-md border border-line bg-glass px-3 py-2 text-left transition-colors hover:border-line-strong hover:bg-glass-strong"
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="truncate text-sm font-medium text-ink">{w.name}</span>
+                  {inUse && (
+                    <span className="shrink-0 text-[10px] uppercase tracking-widest text-ink-faint">
+                      In another quadrant
+                    </span>
+                  )}
+                </div>
+                <div className="mt-0.5 text-xs text-ink-faint">
+                  {w.matchCount} match{w.matchCount === 1 ? '' : 'es'} · {w.status}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={onClose}
+        className="mt-5 w-full rounded-full border border-line bg-glass px-4 py-2 text-sm text-ink-dim hover:text-ink"
       >
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full text-ink-faint hover:text-ink"
-        >
-          ✕
-        </button>
-
-        <h2 className="text-lg font-medium text-ink">Select a watch</h2>
-        <p className="mt-1 text-sm text-ink-dim">
-          Live-stream the chosen watch into this quadrant.
-        </p>
-
-        {watches.length === 0 ? (
-          <div className="mt-5 rounded-lg border border-dashed border-line bg-glass p-6 text-center text-sm text-ink-dim">
-            No watches yet.{' '}
-            <Link to={paths.app.collect.watchNew.getHref()} className="underline">
-              Create one
-            </Link>
-            .
-          </div>
-        ) : (
-          <div className="mt-5 max-h-[60vh] space-y-2 overflow-y-auto">
-            {watches.map((w) => {
-              const inUse = alreadySelected.has(w.id)
-              return (
-                <button
-                  type="button"
-                  key={w.id}
-                  onClick={() => onPick(w.id)}
-                  className="block w-full rounded-md border border-line bg-glass px-3 py-2 text-left transition-colors hover:border-line-strong hover:bg-glass-strong"
-                >
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="truncate text-sm font-medium text-ink">{w.name}</span>
-                    {inUse && (
-                      <span className="shrink-0 text-[10px] uppercase tracking-widest text-ink-faint">
-                        In another quadrant
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-0.5 text-xs text-ink-faint">
-                    {w.matchCount} match{w.matchCount === 1 ? '' : 'es'} · {w.status}
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-        )}
-
-        <button
-          type="button"
-          onClick={onClose}
-          className="mt-5 w-full rounded-full border border-line bg-glass px-4 py-2 text-sm text-ink-dim hover:text-ink"
-        >
-          Cancel
-        </button>
-      </div>
-    </div>,
-    document.body
+        Cancel
+      </button>
+    </Modal>
   )
 }

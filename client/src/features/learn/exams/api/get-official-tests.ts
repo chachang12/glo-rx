@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { apiClient } from '@/lib/api/client'
+import { IDLE_QUERY_KEY, useResourceQuery } from '@/lib/api/hooks'
 import {
   OfficialTestSchema,
   OfficialTestSummarySchema,
@@ -22,8 +22,8 @@ export const getOfficialTestsForExam = (
   )
 
 export const useGetOfficialTestsForExam = (examCode: string | undefined) =>
-  useQuery({
-    queryKey: examCode ? examKeys.officialTests(examCode) : ['exams', '__noop__'],
+  useResourceQuery({
+    queryKey: examCode ? examKeys.officialTests(examCode) : IDLE_QUERY_KEY,
     queryFn: ({ signal }) => getOfficialTestsForExam(examCode!, signal),
     enabled: !!examCode,
   })
@@ -39,8 +39,8 @@ export const getOfficialTest = (
   )
 
 export const useGetOfficialTest = (testId: string | undefined) =>
-  useQuery({
-    queryKey: testId ? examKeys.officialTest(testId) : ['exams', '__noop_test__'],
+  useResourceQuery({
+    queryKey: testId ? examKeys.officialTest(testId) : IDLE_QUERY_KEY,
     queryFn: ({ signal }) => getOfficialTest(testId!, signal),
     enabled: !!testId,
   })

@@ -1,6 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
 import { apiClient } from '@/lib/api/client'
+import { IDLE_QUERY_KEY, useResourceQuery } from '@/lib/api/hooks'
 import {
   ArchiveReleaseResultSchema,
   CreateReleaseInputSchema,
@@ -33,8 +34,8 @@ export const listReleases = (
   )
 
 export const useListReleases = (examCode: string | undefined) =>
-  useQuery({
-    queryKey: examCode ? releaseKeys.list(examCode) : ['admin', '__noop_releases__'],
+  useResourceQuery({
+    queryKey: examCode ? releaseKeys.list(examCode) : IDLE_QUERY_KEY,
     queryFn: ({ signal }) => listReleases(examCode!, signal),
     enabled: !!examCode,
   })
@@ -50,10 +51,8 @@ export const listReleaseCandidates = (
   )
 
 export const useListReleaseCandidates = (examCode: string | undefined) =>
-  useQuery({
-    queryKey: examCode
-      ? releaseKeys.candidates(examCode)
-      : ['admin', '__noop_release_candidates__'],
+  useResourceQuery({
+    queryKey: examCode ? releaseKeys.candidates(examCode) : IDLE_QUERY_KEY,
     queryFn: ({ signal }) => listReleaseCandidates(examCode!, signal),
     enabled: !!examCode,
   })

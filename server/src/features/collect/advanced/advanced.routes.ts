@@ -27,7 +27,7 @@ advancedRoutes.post('/redeem', async (c) => {
     { $set: { advancedCollectMode: true } },
     { new: true }
   )
-  if (!user) return c.json({ error: 'user not found' }, 404)
+  if (!user) return c.json({ error: 'User not found' }, 404)
 
   return c.json({ advancedCollectMode: true })
 })

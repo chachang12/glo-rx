@@ -1,12 +1,13 @@
 import { Outlet, useLocation } from 'react-router'
 import { Navbar } from '@/features/shared/navigation/Navbar'
 import { useGetMe } from '@/features/shared/user'
+import { isCollectPath } from '@/config/paths'
 
 const AppRoot = () => {
   // Ensures the app user record exists in our DB on first visit.
   useGetMe()
   const location = useLocation()
-  const isCollect = location.pathname.startsWith('/app/collect')
+  const isCollect = isCollectPath(location.pathname)
 
   // Collect renders its own chrome (navbar, backgrounds, padding). Bail out
   // of the Learn shell entirely so we don't stack two min-h-screen wrappers

@@ -1,6 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
 import { apiClient } from '@/lib/api/client'
+import { IDLE_QUERY_KEY, useResourceQuery } from '@/lib/api/hooks'
 import type { PlanKind } from './get-readiness'
 
 export const RoadmapDaySchema = z.object({
@@ -47,8 +48,8 @@ export const getRoadmap = (
   apiClient.get(`${apiBase(args)}/roadmap`, RoadmapResponseSchema, { signal })
 
 export const useGetRoadmap = (args: RoadmapArgs | null) =>
-  useQuery({
-    queryKey: args ? roadmapKey(args) : ['plans', '__noop_rm__'],
+  useResourceQuery({
+    queryKey: args ? roadmapKey(args) : IDLE_QUERY_KEY,
     queryFn: ({ signal }) => getRoadmap(args!, signal),
     enabled: !!args,
   })

@@ -62,5 +62,11 @@ planDocumentSchema.index(
   }
 )
 
+// Hot read paths: custom-plan documents are looked up by plan, and the official
+// corpus is read by exam + version. The unique index above only helps the
+// official-write path, so add supporting compound indexes for these reads.
+planDocumentSchema.index({ corpusSource: 1, planId: 1 })
+planDocumentSchema.index({ examCode: 1, corpusVersion: 1 })
+
 export type PlanDocument = InferSchemaType<typeof planDocumentSchema>
 export const PlanDocumentModel = mongoose.model('PlanDocument', planDocumentSchema)

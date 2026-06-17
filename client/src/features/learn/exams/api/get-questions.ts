@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { apiClient } from '@/lib/api/client'
+import { IDLE_QUERY_KEY, useResourceQuery } from '@/lib/api/hooks'
 import { QuestionSchema, type Question } from '../types/exam.schema'
 import { examKeys } from './get-exams'
 
@@ -31,8 +31,8 @@ export const useGetExamQuestions = (
   examCode: string | undefined,
   options: GetQuestionsOptions = {}
 ) =>
-  useQuery({
-    queryKey: examCode ? examKeys.questions(examCode, options) : ['exams', '__noop_q__'],
+  useResourceQuery({
+    queryKey: examCode ? examKeys.questions(examCode, options) : IDLE_QUERY_KEY,
     queryFn: ({ signal }) => getExamQuestions(examCode!, options, signal),
     enabled: !!examCode,
   })

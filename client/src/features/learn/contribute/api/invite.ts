@@ -1,11 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api/client'
+import { userKeys } from '@/features/shared/user'
 import {
   AcceptInviteResponseSchema,
   InviteDetailsSchema,
   type AcceptInviteResponse,
   type InviteDetails,
 } from '../types/contribute.schema'
+import { contributorKeys } from './get-me'
 
 export const getInviteDetails = (
   token: string,
@@ -36,8 +38,8 @@ export const useAcceptInvite = () => {
   return useMutation({
     mutationFn: acceptInvite,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['user', 'me'] })
-      qc.invalidateQueries({ queryKey: ['contributor'] })
+      qc.invalidateQueries({ queryKey: userKeys.me() })
+      qc.invalidateQueries({ queryKey: contributorKeys.all() })
     },
   })
 }

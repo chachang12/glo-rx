@@ -22,7 +22,7 @@ export const useSubmitReview = () => {
   return useMutation({
     mutationFn: submitReview,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['contributor', 'queue'] })
+      qc.invalidateQueries({ queryKey: contributorKeys.queues() })
       qc.invalidateQueries({ queryKey: contributorKeys.me() })
       qc.invalidateQueries({ queryKey: contributorKeys.earnings() })
     },
@@ -39,7 +39,7 @@ export const useSkipQuestion = () => {
   return useMutation({
     mutationFn: skipQuestion,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['contributor', 'queue'] })
+      qc.invalidateQueries({ queryKey: contributorKeys.queues() })
     },
   })
 }

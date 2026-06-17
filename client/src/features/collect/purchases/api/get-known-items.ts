@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { apiClient } from '@/lib/api/client'
+import { purchaseKeys } from './create-purchase'
 
 const KnownItemsResponseSchema = z.object({
   since: z.string(),
@@ -21,7 +22,7 @@ export const getKnownPurchasedItems = (signal?: AbortSignal) =>
  */
 export const useKnownPurchasedItems = () => {
   const query = useQuery({
-    queryKey: ['collect', 'purchases', 'known-items'] as const,
+    queryKey: purchaseKeys.knownItems(),
     queryFn: ({ signal }) => getKnownPurchasedItems(signal),
     staleTime: 30_000,
   })

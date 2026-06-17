@@ -1,23 +1,10 @@
 import mongoose, { Schema, type InferSchemaType } from 'mongoose'
+import { questionBaseFields } from '../../../config/question-schema.js'
 
+// Community tests embed the canonical question fields (no moderation counters —
+// those live on the official bank / official tests only).
 const questionSchema = new Schema(
-  {
-    type: {
-      type: String,
-      enum: ['mcq', 'sata', 'ordered'],
-      default: 'mcq',
-    },
-    stem: { type: String, required: true },
-    options: { type: Schema.Types.Mixed, required: true },
-    answer: { type: [String], required: true },
-    explanation: { type: String, default: '' },
-    topics: { type: [String], default: [] },
-    difficulty: {
-      type: String,
-      enum: ['easy', 'medium', 'hard'],
-      default: null,
-    },
-  },
+  { ...questionBaseFields },
   { _id: true }
 )
 

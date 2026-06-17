@@ -1,4 +1,10 @@
-import type { SearchFilters } from './ebay.types.js'
+import type {
+  SearchFilters,
+  EbayBuyingOption,
+  EbayCondition,
+  EbaySort,
+} from './ebay.types.js'
+import { CONDITIONS, BUYING_OPTIONS, SORTS } from './ebay.constants.js'
 
 export interface BuildOptions {
   sinceISO?: string
@@ -63,6 +69,39 @@ export function buildQueryParams(f: SearchFilters, opts: BuildOptions = {}): URL
   if (opts.fieldgroups?.length) params.set('fieldgroups', opts.fieldgroups.join(','))
 
   return params
+}
+
+// ── Inbound filter validation ────────────────────────────────────────────────
+// The search route reads these from query params and the watch route from a
+// JSON body, but the validation against the allowed enums is identical.
+
+/** Keep only string members of an array; undefined if not a non-empty string[]. */
+export function asStringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const out = value.filter((v): v is string => typeof v === 'string')
+  return out.length ? out : undefined
+}
+
+export function validConditions(
+  values: string[] | undefined
+): EbayCondition[] | undefined {
+  return values?.filter((c): c is EbayCondition =>
+    (CONDITIONS as readonly string[]).includes(c)
+  )
+}
+
+export function validBuyingOptions(
+  values: string[] | undefined
+): EbayBuyingOption[] | undefined {
+  return values?.filter((b): b is EbayBuyingOption =>
+    (BUYING_OPTIONS as readonly string[]).includes(b)
+  )
+}
+
+export function validSort(value: unknown): EbaySort | undefined {
+  return typeof value === 'string' && (SORTS as readonly string[]).includes(value)
+    ? (value as EbaySort)
+    : undefined
 }
 
 // Stable key for caching — does not include the dynamic sinceISO so the

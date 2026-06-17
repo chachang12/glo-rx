@@ -1,22 +1,13 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { z } from 'zod'
 import { apiClient } from '@/lib/api/client'
+import { DeleteResponseSchema } from '@/lib/api/common-schemas'
+import { useDeleteMutation } from '@/lib/api/hooks'
 import { purchaseKeys } from './create-purchase'
-
-const DeleteResponseSchema = z.object({
-  id: z.string(),
-  deleted: z.literal(true),
-})
 
 export const deletePurchase = (id: string) =>
   apiClient.del(`/api/collect/purchases/${encodeURIComponent(id)}`, DeleteResponseSchema)
 
-export const useDeletePurchase = () => {
-  const qc = useQueryClient()
-  return useMutation({
+export const useDeletePurchase = () =>
+  useDeleteMutation({
     mutationFn: deletePurchase,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: purchaseKeys.all() })
-    },
+    invalidateKeys: [purchaseKeys.all()],
   })
-}

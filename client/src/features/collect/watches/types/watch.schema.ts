@@ -1,6 +1,10 @@
 import { z } from 'zod'
 import { CompactItemSchema, type SearchFilters } from '@/features/collect/ebay/types/ebay.schema'
 
+// Re-exported from the shared API schema module so existing imports of
+// `DeleteResponseSchema` from this feature keep working.
+export { DeleteResponseSchema } from '@/lib/api/common-schemas'
+
 export const NotifyModeSchema = z.enum(['sse_only', 'telegram_only', 'both'])
 export type NotifyMode = z.infer<typeof NotifyModeSchema>
 
@@ -67,11 +71,6 @@ export const WatchMatchSchema = z.object({
 
 export type WatchMatch = z.infer<typeof WatchMatchSchema>
 export const WatchMatchListSchema = z.array(WatchMatchSchema)
-
-export const DeleteResponseSchema = z.object({
-  id: z.string(),
-  deleted: z.literal(true),
-})
 
 export interface CreateWatchInput {
   name?: string

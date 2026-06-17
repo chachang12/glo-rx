@@ -42,7 +42,7 @@
 .axeous-plan-detail .exam-date { color: var(--teal); font-weight: 500; }
 
 .axeous-plan-detail .settings-btn {
-  width: 40px; height: 40px; border-radius: 12px;
+  width: 40px; height: 40px; border-radius: var(--radius-lg);
   background: var(--glass);
   border: 1px solid var(--line-strong);
   display: grid; place-items: center;
@@ -87,7 +87,7 @@
   background: rgba(255, 180, 90, 0.08);
 }
 .axeous-plan-detail .no-date-icon {
-  width: 36px; height: 36px; border-radius: 10px;
+  width: 36px; height: 36px; border-radius: var(--radius-md);
   display: grid; place-items: center;
   background: rgba(255, 180, 90, 0.12);
   color: var(--amber);
@@ -193,7 +193,7 @@
   margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap;
 }
 .axeous-plan-detail .practice-chip {
-  padding: 6px 12px; border-radius: 8px; font-size: 12px;
+  padding: 6px 12px; border-radius: var(--radius-md); font-size: 12px;
   background: var(--glass); border: 1px solid var(--line);
   color: var(--ink-dim);
   display: flex; align-items: center; gap: 6px;
@@ -251,7 +251,7 @@
   background: rgba(110, 156, 199, 0.08);
 }
 .axeous-plan-detail .session-check {
-  width: 16px; height: 16px; border-radius: 4px;
+  width: 16px; height: 16px; border-radius: var(--radius-sm);
   border: 1px solid var(--line-strong);
   flex-shrink: 0; display: grid; place-items: center;
   transition: all .15s;
@@ -268,7 +268,7 @@
 .axeous-plan-detail .session-today-tag {
   font-size: 9px; font-weight: 600;
   color: var(--teal); background: rgba(110, 156, 199, 0.15);
-  padding: 2px 6px; border-radius: 4px;
+  padding: 2px 6px; border-radius: var(--radius-sm);
   white-space: nowrap; margin-left: 4px;
 }
 .axeous-plan-detail .session-mastery {
@@ -416,12 +416,12 @@
   font-size: 16px; font-weight: 600; flex-shrink: 0;
 }
 .axeous-plan-detail .topic-bar {
-  width: 100%; height: 5px; border-radius: 3px;
+  width: 100%; height: 5px; border-radius: var(--radius-sm);
   background: color-mix(in oklab, var(--ink) 6%, transparent);
   margin-bottom: 8px;
 }
 .axeous-plan-detail .topic-fill {
-  height: 5px; border-radius: 3px;
+  height: 5px; border-radius: var(--radius-sm);
   transition: width .6s ease;
 }
 .axeous-plan-detail .topic-meta {
@@ -464,7 +464,7 @@
 .axeous-plan-detail .row-badge {
   font-size: 10px; font-weight: 600;
   color: var(--teal); background: rgba(110, 156, 199, 0.12);
-  padding: 2px 6px; border-radius: 4px;
+  padding: 2px 6px; border-radius: var(--radius-sm);
   letter-spacing: 0.05em; text-transform: uppercase;
 }
 .axeous-plan-detail .row-plays { font-size: 11px; color: var(--ink-faint); }
@@ -548,7 +548,7 @@
 .axeous-plan-detail .share-row { display: flex; gap: 8px; align-items: center; }
 .axeous-plan-detail .share-input {
   flex: 1; min-width: 0;
-  padding: 9px 12px; border-radius: 10px;
+  padding: 9px 12px; border-radius: var(--radius-md);
   background: var(--glass); border: 1px solid var(--line);
   font-size: 12px; color: var(--ink-dim);
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
@@ -556,7 +556,7 @@
 }
 .axeous-plan-detail .share-input:focus { outline: none; border-color: var(--line-strong); }
 .axeous-plan-detail .share-copy {
-  padding: 9px 14px; border-radius: 10px;
+  padding: 9px 14px; border-radius: var(--radius-md);
   background: rgba(110, 156, 199, 0.1);
   border: 1px solid rgba(110, 156, 199, 0.3);
   color: var(--teal);
@@ -588,7 +588,7 @@
 
 /* ── Doc chip (custom plans) ─────────────────────────────── */
 .axeous-plan-detail .doc-chip {
-  width: 36px; height: 36px; border-radius: 10px;
+  width: 36px; height: 36px; border-radius: var(--radius-md);
   display: grid; place-items: center;
   background: rgba(110, 156, 199, 0.12);
   border: 1px solid rgba(110, 156, 199, 0.2);

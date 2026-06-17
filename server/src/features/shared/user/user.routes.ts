@@ -25,7 +25,11 @@ userRoutes.patch('/me', async (c) => {
   const authUser = c.get('user')
   const updates = await c.req.json()
 
-  // Only allow updating these fields
+  // Only allow updating these fields.
+  // NOTE: examDate and dailyGoal are intentionally NOT writable here — they are
+  // per-plan settings whose source of truth is the Plan document (see
+  // /me/stats, which reads examDate from Plan). The legacy User-level copies are
+  // deprecated; accepting writes to them would just reintroduce drift.
   const allowed = [
     'username',
     'firstName',
@@ -33,8 +37,6 @@ userRoutes.patch('/me', async (c) => {
     'displayName',
     'activeExam',
     'exams',
-    'examDate',
-    'dailyGoal',
     'defaultSessionLength',
     'onboardingComplete',
   ] as const
@@ -220,53 +222,51 @@ userRoutes.get('/leaderboard', async (c) => {
     .select('authId username firstName lastName')
     .lean()
 
+  // Pull every session for the cohort in a single query, then aggregate in
+  // memory. (Previously this ran a find + an aggregate per user — an N+1 that
+  // scaled query count with friend count.)
+  const sessions = await SessionModel.find({ authId: { $in: allIds } })
+    .select('authId completedAt totalQuestions')
+    .lean()
+
+  const byUser = new Map<string, { days: Set<string>; totalQuestions: number }>()
+  for (const id of allIds) byUser.set(id, { days: new Set(), totalQuestions: 0 })
+  for (const s of sessions) {
+    const agg = byUser.get(s.authId)
+    if (!agg) continue
+    agg.days.add(new Date(s.completedAt).toISOString().slice(0, 10))
+    agg.totalQuestions += s.totalQuestions ?? 0
+  }
+
   // Compute streak for each user
   const today = new Date()
-  const entries = await Promise.all(
-    allIds.map(async (authId) => {
-      const sessions = await SessionModel.find({ authId })
-        .select('completedAt')
-        .lean()
+  const entries = allIds.map((authId) => {
+    const agg = byUser.get(authId)!
+    const uniqueDays = [...agg.days].sort().reverse()
 
-      const uniqueDays = [
-        ...new Set(
-          sessions.map((s) =>
-            new Date(s.completedAt).toISOString().slice(0, 10)
-          )
-        ),
-      ].sort().reverse()
-
-      let streak = 0
-      for (let i = 0; i < uniqueDays.length; i++) {
-        const expected = new Date(today)
-        expected.setDate(today.getDate() - i)
-        if (uniqueDays[i] === expected.toISOString().slice(0, 10)) {
-          streak++
-        } else {
-          break
-        }
+    let streak = 0
+    for (let i = 0; i < uniqueDays.length; i++) {
+      const expected = new Date(today)
+      expected.setDate(today.getDate() - i)
+      if (uniqueDays[i] === expected.toISOString().slice(0, 10)) {
+        streak++
+      } else {
+        break
       }
+    }
 
-      const totalQuestions = sessions.length > 0
-        ? (await SessionModel.aggregate([
-            { $match: { authId } },
-            { $group: { _id: null, total: { $sum: '$totalQuestions' } } },
-          ]))[0]?.total ?? 0
-        : 0
+    const user = users.find((u) => u.authId === authId)
 
-      const user = users.find((u) => u.authId === authId)
-
-      return {
-        authId,
-        username: user?.username ?? null,
-        firstName: user?.firstName ?? '',
-        lastName: user?.lastName ?? '',
-        isMe: authId === me,
-        streak,
-        totalQuestions,
-      }
-    })
-  )
+    return {
+      authId,
+      username: user?.username ?? null,
+      firstName: user?.firstName ?? '',
+      lastName: user?.lastName ?? '',
+      isMe: authId === me,
+      streak,
+      totalQuestions: agg.totalQuestions,
+    }
+  })
 
   // Sort by streak descending, then totalQuestions
   entries.sort((a, b) => b.streak - a.streak || b.totalQuestions - a.totalQuestions)

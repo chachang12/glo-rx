@@ -154,14 +154,36 @@ async function pollOneWatch(watch: InstanceType<typeof WatchModel>) {
   if (newItems.length > 0) {
     await dispatchMatches(watch, newItems)
     watch.seenItemIds = [...watch.seenItemIds, ...newItems.map((i) => i.itemId)]
-    watch.matchCount += newItems.length
   }
 
+  const pollStartDate = new Date(pollStart)
+  const nextPollAt = new Date(Date.now() + pollIntervalMs() + jitterMs())
+
+  // Increment the counters atomically with $inc rather than read-modify-save,
+  // so the running totals can't be clobbered by a concurrent write. The
+  // snapshot fields (seen ids, timestamps) are still set in the same update.
+  await WatchModel.updateOne(
+    { _id: watch._id },
+    {
+      $inc: {
+        pollCount: 1,
+        ...(newItems.length > 0 ? { matchCount: newItems.length } : {}),
+      },
+      $set: {
+        seenItemIds: watch.seenItemIds,
+        lastPolledAt: pollStartDate,
+        nextPollAt,
+        lastError: null,
+      },
+    }
+  )
+
+  // Reflect the new values on the in-memory doc for the heartbeat/log below.
+  watch.matchCount += newItems.length
   watch.pollCount += 1
-  watch.lastPolledAt = new Date(pollStart)
-  watch.nextPollAt = new Date(Date.now() + pollIntervalMs() + jitterMs())
+  watch.lastPolledAt = pollStartDate
+  watch.nextPollAt = nextPollAt
   watch.lastError = null
-  await watch.save()
 
   const durationMs = Date.now() - pollStart
   console.log(

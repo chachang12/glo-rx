@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { createPortal } from 'react-dom'
 import { useGetMe } from '@/features/shared/user'
+import { Modal } from '@/features/shared/ui/Modal'
 import { useRedeemAdvancedKey } from '../api/redeem'
 
 const BoltIcon = ({ color }: { color: string }) => (
@@ -56,15 +56,12 @@ export function AdvancedModeRow() {
         )}
       </div>
 
-      {modalOpen && createPortal(
-        <RedeemModal onClose={() => setModalOpen(false)} />,
-        document.body,
-      )}
+      <RedeemModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
     </>
   )
 }
 
-function RedeemModal({ onClose }: { onClose: () => void }) {
+function RedeemModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [key, setKey] = useState('')
   const redeem = useRedeemAdvancedKey()
 
@@ -83,66 +80,47 @@ function RedeemModal({ onClose }: { onClose: () => void }) {
     redeem.error instanceof Error ? redeem.error.message : null
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-md rounded-lg border border-line bg-surface p-6"
-        style={{ background: 'var(--bg)' }}
-      >
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full text-ink-faint hover:text-ink"
-          aria-label="Close"
-        >
-          ✕
-        </button>
+    <Modal isOpen={isOpen} onClose={onClose} title="Activate advanced mode">
+      <p className="mt-1 text-sm text-ink-dim">
+        Enter your access key. Unlocks 10s eBay polls and up to 4 concurrent watches.
+      </p>
 
-        <h2 className="text-lg font-medium text-ink">Activate advanced mode</h2>
-        <p className="mt-1 text-sm text-ink-dim">
-          Enter your access key. Unlocks 10s eBay polls and up to 4 concurrent watches.
-        </p>
+      <form onSubmit={handleSubmit} className="mt-5">
+        <input
+          type="text"
+          autoFocus
+          value={key}
+          onChange={(e) => setKey(e.target.value)}
+          placeholder="Access key"
+          className="w-full rounded-md border border-line bg-glass px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-brand-amber/60 focus:outline-none"
+          disabled={redeem.isPending}
+        />
 
-        <form onSubmit={handleSubmit} className="mt-5">
-          <input
-            type="text"
-            autoFocus
-            value={key}
-            onChange={(e) => setKey(e.target.value)}
-            placeholder="Access key"
-            className="w-full rounded-md border border-line bg-glass px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-brand-amber/60 focus:outline-none"
-            disabled={redeem.isPending}
-          />
-
-          {errorMessage && (
-            <div className="mt-3 rounded-md border border-brand-coral/40 bg-brand-coral/5 px-3 py-2 text-sm text-brand-coral">
-              {errorMessage}
-            </div>
-          )}
-
-          <div className="mt-5 flex gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 rounded-full border border-line bg-glass px-4 py-2 text-sm text-ink-dim hover:text-ink"
-              disabled={redeem.isPending}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={!key.trim() || redeem.isPending}
-              className="flex-1 rounded-full bg-brand-amber px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-50"
-              style={{ background: 'var(--amber)' }}
-            >
-              {redeem.isPending ? 'Activating…' : 'Activate'}
-            </button>
+        {errorMessage && (
+          <div className="mt-3 rounded-md border border-brand-coral/40 bg-brand-coral/5 px-3 py-2 text-sm text-brand-coral">
+            {errorMessage}
           </div>
-        </form>
-      </div>
-    </div>
+        )}
+
+        <div className="mt-5 flex gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-full border border-line bg-glass px-4 py-2 text-sm text-ink-dim hover:text-ink"
+            disabled={redeem.isPending}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={!key.trim() || redeem.isPending}
+            className="flex-1 rounded-full bg-brand-amber px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-50"
+            style={{ background: 'var(--amber)' }}
+          >
+            {redeem.isPending ? 'Activating…' : 'Activate'}
+          </button>
+        </div>
+      </form>
+    </Modal>
   )
 }

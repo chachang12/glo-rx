@@ -8,16 +8,12 @@ import {
   searchItems,
 } from './ebay.client.js'
 import { WatchModel } from '../watch/watch.model.js'
-import type {
-  EbayBuyingOption,
-  EbayCondition,
-  EbaySort,
-  SearchFilters,
-} from './ebay.types.js'
-
-const CONDITIONS: readonly EbayCondition[] = ['NEW', 'USED', 'UNSPECIFIED']
-const BUYING_OPTIONS: readonly EbayBuyingOption[] = ['FIXED_PRICE', 'AUCTION', 'BEST_OFFER']
-const SORTS: readonly EbaySort[] = ['newlyListed', 'endingSoonest', 'price', '-price']
+import type { SearchFilters } from './ebay.types.js'
+import {
+  validConditions,
+  validBuyingOptions,
+  validSort,
+} from './ebay.filters.js'
 
 function csv(value: string | undefined): string[] | undefined {
   if (!value) return undefined
@@ -58,16 +54,9 @@ function parseAspects(raw: string | undefined): Record<string, string[]> | undef
 }
 
 function parseFilters(q: URLSearchParams): SearchFilters {
-  const conditions = csv(q.get('conditions') ?? undefined)?.filter(
-    (c): c is EbayCondition => (CONDITIONS as readonly string[]).includes(c)
-  )
-  const buyingOptions = csv(q.get('buyingOptions') ?? undefined)?.filter(
-    (b): b is EbayBuyingOption => (BUYING_OPTIONS as readonly string[]).includes(b)
-  )
-  const sortRaw = q.get('sort') ?? undefined
-  const sort = sortRaw && (SORTS as readonly string[]).includes(sortRaw)
-    ? (sortRaw as EbaySort)
-    : undefined
+  const conditions = validConditions(csv(q.get('conditions') ?? undefined))
+  const buyingOptions = validBuyingOptions(csv(q.get('buyingOptions') ?? undefined))
+  const sort = validSort(q.get('sort') ?? undefined)
 
   const mdcRaw = num(q.get('maxDeliveryCost') ?? undefined)
   const maxDeliveryCost = mdcRaw === 0 ? 0 : undefined

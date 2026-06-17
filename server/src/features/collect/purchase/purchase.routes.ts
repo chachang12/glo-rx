@@ -3,6 +3,7 @@ import { requireAuth } from '../../../middleware/auth.js'
 import { requireAdmin } from '../../../middleware/admin.js'
 import type { AuthEnv } from '../../../types.js'
 import { PurchaseModel } from './purchase.model.js'
+import { ADMIN_LIST_HARD_CAP, KNOWN_ITEMS_DEFAULT_DAYS } from '../../../config/limits.js'
 
 interface MaybeCompactItem {
   itemId?: unknown
@@ -84,12 +85,9 @@ purchaseRoutes.get('/', requireAdmin, async (c) => {
   return c.json(purchases.map(purchaseLeanToDTO))
 })
 
-const ADMIN_LIST_HARD_CAP = 500
-
 // ── GET /known-items ── any user; returns distinct itemIds from recent
 // purchases so operator-facing watch views can dim items already on the
 // global ledger and prevent accidental double-marks.
-const KNOWN_ITEMS_DEFAULT_DAYS = 60
 
 purchaseRoutes.get('/known-items', async (c) => {
   const since = c.req.query('since')

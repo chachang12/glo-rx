@@ -50,7 +50,7 @@ telegramRoutes.post('/link', requireAuth, async (c) => {
 telegramRoutes.post('/unlink', requireAuth, async (c) => {
   const authUser = c.get('user')
   const user = await UserModel.findOne({ authId: authUser.id })
-  if (!user) return c.json({ error: 'user not found' }, 404)
+  if (!user) return c.json({ error: 'User not found' }, 404)
 
   const chatId = user.telegramChatId
   user.telegramChatId = null

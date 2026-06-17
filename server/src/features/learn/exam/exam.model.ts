@@ -1,37 +1,17 @@
 import mongoose, { Schema, type InferSchemaType } from 'mongoose'
+import { QUESTION_TYPES, DEFAULT_ALLOWED_TYPES } from '../../../config/question-types.js'
+import { questionBaseFields, questionReportFields } from '../../../config/question-schema.js'
 
-export const QUESTION_TYPES = [
-  'mcq',
-  'sata',
-  'ordered',
-  'calculation',
-  'exhibit',
-  'priority',
-  'fib',
-] as const
-export const DEFAULT_ALLOWED_TYPES: readonly (typeof QUESTION_TYPES)[number][] = ['mcq']
+// Re-export so existing importers of these constants from the exam model keep
+// working; the canonical definitions live in config/question-types.ts.
+export { QUESTION_TYPES, DEFAULT_ALLOWED_TYPES }
 
 // ── Shared question schema ──────────────────────────────────────────────────
 
 const questionSchema = new Schema(
   {
-    type: {
-      type: String,
-      enum: QUESTION_TYPES,
-      default: 'mcq',
-    },
-    stem: { type: String, required: true },
-    options: { type: Schema.Types.Mixed, required: true }, // { "A": "...", "B": "..." } or string[]
-    answer: { type: [String], required: true },
-    explanation: { type: String, default: '' },
-    topics: { type: [String], default: [] },
-    difficulty: {
-      type: String,
-      enum: ['easy', 'medium', 'hard'],
-      default: null,
-    },
-    reportCount: { type: Number, default: 0 },
-    reportedBy: { type: [String], default: [] },
+    ...questionBaseFields,
+    ...questionReportFields,
   },
   { _id: true }
 )
@@ -82,27 +62,16 @@ const questionVoteSchema = new Schema(
 const questionBankItemSchema = new Schema(
   {
     examCode: { type: String, required: true, index: true },
-    type: {
-      type: String,
-      enum: QUESTION_TYPES,
-      default: 'mcq',
-    },
-    stem: { type: String, required: true },
-    options: { type: Schema.Types.Mixed, required: true },
-    answer: { type: [String], required: true },
-    explanation: { type: String, default: '' },
-    topics: { type: [String], default: [] },
-    difficulty: {
-      type: String,
-      enum: ['easy', 'medium', 'hard'],
-      default: null,
-    },
-    reportCount: { type: Number, default: 0 },
-    reportedBy: { type: [String], default: [] },
+    ...questionBaseFields,
+    ...questionReportFields,
 
     // ── Topic-anchored generation metadata ───────────────────────────────
     topicId: { type: Schema.Types.ObjectId, ref: 'Topic', default: null, index: true },
     planId: { type: Schema.Types.ObjectId, ref: 'Plan', default: null, index: true },
+    // authId of the user whose plan generated this question. Lets the creator
+    // preview their own questions while they're still 'pending' review, before
+    // consensus publishes them to all members of the exam.
+    createdByAuthId: { type: String, default: null, index: true },
     generatedBy: {
       type: String,
       enum: ['ai', 'curator', 'user'],

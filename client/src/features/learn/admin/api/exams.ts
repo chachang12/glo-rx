@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
 import { apiClient } from '@/lib/api/client'
+import { SuccessResponseSchema } from '@/lib/api/common-schemas'
+import { IDLE_QUERY_KEY, useDeleteMutation, useResourceQuery } from '@/lib/api/hooks'
 import { examKeys } from '@/features/learn/exams'
 import {
   AdminExamSchema,
@@ -22,8 +24,8 @@ export const getAdminExam = (code: string, signal?: AbortSignal): Promise<AdminE
   apiClient.get(`/api/admin/exams/${encodeURIComponent(code)}`, AdminExamSchema, { signal })
 
 export const useGetAdminExam = (code: string | undefined) =>
-  useQuery({
-    queryKey: code ? adminKeys.exam(code) : ['admin', '__noop__'],
+  useResourceQuery({
+    queryKey: code ? adminKeys.exam(code) : IDLE_QUERY_KEY,
     queryFn: ({ signal }) => getAdminExam(code!, signal),
     enabled: !!code,
   })
@@ -66,19 +68,11 @@ export const useUpdateAdminExam = () => {
   })
 }
 
-const DeleteResponseSchema = z.unknown()
-
 export const deleteAdminExam = (code: string) =>
-  apiClient.del(`/api/admin/exams/${encodeURIComponent(code)}`, DeleteResponseSchema)
+  apiClient.del(`/api/admin/exams/${encodeURIComponent(code)}`, SuccessResponseSchema)
 
-export const useDeleteAdminExam = () => {
-  const queryClient = useQueryClient()
-  return useMutation({
+export const useDeleteAdminExam = () =>
+  useDeleteMutation({
     mutationFn: deleteAdminExam,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminKeys.exams() })
-      queryClient.invalidateQueries({ queryKey: examKeys.visible() })
-      queryClient.invalidateQueries({ queryKey: examKeys.all() })
-    },
+    invalidateKeys: [adminKeys.exams(), examKeys.visible(), examKeys.all()],
   })
-}

@@ -97,8 +97,11 @@ export const ContributorQueue = () => {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
+    // Re-subscribe whenever any value the handlers close over changes, so the
+    // in-flight guards (submit.isPending / skip.isPending) stay current and
+    // rapid keypresses can't double-submit.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current?._id, comment])
+  }, [current?._id, comment, submit.isPending, skip.isPending])
 
   const scopeOptions = useMemo(() => me?.scopes ?? [], [me])
 

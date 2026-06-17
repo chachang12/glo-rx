@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api/client'
+import { IDLE_QUERY_KEY, useResourceQuery } from '@/lib/api/hooks'
 import { SharedPlanSchema, type SharedPlan } from '../types/custom-plan.schema'
 
 export const customPlanKeys = {
@@ -18,8 +18,8 @@ export const getSharedPlan = (
   )
 
 export const useGetSharedPlan = (shareCode: string | undefined) =>
-  useQuery({
-    queryKey: shareCode ? customPlanKeys.shared(shareCode) : ['custom-plans', '__noop__'],
+  useResourceQuery({
+    queryKey: shareCode ? customPlanKeys.shared(shareCode) : IDLE_QUERY_KEY,
     queryFn: ({ signal }) => getSharedPlan(shareCode!, signal),
     enabled: !!shareCode,
   })

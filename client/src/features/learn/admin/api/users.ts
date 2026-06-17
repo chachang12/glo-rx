@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
 import { apiClient } from '@/lib/api/client'
+import { SuccessResponseSchema } from '@/lib/api/common-schemas'
+import { useDeleteMutation } from '@/lib/api/hooks'
 import { AdminUserSchema, type AdminUser } from '../types/admin.schema'
 import { adminKeys } from './get-stats'
 
@@ -12,24 +14,17 @@ export const listAdminUsers = (signal?: AbortSignal): Promise<AdminUser[]> =>
 export const useListAdminUsers = () =>
   useQuery({ queryKey: adminKeys.users(), queryFn: ({ signal }) => listAdminUsers(signal) })
 
-const DeleteUserResponseSchema = z.object({ success: z.boolean() })
-
 export const deleteAdminUser = (userId: string) =>
   apiClient.del(
     `/api/admin/users/${encodeURIComponent(userId)}`,
-    DeleteUserResponseSchema
+    SuccessResponseSchema
   )
 
-export const useDeleteAdminUser = () => {
-  const queryClient = useQueryClient()
-  return useMutation({
+export const useDeleteAdminUser = () =>
+  useDeleteMutation({
     mutationFn: deleteAdminUser,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminKeys.users() })
-      queryClient.invalidateQueries({ queryKey: adminKeys.stats() })
-    },
+    invalidateKeys: [adminKeys.users(), adminKeys.stats()],
   })
-}
 
 export type SettableRole = 'user' | 'contributor' | 'researcher' | 'admin'
 

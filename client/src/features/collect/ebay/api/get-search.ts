@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api/client'
+import { IDLE_QUERY_KEY, useResourceQuery } from '@/lib/api/hooks'
 import {
   SearchResultSchema,
   filtersToQuery,
@@ -23,8 +23,8 @@ export const searchEbay = (
 }
 
 export const useSearchEbay = (filters: SearchFilters | null) =>
-  useQuery({
-    queryKey: filters ? ebayKeys.search(filters) : ['collect', 'ebay', 'search', '__idle__'],
+  useResourceQuery({
+    queryKey: filters ? ebayKeys.search(filters) : IDLE_QUERY_KEY,
     queryFn: ({ signal }) => searchEbay(filters!, signal),
     enabled: filters !== null,
   })
