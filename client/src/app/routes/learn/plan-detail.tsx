@@ -219,6 +219,7 @@ const PlanDetailLayout = ({ kind }: { kind: Kind }) => {
 
   // Topic drawer state — shared across both kinds.
   const [drawerTopic, setDrawerTopic] = useState<TopicData | null>(null)
+  const [topicsExpanded, setTopicsExpanded] = useState(true)
   const [drawerCount, setDrawerCount] = useState(10)
   const [drawerDifficulty, setDrawerDifficulty] = useState<'easy' | 'medium' | 'hard' | 'mixed'>('mixed')
   const [drawerInstructions, setDrawerInstructions] = useState('')
@@ -829,40 +830,55 @@ const PlanDetailLayout = ({ kind }: { kind: Kind }) => {
             )}
 
             <div className="topics-section">
-              <h2 className="topics-head">Topic Mastery</h2>
-              <div className="topics-grid">
-                {readiness.topics.map((topic) => {
-                  const color = masteryColor(topic.mastery)
-                  const hasQuestions = (topic.generatedQuestionCount ?? 0) > 0
-                  return (
-                    <button
-                      key={topic.id}
-                      type="button"
-                      className="topic-card topic-card-button"
-                      onClick={() => openTopicDrawer(topic)}
-                    >
-                      <div className="topic-top">
-                        <span className="topic-name">{topic.label}</span>
-                        <span className="topic-pct" style={{ color }}>{topic.mastery}%</span>
-                      </div>
-                      <div className="topic-bar">
-                        <div
-                          className="topic-fill"
-                          style={{
-                            width: `${topic.mastery}%`,
-                            background: color,
-                            boxShadow: `0 0 10px ${color}44`,
-                          }}
-                        />
-                      </div>
-                      <div className="topic-meta">
-                        {topic.questionsAnswered} answered
-                        {hasQuestions && ` · ${topic.generatedQuestionCount} questions`}
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
+              <button
+                type="button"
+                className={`topics-toggle${topicsExpanded ? ' open' : ''}`}
+                aria-expanded={topicsExpanded}
+                onClick={() => setTopicsExpanded((v) => !v)}
+              >
+                <span className="topics-toggle-chevron" aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </span>
+                <span className="topics-toggle-label">Topic Mastery</span>
+                <span className="topics-toggle-count">{readiness.topics.length}</span>
+              </button>
+              {topicsExpanded && (
+                <div className="topics-grid">
+                  {readiness.topics.map((topic) => {
+                    const color = masteryColor(topic.mastery)
+                    const hasQuestions = (topic.generatedQuestionCount ?? 0) > 0
+                    return (
+                      <button
+                        key={topic.id}
+                        type="button"
+                        className="topic-card topic-card-button"
+                        onClick={() => openTopicDrawer(topic)}
+                      >
+                        <div className="topic-top">
+                          <span className="topic-name">{topic.label}</span>
+                          <span className="topic-pct" style={{ color }}>{topic.mastery}%</span>
+                        </div>
+                        <div className="topic-bar">
+                          <div
+                            className="topic-fill"
+                            style={{
+                              width: `${topic.mastery}%`,
+                              background: color,
+                              boxShadow: `0 0 10px ${color}44`,
+                            }}
+                          />
+                        </div>
+                        <div className="topic-meta">
+                          {topic.questionsAnswered} answered
+                          {hasQuestions && ` · ${topic.generatedQuestionCount} questions`}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </>
         )}

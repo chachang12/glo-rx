@@ -12,11 +12,14 @@ import {
   useCreateAdminExam,
   useDeleteAdminQuestion,
   useDeleteOfficialTest,
+  useSetAdminUserRole,
+  type SettableRole,
   type AdminUser as UserEntry,
   type AdminExam as ExamEntry,
   type AdminStats as Stats,
   type FlaggedQuestion,
 } from '@/features/learn/admin'
+import { useGetMe } from '@/features/shared/user'
 
 type Tab = 'overview' | 'exams' | 'users' | 'flagged'
 
@@ -27,6 +30,8 @@ export const AdminDashboard = () => {
   const { data: exams = [], isLoading: examsLoading } = useListAdminExams()
   const { data: flagged = [], isLoading: flaggedLoading } = useListFlaggedQuestions()
   const deleteUserMutation = useDeleteAdminUser()
+  const setRoleMutation = useSetAdminUserRole()
+  const { data: me } = useGetMe()
   const createExamMutation = useCreateAdminExam()
   const deleteQuestionMutation = useDeleteAdminQuestion()
   const deleteOfficialTestMutation = useDeleteOfficialTest()
@@ -213,13 +218,12 @@ export const AdminDashboard = () => {
                     {user.username && <p className="text-xs text-[#555]">@{user.username}</p>}
                   </div>
 
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                    user.role === 'admin'
-                      ? 'bg-[#8b5cf6]/10 text-[#8b5cf6]'
-                      : 'bg-white/[0.04] text-[#555]'
-                  }`}>
-                    {user.role}
-                  </span>
+                  <RoleSelect
+                    user={user}
+                    isSelf={user.authId === me?.authId}
+                    onChange={(role) => setRoleMutation.mutate({ userId: user._id, role })}
+                  />
+
 
                   <div className="flex items-center gap-1">
                     {user.licenses?.aiGeneration && (
@@ -329,6 +333,48 @@ export const AdminDashboard = () => {
         )}
       </div>
     </div>
+  )
+}
+
+const ROLE_OPTIONS: { value: SettableRole; label: string }[] = [
+  { value: 'user', label: 'User' },
+  { value: 'contributor', label: 'Contributor' },
+  { value: 'researcher', label: 'Researcher' },
+  { value: 'admin', label: 'Admin' },
+]
+
+const RoleSelect = ({
+  user,
+  isSelf,
+  onChange,
+}: {
+  user: UserEntry
+  isSelf: boolean
+  onChange: (role: SettableRole) => void
+}) => {
+  const accent =
+    user.role === 'admin'
+      ? 'border-[#8b5cf6]/30 bg-[#8b5cf6]/5 text-[#8b5cf6]'
+      : user.role === 'researcher'
+        ? 'border-[#14b8a6]/30 bg-[#14b8a6]/5 text-[#14b8a6]'
+        : user.role === 'contributor'
+          ? 'border-[#eab308]/30 bg-[#eab308]/5 text-[#eab308]'
+          : 'border-white/[0.08] bg-white/[0.03] text-[#888]'
+
+  return (
+    <select
+      value={user.role}
+      disabled={isSelf}
+      onChange={(e) => onChange(e.target.value as SettableRole)}
+      title={isSelf ? "You can't change your own role" : undefined}
+      className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full border focus:outline-none focus:ring-2 focus:ring-[#4f8ef7]/40 disabled:opacity-60 disabled:cursor-not-allowed ${accent}`}
+    >
+      {ROLE_OPTIONS.map((opt) => (
+        <option key={opt.value} value={opt.value} className="bg-[#0a0a0f] text-[#ddd]">
+          {opt.label}
+        </option>
+      ))}
+    </select>
   )
 }
 

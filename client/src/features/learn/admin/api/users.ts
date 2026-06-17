@@ -30,3 +30,28 @@ export const useDeleteAdminUser = () => {
     },
   })
 }
+
+export type SettableRole = 'user' | 'contributor' | 'researcher' | 'admin'
+
+const SetRoleResponseSchema = z.object({
+  _id: z.string(),
+  role: z.enum(['user', 'contributor', 'researcher', 'admin']),
+})
+
+export const setAdminUserRole = (userId: string, role: SettableRole) =>
+  apiClient.patch(
+    `/api/admin/users/${encodeURIComponent(userId)}/role`,
+    SetRoleResponseSchema,
+    { body: { role } }
+  )
+
+export const useSetAdminUserRole = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ userId, role }: { userId: string; role: SettableRole }) =>
+      setAdminUserRole(userId, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.users() })
+    },
+  })
+}

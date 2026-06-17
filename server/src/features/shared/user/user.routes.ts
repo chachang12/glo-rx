@@ -13,30 +13,11 @@ const userRoutes = new Hono<AuthEnv>()
 
 userRoutes.use(requireAuth)
 
-// GET /api/user/me — get the current user's profile
+// GET /api/user/me — return the current user's profile. Creation lives in
+// the BetterAuth user.create.after hook (primary) and requireAuth's upsert
+// (safety net), so this endpoint is a pure read.
 userRoutes.get('/me', async (c) => {
-  const authUser = c.get('user')
-
-  let user = await UserModel.findOne({ authId: authUser.id })
-
-  // First login — create profile from OAuth data
-  if (!user) {
-    console.log(`Creating user profile for ${authUser.id} (${authUser.name ?? 'unknown'})`)
-    try {
-      const [firstName = '', lastName = ''] = (authUser.name ?? '').split(' ', 2)
-      user = await UserModel.create({
-        authId: authUser.id,
-        firstName,
-        lastName,
-      })
-      console.log(`User profile created: ${user._id}`)
-    } catch (err) {
-      console.error('Failed to create user profile:', err)
-      throw err
-    }
-  }
-
-  return c.json(user)
+  return c.json(c.get('appUser'))
 })
 
 // PATCH /api/user/me — update the current user's profile

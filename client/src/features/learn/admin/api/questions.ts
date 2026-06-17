@@ -105,18 +105,21 @@ export const useDeleteAdminQuestion = () => {
   })
 }
 
+export type BulkUpsertTargetStatus = 'published' | 'pending'
+
 interface BulkUpsertArgs {
   code: string
   questions: unknown[]
+  targetStatus?: BulkUpsertTargetStatus
 }
 
 const BulkResponseSchema = z.unknown()
 
-export const bulkUpsertQuestions = ({ code, questions }: BulkUpsertArgs) =>
+export const bulkUpsertQuestions = ({ code, questions, targetStatus }: BulkUpsertArgs) =>
   apiClient.post(
     `/api/admin/exams/${encodeURIComponent(code)}/questions/bulk`,
     BulkResponseSchema,
-    { body: { questions } }
+    { body: { questions, targetStatus: targetStatus ?? 'published' } }
   )
 
 export const useBulkUpsertQuestions = () => {

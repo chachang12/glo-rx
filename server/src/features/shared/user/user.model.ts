@@ -50,7 +50,7 @@ const userSchema = new Schema(
     // ── Account ──────────────────────────────────────────────────────────
     role: {
       type: String,
-      enum: ['user', 'contributor', 'admin'],
+      enum: ['user', 'contributor', 'researcher', 'admin'],
       default: 'user',
     },
     onboardingComplete: { type: Boolean, default: false },

@@ -4,7 +4,15 @@ export * from './types/opp.schema'
 
 // Queries
 export { getAdminStats, useGetAdminStats, adminKeys } from './api/get-stats'
-export { listAdminUsers, useListAdminUsers, deleteAdminUser, useDeleteAdminUser } from './api/users'
+export {
+  listAdminUsers,
+  useListAdminUsers,
+  deleteAdminUser,
+  useDeleteAdminUser,
+  setAdminUserRole,
+  useSetAdminUserRole,
+  type SettableRole,
+} from './api/users'
 export {
   listAdminExams,
   useListAdminExams,
@@ -29,6 +37,7 @@ export {
   useBulkUpsertQuestions,
   type QuestionsPage,
   type QuestionFilters,
+  type BulkUpsertTargetStatus,
 } from './api/questions'
 export {
   listExamOfficialTests,

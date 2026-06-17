@@ -15,7 +15,7 @@ export const AdminUserSchema = z.object({
   firstName: z.string(),
   lastName: z.string(),
   username: z.string().nullable().optional(),
-  role: z.enum(['user', 'admin']),
+  role: z.enum(['user', 'contributor', 'researcher', 'admin']),
   licenses: z
     .object({
       aiGeneration: z.boolean(),

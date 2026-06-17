@@ -23,5 +23,8 @@ export const PostLoginRedirect = () => {
   if (canContribute) {
     return <Navigate to={paths.app.contribute.queue.getHref()} replace />
   }
+  if (user?.role === 'researcher') {
+    return <Navigate to={paths.app.research.getHref()} replace />
+  }
   return <Navigate to={paths.app.dashboard.getHref()} replace />
 }

@@ -12,6 +12,7 @@ import {
   useCreateOfficialTest,
   useBulkUpsertQuestions,
   type UpdateExamInput,
+  type BulkUpsertTargetStatus,
 } from '@/features/learn/admin'
 
 export const AdminExamEditor = () => {
@@ -33,7 +34,6 @@ export const AdminExamEditor = () => {
   const notFound = examError
   const saving = updateExamMutation.isPending
   const [saved, setSaved] = useState(false)
-  const [newTopic, setNewTopic] = useState('')
 
   const save = useCallback(async (updates: UpdateExamInput) => {
     if (!code) return
@@ -118,6 +118,7 @@ export const AdminExamEditor = () => {
     downloadJson(schema, `${exam.code}-question-schema.json`)
   }, [exam, downloadJson])
 
+  const [uploadTargetStatus, setUploadTargetStatus] = useState<BulkUpsertTargetStatus>('published')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const handleDeleteExam = useCallback(async () => {
@@ -125,19 +126,6 @@ export const AdminExamEditor = () => {
     await deleteExamMutation.mutateAsync(code)
     window.location.href = paths.app.admin.getHref()
   }, [code, deleteExamMutation])
-
-  const addTopic = () => {
-    if (!newTopic.trim() || !exam) return
-    const updated = [...exam.topics, newTopic.trim()]
-    setNewTopic('')
-    save({ topics: updated })
-  }
-
-  const removeTopic = (index: number) => {
-    if (!exam) return
-    const updated = exam.topics.filter((_, i) => i !== index)
-    save({ topics: updated })
-  }
 
   if (!ready) return <PageLoader />
 
@@ -269,42 +257,21 @@ export const AdminExamEditor = () => {
         </Section>
 
         {/* Topics */}
-        <Section title={`Topics (${exam.topics.length})`}>
-          <div className="space-y-3">
-            {exam.topics.map((topic, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between gap-2 rounded-lg border border-white/[0.04] bg-white/[0.01] px-3 py-2"
-              >
-                <span className="text-sm text-[#ddd]">{topic}</span>
-                <button
-                  onClick={() => removeTopic(i)}
-                  className="text-[#555] hover:text-[#ef4444] transition-colors text-lg leading-none"
-                >
-                  &times;
-                </button>
-              </div>
-            ))}
-
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newTopic}
-                onChange={(e) => setNewTopic(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && addTopic()}
-                placeholder="Add a topic..."
-                className="flex-1 px-3 py-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-sm text-[#ddd] placeholder-[#555] focus:outline-none focus:ring-2 focus:ring-[#4f8ef7]/40"
-              />
-              <button
-                onClick={addTopic}
-                disabled={!newTopic.trim()}
-                className="px-4 py-2 rounded-lg border border-[#4f8ef7]/30 bg-[#4f8ef7]/5 text-xs font-semibold text-[#4f8ef7] hover:border-[#4f8ef7]/60 transition-all disabled:opacity-50"
-              >
-                Add
-              </button>
-            </div>
-          </div>
-        </Section>
+        <SectionWithAction
+          title={`Topics (${exam.topics.length})`}
+          action={
+            <Link
+              to={paths.app.adminExamTopics.getHref(exam.code)}
+              className="text-[10px] font-semibold text-[#4f8ef7] hover:underline"
+            >
+              Browse topics →
+            </Link>
+          }
+        >
+          <p className="text-xs text-[#555]">
+            Manage topics and per-topic reference uploads in the dedicated Topics view.
+          </p>
+        </SectionWithAction>
 
         {/* AI Reference */}
         <Section title="AI Reference File">
@@ -425,6 +392,34 @@ export const AdminExamEditor = () => {
           }
         >
           <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-white/[0.04] bg-white/[0.01] px-3 py-2">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-[#ddd]">On upload</p>
+                <p className="text-[10px] text-[#555] mt-0.5">
+                  {uploadTargetStatus === 'published'
+                    ? 'Questions go live immediately, served in user sessions.'
+                    : 'Questions enter the contributor review queue. Not served until approved + released.'}
+                </p>
+              </div>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                {(['published', 'pending'] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setUploadTargetStatus(s)}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-semibold transition-all ${
+                      uploadTargetStatus === s
+                        ? s === 'published'
+                          ? 'border border-[#10b981]/30 bg-[#10b981]/5 text-[#10b981]'
+                          : 'border border-[#eab308]/30 bg-[#eab308]/5 text-[#eab308]'
+                        : 'border border-white/[0.08] bg-white/[0.03] text-[#555] hover:text-[#888]'
+                    }`}
+                  >
+                    {s === 'published' ? 'Publish' : 'Send to review'}
+                  </button>
+                ))}
+              </div>
+            </div>
             <label className="block cursor-pointer">
               <div className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-white/[0.08] bg-white/[0.02] p-6 hover:border-[#4f8ef7]/30 transition-all">
                 <UploadIcon />
@@ -441,7 +436,11 @@ export const AdminExamEditor = () => {
                   try {
                     const text = await file.text()
                     const data = JSON.parse(text)
-                    await bulkUpsertMutation.mutateAsync({ code, questions: data.questions ?? data })
+                    await bulkUpsertMutation.mutateAsync({
+                      code,
+                      questions: data.questions ?? data,
+                      targetStatus: uploadTargetStatus,
+                    })
                   } catch { /* invalid JSON */ }
                   e.target.value = ''
                 }}

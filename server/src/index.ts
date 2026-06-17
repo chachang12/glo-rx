@@ -11,6 +11,7 @@ import { userRoutes } from './features/shared/user/index.js'
 import { friendshipRoutes } from './features/shared/friendship/index.js'
 import { adminRoutes } from './features/shared/admin/index.js'
 import { contributorFeatureRoutes } from './features/shared/contributor/index.js'
+import { researcherRoutes } from './features/shared/researcher/index.js'
 import { recomputeAllReliabilityScores } from './features/shared/contributor/reliability-score.service.js'
 
 // Learn
@@ -52,6 +53,7 @@ app.route('/api/user', userRoutes)
 if (isOfficialPlanProgramPhaseAtLeast(2)) {
   app.route('/api/contributor', contributorFeatureRoutes)
 }
+app.route('/api/researcher', researcherRoutes)
 
 // Learn routes
 app.route('/api/abg', abgRoutes)

@@ -5,6 +5,7 @@ import { paths } from '@/config/paths'
 import { useGetVisibleExams, type Exam } from '@/features/learn/exams'
 import { useGetPlans, useCreatePlan } from '@/features/learn/plans'
 import { PageLoader } from '@/features/shared/ui/PageLoader'
+import { useGetMe } from '@/features/shared/user'
 import './marketplace.css'
 
 // ============================================================
@@ -126,11 +127,13 @@ function tagLabel(tag: ExamTag): string {
 export const Marketplace = () => {
   const { data: exams = [], isLoading: examsLoading } = useGetVisibleExams()
   const { data: plans = [], isLoading: plansLoading } = useGetPlans()
+  const { data: me } = useGetMe()
   const createPlanMutation = useCreatePlan()
   const [enrolling, setEnrolling] = useState<string | null>(null)
   const [filter, setFilter] = useState<FilterMode>('all')
   const [search, setSearch] = useState('')
   const navigate = useNavigate()
+  const isAdmin = me?.role === 'admin'
 
   const enrolledCodes = useMemo(
     () => new Set(plans.map((p) => p.examCode)),
@@ -284,6 +287,7 @@ export const Marketplace = () => {
                     isEnrolled={enrolledCodes.has(exam.code)}
                     enrolling={enrolling === exam.code}
                     onEnroll={() => handleEnroll(exam.code)}
+                    isAdmin={isAdmin}
                   />
                 ))}
               </div>
@@ -351,14 +355,17 @@ const ExamCard = ({
   isEnrolled,
   enrolling,
   onEnroll,
+  isAdmin,
 }: {
   exam: Exam
   isEnrolled: boolean
   enrolling: boolean
   onEnroll: () => void
+  isAdmin: boolean
 }) => {
   const meta = EXAM_META[exam.code]
   const tag = resolveTag(exam, isEnrolled)
+  const adminUnlock = isAdmin && tag === 'soon'
   const style: CSSProperties = meta?.glow ? { ['--exam-glow' as string]: meta.glow } : {}
 
   return (
@@ -387,7 +394,7 @@ const ExamCard = ({
               View plan <ArrowIcon size={12} />
             </Link>
           </>
-        ) : tag === 'soon' ? (
+        ) : tag === 'soon' && !adminUnlock ? (
           <button type="button" className="exam-btn soon" disabled>
             Coming soon
           </button>
@@ -397,8 +404,9 @@ const ExamCard = ({
             className="exam-btn enroll"
             onClick={onEnroll}
             disabled={enrolling}
+            title={adminUnlock ? 'Admin: enrolling in a coming-soon exam' : undefined}
           >
-            {enrolling ? 'Adding…' : 'Enroll'} <ArrowIcon size={12} />
+            {enrolling ? 'Adding…' : adminUnlock ? 'Enroll (admin)' : 'Enroll'} <ArrowIcon size={12} />
           </button>
         )}
       </div>

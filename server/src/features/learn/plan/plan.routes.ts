@@ -11,14 +11,61 @@ import {
   generateQuestionsForTopic,
   GenerationError,
 } from '../generation/generate-questions.service.js'
+import { UserModel } from '../../shared/user/user.model.js'
 
 const planRoutes = new Hono<AuthEnv>()
 
 planRoutes.use(requireAuth)
 
+// Admins get auto-enrolled in every coming-soon exam so they can test
+// against the upcoming launch without manual setup. Idempotent — only
+// creates plans for exams the admin doesn't already have one for, and
+// seeds topics on each newly-created plan.
+async function ensureAdminComingSoonPlans(authId: string) {
+  const exams = await ExamModel.find({ visibility: 'coming-soon' })
+    .select('code topics')
+    .lean()
+  if (exams.length === 0) return
+
+  const existing = await PlanModel.find({
+    authId,
+    examCode: { $in: exams.map((e) => e.code) },
+  })
+    .select('examCode')
+    .lean()
+
+  const have = new Set(existing.map((p) => p.examCode))
+  const missing = exams.filter((e) => !have.has(e.code))
+  if (missing.length === 0) return
+
+  for (const exam of missing) {
+    const plan = await PlanModel.create({
+      authId,
+      examCode: exam.code,
+      examDate: null,
+      dailyGoal: null,
+    })
+
+    if (exam.topics?.length) {
+      await TopicModel.insertMany(
+        exam.topics.map((label, i) => ({
+          planId: plan._id,
+          label,
+          sortOrder: i,
+        }))
+      )
+    }
+  }
+}
+
 // GET /api/plans — list all plans for the current user
 planRoutes.get('/', async (c) => {
   const authUser = c.get('user')
+
+  const me = await UserModel.findOne({ authId: authUser.id }).select('role').lean()
+  if (me?.role === 'admin') {
+    await ensureAdminComingSoonPlans(authUser.id)
+  }
 
   const plans = await PlanModel.find({ authId: authUser.id })
     .sort({ createdAt: -1 })

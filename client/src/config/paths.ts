@@ -107,6 +107,10 @@ export const paths = {
       path: 'admin/exams/:code/questions',
       getHref: (code: string) => `/app/admin/exams/${code}/questions`,
     },
+    adminExamTopics: {
+      path: 'admin/exams/:code/topics',
+      getHref: (code: string) => `/app/admin/exams/${code}/topics`,
+    },
     adminCorpus: {
       path: 'admin/corpus',
       getHref: () => '/app/admin/corpus',
@@ -122,6 +126,14 @@ export const paths = {
     adminReleases: {
       path: 'admin/releases',
       getHref: () => '/app/admin/releases',
+    },
+    research: {
+      path: 'research',
+      getHref: () => '/app/research',
+    },
+    researchExamTopics: {
+      path: 'research/exams/:code/topics',
+      getHref: (code: string) => `/app/research/exams/${code}/topics`,
     },
     contribute: {
       root: {

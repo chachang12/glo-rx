@@ -44,6 +44,38 @@ baseAdminRoutes.get('/users', async (c) => {
   return c.json(users)
 })
 
+const ALLOWED_ROLES = ['user', 'contributor', 'researcher', 'admin'] as const
+type AllowedRole = (typeof ALLOWED_ROLES)[number]
+
+baseAdminRoutes.patch('/users/:userId/role', async (c) => {
+  const { userId } = c.req.param()
+  const body = await c.req.json().catch(() => ({}))
+  const role = body?.role
+
+  if (!ALLOWED_ROLES.includes(role)) {
+    return c.json(
+      { error: `role must be one of ${ALLOWED_ROLES.join(', ')}` },
+      400
+    )
+  }
+
+  const user = await UserModel.findById(userId).select('authId role')
+  if (!user) return c.json({ error: 'User not found' }, 404)
+
+  const authUser = c.get('user')
+  if (user.authId === authUser.id && (role as AllowedRole) !== 'admin') {
+    return c.json({ error: 'Cannot demote your own admin account.' }, 400)
+  }
+
+  user.role = role
+  // Setting role away from contributor leaves the embedded contributor doc
+  // intact (scopes/rate history); re-granting later restores access without
+  // re-inviting. Mirror this on researcher when its profile is added.
+  await user.save()
+
+  return c.json({ _id: String(user._id), role: user.role })
+})
+
 baseAdminRoutes.delete('/users/:userId', async (c) => {
   const { userId } = c.req.param()
 
@@ -293,6 +325,11 @@ baseAdminRoutes.post('/exams/:code/questions/bulk', async (c) => {
   const validationError = validateBulkQuestions(body)
   if (validationError) return c.json({ error: validationError }, 400)
 
+  const targetStatus = body.targetStatus ?? 'published'
+  if (targetStatus !== 'published' && targetStatus !== 'pending') {
+    return c.json({ error: "targetStatus must be 'published' or 'pending'" }, 400)
+  }
+
   const docs = body.questions.map((q: Record<string, unknown>) => ({
     examCode: code,
     type: q.type ?? 'mcq',
@@ -302,10 +339,11 @@ baseAdminRoutes.post('/exams/:code/questions/bulk', async (c) => {
     explanation: q.explanation ?? '',
     topics: (q.topics as string[]) ?? [],
     difficulty: q.difficulty ?? null,
+    status: targetStatus,
   }))
 
   const created = await QuestionBankModel.insertMany(docs)
-  return c.json({ count: created.length }, 201)
+  return c.json({ count: created.length, status: targetStatus }, 201)
 })
 
 baseAdminRoutes.delete('/questions/:questionId', async (c) => {

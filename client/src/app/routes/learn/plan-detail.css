@@ -348,11 +348,42 @@
   max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
-/* ── Topic mastery grid ──────────────────────────────────── */
+/* ── Topic mastery accordion ─────────────────────────────── */
 .axeous-plan-detail .topics-section { margin-bottom: 32px; }
-.axeous-plan-detail .topics-head {
-  font-size: 18px; font-weight: 500; margin: 40px 0 16px; color: var(--ink);
+
+.axeous-plan-detail .topics-toggle {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 0;
+  margin: 40px 0 16px;
+  background: transparent; border: 0;
+  color: var(--ink); font-size: 18px; font-weight: 500;
+  cursor: pointer; text-align: left;
 }
+.axeous-plan-detail .topics-toggle:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 4px;
+  border-radius: var(--radius-sm);
+}
+.axeous-plan-detail .topics-toggle-chevron {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px;
+  color: var(--ink-dim);
+  transition: transform .18s ease, color .18s ease;
+}
+.axeous-plan-detail .topics-toggle.open .topics-toggle-chevron {
+  transform: rotate(90deg);
+  color: var(--ink);
+}
+.axeous-plan-detail .topics-toggle-label { flex: 1; }
+.axeous-plan-detail .topics-toggle-count {
+  font-size: 12px; font-weight: 500;
+  color: var(--ink-faint);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--glass);
+  border: 1px solid var(--line);
+}
+
 .axeous-plan-detail .topics-grid {
   display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
 }

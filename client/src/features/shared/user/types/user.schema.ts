@@ -19,7 +19,7 @@ export const AppUserSchema = z.object({
       customPlans: z.boolean(),
     })
     .optional(),
-  role: z.enum(['user', 'contributor', 'admin']).default('user'),
+  role: z.enum(['user', 'contributor', 'researcher', 'admin']).default('user'),
   onboardingComplete: z.boolean().default(false),
   telegramChatId: z.string().nullable().optional(),
   telegramUsername: z.string().nullable().optional(),

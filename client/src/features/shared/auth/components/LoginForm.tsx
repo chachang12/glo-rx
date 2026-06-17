@@ -4,9 +4,11 @@ import { authClient } from '@/lib/auth-client'
 
 export const LoginForm = () => {
   const [searchParams] = useSearchParams()
-  // No `redirectTo` → /app, which renders <PostLoginRedirect /> and sends
-  // contributors to their queue and everyone else to the dashboard.
-  const redirectTo = searchParams.get('redirectTo') ?? '/app'
+  // Point at /app/dashboard instead of /app: Render's static-site rewrite
+  // currently 404s bare /app before React loads, so PostLoginRedirect (the
+  // /app index route) never runs. Contributors still reach their queue via
+  // the Contribute nav tab.
+  const redirectTo = searchParams.get('redirectTo') ?? '/app/dashboard'
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 

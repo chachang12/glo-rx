@@ -92,3 +92,51 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
+
+/* ==========================================================================
+   Scrollbars — themed via design tokens so they swap with data-theme.
+   Root scroll uses the styled variant by default. Other scroll containers
+   can opt in with the `.scroll-styled` class. Use `.scroll-hidden` on
+   containers that scroll invisibly (carousels, roadmap track).
+   ========================================================================== */
+
+html,
+.scroll-styled {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+html::-webkit-scrollbar,
+.scroll-styled::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+html::-webkit-scrollbar-track,
+.scroll-styled::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html::-webkit-scrollbar-thumb,
+.scroll-styled::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: var(--radius-full);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+html::-webkit-scrollbar-thumb:hover,
+.scroll-styled::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--ink) 22%, transparent);
+  background-clip: padding-box;
+}
+
+html::-webkit-scrollbar-corner,
+.scroll-styled::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.scroll-hidden {
+  scrollbar-width: none;
+}
+.scroll-hidden::-webkit-scrollbar { display: none; }

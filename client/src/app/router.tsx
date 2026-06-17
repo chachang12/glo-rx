@@ -7,6 +7,7 @@ import {
   ProtectedRoute,
   AdminRoute,
   ContributorRoute,
+  ResearcherRoute,
   PostLoginRedirect,
 } from '@/features/shared/auth'
 import { isOfficialPlanProgramPhaseAtLeast } from '@/config/feature-flags'
@@ -193,6 +194,13 @@ export const createAppRouter = () =>
                         Component: m.AdminExamQuestions,
                       })),
                   },
+                  {
+                    path: paths.app.adminExamTopics.path,
+                    lazy: () =>
+                      import('./routes/learn/admin/exam-topics').then((m) => ({
+                        Component: m.AdminExamTopics,
+                      })),
+                  },
                   ...(isOfficialPlanProgramPhaseAtLeast(1)
                     ? [
                         {
@@ -233,6 +241,26 @@ export const createAppRouter = () =>
                         },
                       ]
                     : []),
+                ],
+              },
+
+              {
+                element: <ResearcherRoute />,
+                children: [
+                  {
+                    path: paths.app.research.path,
+                    lazy: () =>
+                      import('./routes/research/research-home').then((m) => ({
+                        Component: m.ResearchHome,
+                      })),
+                  },
+                  {
+                    path: paths.app.researchExamTopics.path,
+                    lazy: () =>
+                      import('./routes/research/research-exam-topics').then((m) => ({
+                        Component: m.ResearchExamTopics,
+                      })),
+                  },
                 ],
               },
 
