@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api/client'
+import { IDLE_QUERY_KEY, useResourceQuery } from '@/lib/api/hooks'
 import {
   WatchListSchema,
   WatchSchema,
@@ -26,8 +27,8 @@ export const getWatch = (id: string, signal?: AbortSignal): Promise<Watch> =>
   apiClient.get(`/api/collect/watches/${encodeURIComponent(id)}`, WatchSchema, { signal })
 
 export const useGetWatch = (id: string | undefined, opts?: { refetchInterval?: number }) =>
-  useQuery({
-    queryKey: id ? watchKeys.detail(id) : ['collect', 'watches', '__idle__'],
+  useResourceQuery({
+    queryKey: id ? watchKeys.detail(id) : IDLE_QUERY_KEY,
     queryFn: ({ signal }) => getWatch(id!, signal),
     enabled: !!id,
     refetchInterval: opts?.refetchInterval,

@@ -26,7 +26,9 @@ export const CustomPlanSetup = () => {
 
   const [step, setStep] = useState<Step>('upload')
   const [docs, setDocs] = useState<UploadedDoc[]>([])
-  const [topics, setTopics] = useState<string[]>([])
+  // Topics carry a stable id so editable rows keep a stable React key across
+  // add/remove/edit (keying by array index would reuse rows on mutation).
+  const [topics, setTopics] = useState<{ id: string; label: string }[]>([])
   const [newTopic, setNewTopic] = useState('')
   const [error, setError] = useState<string | null>(null)
   const extractMutation = useExtractTopics()
@@ -62,7 +64,7 @@ export const CustomPlanSetup = () => {
 
     try {
       const data = await extractMutation.mutateAsync(planId)
-      setTopics(data.topics)
+      setTopics(data.topics.map((label) => ({ id: crypto.randomUUID(), label })))
       setStep('review')
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Topic extraction failed')
@@ -77,7 +79,7 @@ export const CustomPlanSetup = () => {
 
     setError(null)
     try {
-      await confirmMutation.mutateAsync({ planId, topics })
+      await confirmMutation.mutateAsync({ planId, topics: topics.map((t) => t.label) })
       navigate(paths.app.customPlanDetail.getHref(planId))
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to save topics')
@@ -91,12 +93,12 @@ export const CustomPlanSetup = () => {
   }
 
   const editTopic = (index: number, value: string) => {
-    setTopics((prev) => prev.map((t, i) => (i === index ? value : t)))
+    setTopics((prev) => prev.map((t, i) => (i === index ? { ...t, label: value } : t)))
   }
 
   const addTopic = () => {
     if (newTopic.trim()) {
-      setTopics((prev) => [...prev, newTopic.trim()])
+      setTopics((prev) => [...prev, { id: crypto.randomUUID(), label: newTopic.trim() }])
       setNewTopic('')
     }
   }
@@ -245,12 +247,12 @@ export const CustomPlanSetup = () => {
             <div className="space-y-2">
               {topics.map((topic, i) => (
                 <div
-                  key={i}
+                  key={topic.id}
                   className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-3"
                 >
                   <input
                     type="text"
-                    value={topic}
+                    value={topic.label}
                     onChange={(e) => editTopic(i, e.target.value)}
                     className="flex-1 bg-transparent text-sm text-[#ddd] focus:outline-none"
                   />
@@ -286,10 +288,10 @@ export const CustomPlanSetup = () => {
             {/* Confirm */}
             <button
               onClick={handleConfirm}
-              disabled={confirming || topics.filter((t) => t.trim()).length === 0}
+              disabled={confirming || topics.filter((t) => t.label.trim()).length === 0}
               className="w-full py-3 rounded-2xl bg-[#4f8ef7] text-[#0f0f1a] text-sm font-semibold hover:bg-[#4f8ef7]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {confirming ? 'Saving...' : `Confirm ${topics.filter((t) => t.trim()).length} Topics`}
+              {confirming ? 'Saving...' : `Confirm ${topics.filter((t) => t.label.trim()).length} Topics`}
             </button>
           </div>
         )}

@@ -2,20 +2,18 @@ import { Hono } from 'hono'
 import { streamSSE } from 'hono/streaming'
 import { requireAuth } from '../../../middleware/auth.js'
 import type { AuthEnv } from '../../../types.js'
-import type {
-  EbayBuyingOption,
-  EbayCondition,
-  EbaySort,
-  SearchFilters,
-} from '../ebay/ebay.types.js'
+import type { SearchFilters } from '../ebay/ebay.types.js'
+import {
+  asStringArray,
+  validConditions,
+  validBuyingOptions,
+  validSort,
+} from '../ebay/ebay.filters.js'
 import { WatchMatchModel, WatchModel } from './watch.model.js'
 import { subscribe } from './watch.sse-registry.js'
 import { UserModel } from '../../shared/user/user.model.js'
 import { ADVANCED_MAX_WATCHES_PER_USER } from '../advanced/index.js'
 
-const CONDITIONS: readonly EbayCondition[] = ['NEW', 'USED', 'UNSPECIFIED']
-const BUYING_OPTIONS: readonly EbayBuyingOption[] = ['FIXED_PRICE', 'AUCTION', 'BEST_OFFER']
-const SORTS: readonly EbaySort[] = ['newlyListed', 'endingSoonest', 'price', '-price']
 const NOTIFY_MODES = ['sse_only', 'telegram_only', 'both'] as const
 const STATUSES = ['active', 'paused', 'rate_limited', 'error'] as const
 
@@ -38,25 +36,13 @@ function defaultWatchName(filters: SearchFilters): string {
   return 'Untitled watch'
 }
 
-function asStringArray(value: unknown): string[] | undefined {
-  if (!Array.isArray(value)) return undefined
-  const out = value.filter((v): v is string => typeof v === 'string')
-  return out.length ? out : undefined
-}
-
 function coerceFilters(raw: unknown): SearchFilters | null {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
   const r = raw as Record<string, unknown>
 
-  const conditions = asStringArray(r.conditions)?.filter(
-    (c): c is EbayCondition => (CONDITIONS as readonly string[]).includes(c)
-  )
-  const buyingOptions = asStringArray(r.buyingOptions)?.filter(
-    (b): b is EbayBuyingOption => (BUYING_OPTIONS as readonly string[]).includes(b)
-  )
-  const sort = typeof r.sort === 'string' && (SORTS as readonly string[]).includes(r.sort)
-    ? (r.sort as EbaySort)
-    : undefined
+  const conditions = validConditions(asStringArray(r.conditions))
+  const buyingOptions = validBuyingOptions(asStringArray(r.buyingOptions))
+  const sort = validSort(r.sort)
 
   let aspects: Record<string, string[]> | undefined
   if (r.aspects && typeof r.aspects === 'object' && !Array.isArray(r.aspects)) {

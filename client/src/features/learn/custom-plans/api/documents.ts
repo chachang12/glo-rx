@@ -1,6 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
 import { apiClient } from '@/lib/api/client'
+import { IDLE_QUERY_KEY, useResourceQuery } from '@/lib/api/hooks'
 
 // Mongo-style payload (documents list endpoint).
 const RawListDocSchema = z.object({
@@ -48,8 +49,8 @@ export const getPlanDocuments = async (
 }
 
 export const useGetPlanDocuments = (planId: string | undefined) =>
-  useQuery({
-    queryKey: planId ? documentsKey(planId) : ['custom-plans', '__noop_docs__'],
+  useResourceQuery({
+    queryKey: planId ? documentsKey(planId) : IDLE_QUERY_KEY,
     queryFn: ({ signal }) => getPlanDocuments(planId!, signal),
     enabled: !!planId,
   })

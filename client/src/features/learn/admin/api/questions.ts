@@ -1,6 +1,8 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
 import { apiClient } from '@/lib/api/client'
+import { SuccessResponseSchema } from '@/lib/api/common-schemas'
+import { IDLE_QUERY_KEY, useDeleteMutation, useResourceQuery } from '@/lib/api/hooks'
 import {
   AdminQuestionSchema,
   FlaggedQuestionSchema,
@@ -53,7 +55,7 @@ export const useListExamQuestionsPaged = (
   useInfiniteQuery({
     queryKey: code
       ? [...adminKeys.examQuestions(code), 'paged', filters]
-      : ['admin', '__noop_q__'],
+      : IDLE_QUERY_KEY,
     queryFn: ({ pageParam, signal }) =>
       listExamQuestionsPage(code!, filters, pageParam, signal),
     enabled: !!code,
@@ -62,8 +64,8 @@ export const useListExamQuestionsPaged = (
   })
 
 export const useExamQuestionCount = (code: string | undefined) =>
-  useQuery({
-    queryKey: code ? [...adminKeys.examQuestions(code), 'count'] : ['admin', '__noop_q_count__'],
+  useResourceQuery({
+    queryKey: code ? [...adminKeys.examQuestions(code), 'count'] : IDLE_QUERY_KEY,
     queryFn: ({ signal }) =>
       apiClient
         .get(
@@ -86,24 +88,17 @@ export const useListFlaggedQuestions = () =>
     queryFn: ({ signal }) => listFlaggedQuestions(signal),
   })
 
-const DeleteResponseSchema = z.unknown()
-
 export const deleteAdminQuestion = (questionId: string) =>
   apiClient.del(
     `/api/admin/questions/${encodeURIComponent(questionId)}`,
-    DeleteResponseSchema
+    SuccessResponseSchema
   )
 
-export const useDeleteAdminQuestion = () => {
-  const queryClient = useQueryClient()
-  return useMutation({
+export const useDeleteAdminQuestion = () =>
+  useDeleteMutation({
     mutationFn: deleteAdminQuestion,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminKeys.flaggedQuestions() })
-      queryClient.invalidateQueries({ queryKey: ['admin', 'exams'] })
-    },
+    invalidateKeys: [adminKeys.flaggedQuestions(), adminKeys.exams()],
   })
-}
 
 interface BulkUpsertArgs {
   code: string

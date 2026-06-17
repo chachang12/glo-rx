@@ -65,11 +65,11 @@ const EXAM_META: Record<string, ExamMeta> = {
 const CATEGORY_COLORS: Record<string, string> = {
   nursing: 'var(--teal)',
   veterinary: 'var(--violet)',
-  dental: '#ffb45a',
-  medical: 'var(--coral)',
+  dental: 'var(--amber)',
+  medical: 'var(--blue)',
   graduate: 'var(--blue)',
   law: 'var(--violet)',
-  accounting: '#ffb45a',
+  accounting: 'var(--amber)',
 }
 
 const CATEGORY_LABELS: Record<string, string> = {

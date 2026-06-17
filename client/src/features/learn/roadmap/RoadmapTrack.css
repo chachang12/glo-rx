@@ -52,15 +52,15 @@
   color: #04120f;
 }
 .rm-today .rm-dot {
-  background: linear-gradient(135deg, #ff4858, #ff7a87);
-  border-color: #ff4858;
-  color: #fff;
-  box-shadow: 0 0 22px rgba(255, 72, 88, 0.35);
+  background: linear-gradient(135deg, var(--amber), #ffce8f);
+  border-color: var(--amber);
+  color: #3a2a10;
+  box-shadow: 0 0 22px rgba(255, 180, 90, 0.35);
   animation: rmPulse 2.4s ease-in-out infinite;
 }
 @keyframes rmPulse {
-  0%, 100% { box-shadow: 0 0 18px rgba(255, 72, 88, 0.30); }
-  50%      { box-shadow: 0 0 28px rgba(255, 72, 88, 0.50); }
+  0%, 100% { box-shadow: 0 0 18px rgba(255, 180, 90, 0.30); }
+  50%      { box-shadow: 0 0 28px rgba(255, 180, 90, 0.50); }
 }
 .rm-exam .rm-dot {
   background: linear-gradient(135deg, #6aa8ff, #a78bfa);
@@ -140,7 +140,7 @@
 }
 .k-drill  { background: color-mix(in oklab, var(--teal) 18%, transparent);   color: var(--teal); }
 .k-quiz   { background: color-mix(in oklab, var(--violet) 18%, transparent); color: var(--violet); }
-.k-test   { background: color-mix(in oklab, var(--coral) 18%, transparent);  color: var(--coral); }
+.k-test   { background: color-mix(in oklab, var(--blue) 18%, transparent);   color: var(--blue); }
 .k-review { background: color-mix(in oklab, var(--amber) 18%, transparent);  color: var(--amber); }
 
 .rm-label {
@@ -160,7 +160,7 @@
   font-size: 10px;
   color: var(--ink-faint);
 }
-.rm-today .rm-tag { color: #ff7a87; }
+.rm-today .rm-tag { color: var(--amber); }
 .rm-exam .rm-tag { color: #c4b5fd; letter-spacing: 0.14em; font-weight: 600; }
 
 /* Legend row (used by Plan Detail + Dashboard) */
@@ -179,4 +179,4 @@
 .ld-study  { background: var(--teal);   box-shadow: 0 0 6px rgba(110, 156, 199, 0.5); }
 .ld-quiz   { background: var(--violet); box-shadow: 0 0 6px rgba(167, 139, 250, 0.5); }
 .ld-review { background: var(--amber);  box-shadow: 0 0 6px rgba(255, 180, 90, 0.5); }
-.ld-test   { background: var(--coral);  box-shadow: 0 0 6px rgba(255, 72, 88, 0.5); }
+.ld-test   { background: var(--blue);   box-shadow: 0 0 6px rgba(106, 168, 255, 0.5); }

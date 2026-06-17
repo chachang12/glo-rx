@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api/client'
+import { IDLE_QUERY_KEY, useResourceQuery } from '@/lib/api/hooks'
 import {
   TestListResponseSchema,
   CommunityTestSchema,
@@ -49,8 +50,8 @@ export const getTest = (id: string, signal?: AbortSignal): Promise<CommunityTest
   apiClient.get(`/api/tests/${encodeURIComponent(id)}`, CommunityTestSchema, { signal })
 
 export const useGetTest = (id: string | undefined) =>
-  useQuery({
-    queryKey: id ? testKeys.byId(id) : ['tests', '__noop__'],
+  useResourceQuery({
+    queryKey: id ? testKeys.byId(id) : IDLE_QUERY_KEY,
     queryFn: ({ signal }) => getTest(id!, signal),
     enabled: !!id,
   })

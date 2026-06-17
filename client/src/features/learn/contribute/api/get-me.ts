@@ -3,7 +3,9 @@ import { apiClient } from '@/lib/api/client'
 import { ContributorMeSchema, type ContributorMe } from '../types/contribute.schema'
 
 export const contributorKeys = {
+  all: () => ['contributor'] as const,
   me: () => ['contributor', 'me'] as const,
+  queues: () => ['contributor', 'queue'] as const,
   queue: (examCode: string | undefined) =>
     ['contributor', 'queue', examCode ?? 'all'] as const,
   earnings: () => ['contributor', 'earnings'] as const,

@@ -151,7 +151,7 @@ const ThemePreview = ({ theme }: { theme: Theme }) => {
           >
             <div className="flex h-full flex-col justify-end p-2 gap-1">
               <div className="h-1 w-6 rounded-full" style={{ background: inkDim }} />
-              <div className="h-1.5 w-10 rounded-full" style={{ background: '#ff4858' }} />
+              <div className="h-1.5 w-10 rounded-full" style={{ background: '#6aa8ff' }} />
             </div>
           </div>
         </div>

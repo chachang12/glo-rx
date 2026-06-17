@@ -1,5 +1,6 @@
 import mongoose, { Schema, type InferSchemaType } from 'mongoose'
 import { isValidExamCode } from '../../../config/exams.js'
+import { getNextDailyReset } from '../../../config/usage.js'
 
 const planSchema = new Schema(
   {
@@ -47,7 +48,7 @@ const planSchema = new Schema(
       default: 'free',
     },
     usageCount: { type: Number, default: 0 },
-    usageResetAt: { type: Date, default: () => getNextReset() },
+    usageResetAt: { type: Date, default: () => getNextDailyReset() },
 
     // ── Transient: extracted topics awaiting user confirmation ───────────
     // Populated by POST /extract-topics, consumed by POST /confirm-topics.
@@ -82,13 +83,6 @@ const planSchema = new Schema(
 
 // A user can only have one plan per exam
 planSchema.index({ authId: 1, examCode: 1 }, { unique: true })
-
-function getNextReset(): Date {
-  const now = new Date()
-  const reset = new Date(now)
-  reset.setUTCHours(24, 0, 0, 0) // midnight UTC tomorrow
-  return reset
-}
 
 export type Plan = InferSchemaType<typeof planSchema>
 export const PlanModel = mongoose.model('Plan', planSchema)

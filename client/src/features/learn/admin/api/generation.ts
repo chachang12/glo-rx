@@ -1,6 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
 import { apiClient } from '@/lib/api/client'
+import { IDLE_QUERY_KEY, useResourceQuery } from '@/lib/api/hooks'
 import {
   GenerateBatchResultSchema,
   PromoteResultSchema,
@@ -8,6 +9,7 @@ import {
   type GenerateBatchResult,
   type PromoteResult,
 } from '../types/opp.schema'
+import { adminKeys } from './get-stats'
 
 export const generationKeys = {
   examTopics: (examCode: string) => ['admin', 'exam-topics', examCode] as const,
@@ -26,8 +28,8 @@ export const listExamTopics = (
   )
 
 export const useListExamTopics = (examCode: string | undefined) =>
-  useQuery({
-    queryKey: examCode ? generationKeys.examTopics(examCode) : ['admin', '__noop_topics__'],
+  useResourceQuery({
+    queryKey: examCode ? generationKeys.examTopics(examCode) : IDLE_QUERY_KEY,
     queryFn: ({ signal }) => listExamTopics(examCode!, signal),
     enabled: !!examCode,
   })
@@ -59,7 +61,7 @@ export const usePromoteQuestions = () => {
   return useMutation({
     mutationFn: promoteQuestions,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'exams'] })
+      queryClient.invalidateQueries({ queryKey: adminKeys.exams() })
     },
   })
 }

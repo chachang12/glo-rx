@@ -21,6 +21,7 @@ interface SessionQuestion {
   explanation?: string
   topics?: string[]
   difficulty?: string
+  pendingReview?: boolean
 }
 
 type SessionMode = 'setup' | 'active' | 'results'
@@ -82,6 +83,7 @@ export const Test = () => {
             answer: q.answer,
             explanation: q.explanation,
             difficulty: q.difficulty ?? undefined,
+            pendingReview: q.pendingReview,
           }))
           setQuestions(adapted)
           setSessionTitle(data.topicLabel ?? 'Topic Practice')

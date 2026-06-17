@@ -9,6 +9,7 @@ import { SessionModel } from '../../learn/session/session.model.js'
 import { ExamModel, OfficialTestModel, QuestionBankModel } from '../../learn/exam/exam.model.js'
 import { TestModel } from '../../learn/test/test.model.js'
 import { validateTest, validateQuestion, validateBulkQuestions } from '../../../config/schemas.js'
+import { FLAGGED_QUESTION_THRESHOLD } from '../../../config/limits.js'
 
 const baseAdminRoutes = new Hono<AuthEnv>()
 
@@ -318,7 +319,7 @@ baseAdminRoutes.delete('/questions/:questionId', async (c) => {
 // ── Flagged Questions ───────────────────────────────────────────────────────
 
 baseAdminRoutes.get('/flagged-questions', async (c) => {
-  const threshold = 5
+  const threshold = FLAGGED_QUESTION_THRESHOLD
 
   // Flagged question bank items
   const bankQuestions = await QuestionBankModel.find({ reportCount: { $gte: threshold } })

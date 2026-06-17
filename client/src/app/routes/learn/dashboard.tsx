@@ -3,15 +3,15 @@ import { paths } from '@/config/paths'
 import { useUser } from '@/features/shared/auth'
 import { useGetMyStats, type UserStats } from '@/features/shared/user'
 import { useGetVisibleExams } from '@/features/learn/exams'
-import { useGetPlans, type Plan } from '@/features/learn/plans'
+import { useGetPlans } from '@/features/learn/plans'
 import { PageLoader } from '@/features/shared/ui/PageLoader'
 import './dashboard.css'
 
 const CATEGORY_COLORS: Record<string, string> = {
-  nursing: '#6aa8ff',
-  medical: '#6e9cc7',
-  law: '#a78bfa',
-  accounting: '#ff4858',
+  nursing: 'var(--teal)',
+  medical: 'var(--blue)',
+  law: 'var(--violet)',
+  accounting: 'var(--amber)',
 }
 
 export const Dashboard = () => {

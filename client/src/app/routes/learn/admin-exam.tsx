@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router'
 import { paths } from '@/config/paths'
 import { PageLoader } from '@/features/shared/ui/PageLoader'
@@ -25,9 +25,15 @@ export const AdminExamEditor = () => {
   const createOfficialTestMutation = useCreateOfficialTest()
   const bulkUpsertMutation = useBulkUpsertQuestions()
 
-  // Keep a local draft so text inputs stay editable; sync from server data when it loads.
+  // Keep a local draft so text inputs stay editable; re-sync from server data
+  // whenever the fetched record changes. Adjusting state during render (rather
+  // than in an effect) avoids an extra render against the stale/previous value.
   const [exam, setExam] = useState(remoteExam)
-  useEffect(() => { setExam(remoteExam) }, [remoteExam])
+  const [lastRemoteExam, setLastRemoteExam] = useState(remoteExam)
+  if (remoteExam !== lastRemoteExam) {
+    setLastRemoteExam(remoteExam)
+    setExam(remoteExam)
+  }
 
   const ready = !examLoading && !officialLoading && !questionsLoading
   const notFound = examError

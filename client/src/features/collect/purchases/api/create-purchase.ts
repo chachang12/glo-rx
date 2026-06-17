@@ -9,6 +9,7 @@ import {
 export const purchaseKeys = {
   all: () => ['collect', 'purchases'] as const,
   byDate: (date: string) => ['collect', 'purchases', 'date', date] as const,
+  knownItems: () => ['collect', 'purchases', 'known-items'] as const,
 }
 
 export const createPurchase = (input: CreatePurchaseInput): Promise<Purchase> =>

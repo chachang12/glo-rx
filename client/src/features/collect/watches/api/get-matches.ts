@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api/client'
+import { IDLE_QUERY_KEY, useResourceQuery } from '@/lib/api/hooks'
 import {
   WatchMatchListSchema,
   type WatchMatch,
@@ -23,8 +23,8 @@ export const getWatchMatches = (
 }
 
 export const useGetWatchMatches = (id: string | undefined, limit = 50) =>
-  useQuery({
-    queryKey: id ? [...watchKeys.matches(id), { limit }] : ['collect', 'watches', '__idle__matches__'],
+  useResourceQuery({
+    queryKey: id ? [...watchKeys.matches(id), { limit }] : IDLE_QUERY_KEY,
     queryFn: ({ signal }) => getWatchMatches(id!, { limit }, signal),
     enabled: !!id,
   })

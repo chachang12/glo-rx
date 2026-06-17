@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from 'react-router'
-import { paths } from '@/config/paths'
+import { paths, isCollectPath } from '@/config/paths'
 import { LoginForm } from '@/features/shared/auth'
 import AxeousLogo from '@/components/ui/AxeousLogo'
 import { ThemeToggle } from '@/components/theme-provider'
@@ -7,7 +7,7 @@ import { ThemeToggle } from '@/components/theme-provider'
 export const LoginPage = () => {
   const [searchParams] = useSearchParams()
   const redirectTo = searchParams.get('redirectTo') ?? ''
-  const product = redirectTo.startsWith('/app/collect') ? 'Collect' : 'Learn'
+  const product = isCollectPath(redirectTo) ? 'Collect' : 'Learn'
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-surface text-ink">

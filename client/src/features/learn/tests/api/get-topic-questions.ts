@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { apiClient } from '@/lib/api/client'
+import { IDLE_QUERY_KEY, useResourceQuery } from '@/lib/api/hooks'
 import { QuestionTypeSchema } from '@/features/learn/exams'
 
 const TopicQuestionSchema = z.object({
@@ -14,6 +14,8 @@ const TopicQuestionSchema = z.object({
   answer: z.array(z.string()),
   explanation: z.string().optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']).nullable().optional(),
+  // True for the user's own AI-generated questions still awaiting SME review.
+  pendingReview: z.boolean().optional().default(false),
 })
 export type TopicQuestion = z.infer<typeof TopicQuestionSchema>
 
@@ -40,10 +42,8 @@ export const getTopicQuestions = (
 }
 
 export const useGetTopicQuestions = (args: GetTopicQuestionsArgs | null) =>
-  useQuery({
-    queryKey: args
-      ? ['tests', 'topic-questions', args]
-      : ['tests', '__noop_tq__'],
+  useResourceQuery({
+    queryKey: args ? ['tests', 'topic-questions', args] : IDLE_QUERY_KEY,
     queryFn: ({ signal }) => getTopicQuestions(args!, signal),
     enabled: !!args && (!!args.customPlanId || !!args.examCode),
   })

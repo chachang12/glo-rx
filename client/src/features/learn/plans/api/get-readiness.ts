@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { apiClient } from '@/lib/api/client'
+import { IDLE_QUERY_KEY, useResourceQuery } from '@/lib/api/hooks'
 
 export const TopicReadinessSchema = z.object({
   id: z.string(),
@@ -41,8 +41,8 @@ export const getReadiness = (
   apiClient.get(`${apiBase(args)}/readiness`, ReadinessSchema, { signal })
 
 export const useGetReadiness = (args: ReadinessArgs | null) =>
-  useQuery({
-    queryKey: args ? ['plans', args.kind, args.identifier, 'readiness'] : ['plans', '__noop_r__'],
+  useResourceQuery({
+    queryKey: args ? ['plans', args.kind, args.identifier, 'readiness'] : IDLE_QUERY_KEY,
     queryFn: ({ signal }) => getReadiness(args!, signal),
     enabled: !!args,
   })

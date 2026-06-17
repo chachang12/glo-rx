@@ -12,6 +12,7 @@ interface SessionQuestion {
   explanation?: string
   topics?: string[]
   difficulty?: string
+  pendingReview?: boolean
 }
 
 const SINGLE_ANSWER_TYPES = new Set(['mcq', 'calculation', 'exhibit', 'priority'])
@@ -355,6 +356,14 @@ export const PracticeSession = ({
               <span className="text-[10px] text-[#888]">Type your answer</span>
             )}
           </div>
+
+          {/* Pending-review badge — the user's own generated question that
+              hasn't cleared SME review yet (visible only to them). */}
+          {question.pendingReview && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#ffb45a]/10 px-2 py-0.5 text-[10px] font-medium text-[#ffb45a]">
+              Pending review
+            </span>
+          )}
 
           {/* Stem */}
           <p className="text-[#e8e6f0] leading-relaxed whitespace-pre-line">{question.stem}</p>

@@ -16,6 +16,7 @@ export const CollectProfile = () => {
   const { data: quota } = useGetEbayQuota()
   const deleteMeMutation = useDeleteMe()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const isAdmin = appUser?.role === 'admin'
 
@@ -25,8 +26,19 @@ export const CollectProfile = () => {
   }
 
   const handleDeleteAccount = async () => {
-    await deleteMeMutation.mutateAsync()
-    await authClient.signOut()
+    setDeleteError(null)
+    try {
+      await deleteMeMutation.mutateAsync()
+    } catch {
+      setDeleteError('Could not delete your account. Please try again.')
+      return
+    }
+    try {
+      await authClient.signOut()
+    } catch {
+      // Account is already deleted server-side; force the user back to a
+      // signed-out state rather than leaving stale auth in place.
+    }
     navigate(paths.home.getHref())
   }
 
@@ -170,9 +182,13 @@ export const CollectProfile = () => {
             ) : (
               <div style={{ display: 'flex', gap: 8 }}>
                 <button
-                  onClick={() => setShowDeleteConfirm(false)}
+                  onClick={() => {
+                    setShowDeleteConfirm(false)
+                    setDeleteError(null)
+                  }}
                   className="row-action"
                   type="button"
+                  disabled={deleteMeMutation.isPending}
                 >
                   Cancel
                 </button>
@@ -180,12 +196,18 @@ export const CollectProfile = () => {
                   onClick={handleDeleteAccount}
                   className="danger-confirm"
                   type="button"
+                  disabled={deleteMeMutation.isPending}
                 >
-                  Confirm delete
+                  {deleteMeMutation.isPending ? 'Deleting…' : 'Confirm delete'}
                 </button>
               </div>
             )}
           </div>
+          {deleteError && (
+            <p className="danger-error" role="alert">
+              {deleteError}
+            </p>
+          )}
         </div>
       </div>
     </div>

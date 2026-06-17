@@ -1,12 +1,5 @@
 import mongoose, { Schema, type InferSchemaType } from 'mongoose'
-
-const inviteScopeSchema = new Schema(
-  {
-    examCode: { type: String, required: true },
-    rateCents: { type: Number, required: true, min: 0 },
-  },
-  { _id: false }
-)
+import { inviteScopeSchema } from './contributor-scope.js'
 
 const contributorInviteSchema = new Schema(
   {

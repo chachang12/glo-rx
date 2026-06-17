@@ -1,18 +1,14 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api/client'
-import { DeleteResponseSchema } from '../types/watch.schema'
+import { DeleteResponseSchema } from '@/lib/api/common-schemas'
+import { useDeleteMutation } from '@/lib/api/hooks'
 import { watchKeys } from './get-watches'
 
 export const deleteWatch = (id: string) =>
   apiClient.del(`/api/collect/watches/${encodeURIComponent(id)}`, DeleteResponseSchema)
 
-export const useDeleteWatch = () => {
-  const qc = useQueryClient()
-  return useMutation({
+export const useDeleteWatch = () =>
+  useDeleteMutation({
     mutationFn: deleteWatch,
-    onSuccess: (_data, id) => {
-      qc.removeQueries({ queryKey: watchKeys.detail(id) })
-      qc.invalidateQueries({ queryKey: watchKeys.list() })
-    },
+    removeKeys: (_data, id) => [watchKeys.detail(id)],
+    invalidateKeys: [watchKeys.list()],
   })
-}

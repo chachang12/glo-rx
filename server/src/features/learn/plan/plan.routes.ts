@@ -1,16 +1,21 @@
 import { Hono } from 'hono'
 import { requireAuth } from '../../../middleware/auth.js'
+import { requireUsage } from '../../../middleware/usage.js'
 import type { AuthEnv } from '../../../types.js'
 import { PlanModel } from './plan.model.js'
-import { ExamModel, QuestionBankModel } from '../exam/exam.model.js'
+import { ExamModel } from '../exam/exam.model.js'
 import { TopicModel } from '../custom-plan/topic.model.js'
 import { RoadmapDayModel } from '../custom-plan/roadmap-day.model.js'
-import { computeMastery } from '../custom-plan/mastery.algorithm.js'
-import { generateRoadmap } from '../custom-plan/roadmap.algorithm.js'
 import {
-  generateQuestionsForTopic,
-  GenerationError,
-} from '../generation/generate-questions.service.js'
+  buildReadiness,
+  recordTopicAnswer,
+  getOwnedTopic,
+  getVisibleTopicQuestions,
+  generateTopicQuestionsResponse,
+  generateAndPersistRoadmap,
+  getEnrichedRoadmap,
+  completeRoadmapDay,
+} from './plan-shared.service.js'
 
 const planRoutes = new Hono<AuthEnv>()
 
@@ -167,50 +172,27 @@ planRoutes.patch('/:examCode/topics/:topicId/record', async (c) => {
     return c.json({ error: 'correct (boolean) is required' }, 400)
   }
 
-  const topic = await TopicModel.findOne({ _id: topicId, planId: plan._id })
+  const topic = await recordTopicAnswer(plan._id, topicId, body.correct)
   if (!topic) return c.json({ error: 'Topic not found' }, 404)
-
-  const newMastery = computeMastery(topic.mastery, topic.questionsAnswered, body.correct)
-  topic.questionsAnswered += 1
-  if (body.correct) topic.correctCount += 1
-  topic.mastery = newMastery
-  await topic.save()
 
   return c.json(topic)
 })
 
 // ── POST /:examCode/topics/:topicId/generate-questions — AI question gen ───
 
-planRoutes.post('/:examCode/topics/:topicId/generate-questions', async (c) => {
+planRoutes.post('/:examCode/topics/:topicId/generate-questions', requireUsage, async (c) => {
   const authUser = c.get('user')
   const { examCode, topicId } = c.req.param()
 
   const plan = await PlanModel.findOne({ authId: authUser.id, examCode }).lean()
   if (!plan) return c.json({ error: 'Plan not found' }, 404)
 
-  const topic = await TopicModel.findOne({ _id: topicId, planId: plan._id }).lean()
+  const topic = await getOwnedTopic(plan._id, topicId)
   if (!topic) return c.json({ error: 'Topic not found' }, 404)
 
-  const body = await c.req.json().catch(() => ({}))
-
-  try {
-    const result = await generateQuestionsForTopic({
-      topicId: topic._id,
-      count: body.count,
-      allowedTypes: body.types,
-      typeWeights: body.typeWeights,
-      difficulty: body.difficulty,
-      customInstructions: body.customInstructions,
-      force: !!body.force,
-    })
-    return c.json(result)
-  } catch (err) {
-    if (err instanceof GenerationError) {
-      return c.json({ error: err.message }, err.status as 400 | 404 | 409 | 502)
-    }
-    console.error('Question generation failed:', err)
-    return c.json({ error: 'Question generation failed. Please try again.' }, 500)
-  }
+  // Body was parsed and validated-as-optional by requireUsage.
+  const body = c.get('parsedBody')
+  return generateTopicQuestionsResponse(c, topic._id, body, authUser.id)
 })
 
 // ── GET /:examCode/topics/:topicId/questions — Cached topic questions ───────
@@ -222,29 +204,14 @@ planRoutes.get('/:examCode/topics/:topicId/questions', async (c) => {
   const plan = await PlanModel.findOne({ authId: authUser.id, examCode }).lean()
   if (!plan) return c.json({ error: 'Plan not found' }, 404)
 
-  const topic = await TopicModel.findOne({ _id: topicId, planId: plan._id }).lean()
+  const topic = await getOwnedTopic(plan._id, topicId)
   if (!topic) return c.json({ error: 'Topic not found' }, 404)
 
-  const questions = await QuestionBankModel.find({
-    topicId: topic._id,
-    status: 'published',
-  })
-    .sort({ createdAt: -1 })
-    .lean()
-
-  return c.json({
-    topicId: String(topic._id),
-    topicLabel: topic.label,
-    questions: questions.map((q) => ({
-      id: String(q._id),
-      type: q.type,
-      stem: q.stem,
-      options: q.options,
-      answer: q.answer,
-      explanation: q.explanation,
-      difficulty: q.difficulty,
-    })),
-  })
+  // Standard plans share approved questions across all members of the exam,
+  // plus the requesting user's own pending generations.
+  return c.json(
+    await getVisibleTopicQuestions({ examCode, topic, authId: authUser.id })
+  )
 })
 
 // ── GET /:examCode/readiness — Overall readiness score ──────────────────────
@@ -256,32 +223,9 @@ planRoutes.get('/:examCode/readiness', async (c) => {
   const plan = await PlanModel.findOne({ authId: authUser.id, examCode }).lean()
   if (!plan) return c.json({ error: 'Plan not found' }, 404)
 
-  const topics = await TopicModel.find({ planId: plan._id })
-    .sort({ sortOrder: 1 })
-    .lean()
-
-  if (topics.length === 0) {
-    return c.json({ readiness: 0, topicCount: 0, topics: [] })
-  }
-
-  const readiness = Math.round(
-    topics.reduce((sum, t) => sum + t.mastery, 0) / topics.length
-  )
-
-  const counts = await QuestionBankModel.aggregate([
-    {
-      $match: {
-        topicId: { $in: topics.map((t) => t._id) },
-        status: 'published',
-      },
-    },
-    { $group: { _id: '$topicId', count: { $sum: 1 } } },
-  ])
-  const countByTopic = new Map(counts.map((c) => [String(c._id), c.count]))
-
   // Standard plans don't have user-uploaded source excerpts, but they can fall
-  // back to admin-supplied aiReferenceText. Surface availability so the UI
-  // can show or hide the Generate CTA accordingly.
+  // back to admin-supplied aiReferenceText. Surface availability so the UI can
+  // show or hide the Generate CTA accordingly.
   const exam = await ExamModel.findOne({ code: examCode })
     .select('aiReferenceText allowedQuestionTypes')
     .lean()
@@ -291,21 +235,14 @@ planRoutes.get('/:examCode/readiness', async (c) => {
       ? exam.allowedQuestionTypes
       : ['mcq']
 
-  return c.json({
-    readiness,
-    topicCount: topics.length,
-    allowedQuestionTypes,
-    topics: topics.map((t) => ({
-      id: t._id,
-      label: t.label,
-      description: t.description ?? '',
-      mastery: t.mastery,
-      questionsAnswered: t.questionsAnswered,
-      correctCount: t.correctCount,
-      hasSourceExcerpts: (t.sourceExcerpts?.length ?? 0) > 0 || examHasReference,
-      generatedQuestionCount: countByTopic.get(String(t._id)) ?? 0,
-    })),
-  })
+  return c.json(
+    await buildReadiness(plan._id, {
+      allowedQuestionTypes,
+      examHasReference,
+      sharedExamCode: examCode,
+      viewerAuthId: authUser.id,
+    })
+  )
 })
 
 // ── POST /:examCode/roadmap/generate — Generate study roadmap ───────────────
@@ -317,39 +254,10 @@ planRoutes.post('/:examCode/roadmap/generate', async (c) => {
   const plan = await PlanModel.findOne({ authId: authUser.id, examCode })
   if (!plan) return c.json({ error: 'Plan not found' }, 404)
 
-  if (!plan.examDate) {
-    return c.json({ error: 'Set an exam date before generating a roadmap' }, 400)
-  }
+  const result = await generateAndPersistRoadmap(plan)
+  if (!result.ok) return c.json({ error: result.error }, result.status)
 
-  const topics = await TopicModel.find({ planId: plan._id })
-    .sort({ sortOrder: 1 })
-    .lean()
-
-  if (topics.length === 0) {
-    return c.json({ error: 'No topics found for this plan' }, 400)
-  }
-
-  const now = new Date()
-  const daysUntilExam = Math.ceil(
-    (plan.examDate.getTime() - now.getTime()) / 86400000
-  )
-
-  if (daysUntilExam < 7) {
-    return c.json({ error: 'Exam date must be at least 7 days away' }, 400)
-  }
-
-  const roadmapDays = generateRoadmap(topics, now, plan.examDate)
-
-  await RoadmapDayModel.deleteMany({ planId: plan._id })
-  await RoadmapDayModel.insertMany(
-    roadmapDays.map((day) => ({ planId: plan._id, ...day }))
-  )
-
-  const created = await RoadmapDayModel.find({ planId: plan._id })
-    .sort({ dayNumber: 1 })
-    .lean()
-
-  return c.json(created, 201)
+  return c.json(result.days, 201)
 })
 
 // ── GET /:examCode/roadmap — Get study roadmap ──────────────────────────────
@@ -361,28 +269,7 @@ planRoutes.get('/:examCode/roadmap', async (c) => {
   const plan = await PlanModel.findOne({ authId: authUser.id, examCode }).lean()
   if (!plan) return c.json({ error: 'Plan not found' }, 404)
 
-  const days = await RoadmapDayModel.find({ planId: plan._id })
-    .sort({ dayNumber: 1 })
-    .lean()
-
-  const allTopicIds = [...new Set(days.flatMap((d) => d.topicIds.map(String)))]
-  const topicMap = new Map<string, string>()
-
-  if (allTopicIds.length > 0) {
-    const topics = await TopicModel.find({ _id: { $in: allTopicIds } })
-      .select('label')
-      .lean()
-    for (const t of topics) {
-      topicMap.set(String(t._id), t.label)
-    }
-  }
-
-  const enriched = days.map((d) => ({
-    ...d,
-    topicLabels: d.topicIds.map((id) => topicMap.get(String(id)) ?? 'Unknown'),
-  }))
-
-  return c.json(enriched)
+  return c.json(await getEnrichedRoadmap(plan._id))
 })
 
 // ── PATCH /:examCode/roadmap/:dayNumber/complete — Mark a day complete ──────
@@ -394,12 +281,7 @@ planRoutes.patch('/:examCode/roadmap/:dayNumber/complete', async (c) => {
   const plan = await PlanModel.findOne({ authId: authUser.id, examCode }).lean()
   if (!plan) return c.json({ error: 'Plan not found' }, 404)
 
-  const day = await RoadmapDayModel.findOneAndUpdate(
-    { planId: plan._id, dayNumber: parseInt(dayNumber) },
-    { $set: { completed: true } },
-    { new: true }
-  )
-
+  const day = await completeRoadmapDay(plan._id, parseInt(dayNumber))
   if (!day) return c.json({ error: 'Roadmap day not found' }, 404)
   return c.json(day)
 })

@@ -1,4 +1,5 @@
 import mongoose, { Schema, type InferSchemaType } from 'mongoose'
+import { scopeBaseFields } from '../contributor/contributor-scope.js'
 
 const userSchema = new Schema(
   {
@@ -32,6 +33,10 @@ const userSchema = new Schema(
       type: [{ type: String }],
       default: [],
     },
+    // @deprecated examDate and dailyGoal duplicate per-plan settings whose
+    // source of truth is the Plan document. Kept for backward compatibility
+    // (removal needs a migration + shared-seam review); no longer writable via
+    // PATCH /me. Read examDate/dailyGoal from the user's Plans instead.
     examDate: { type: Date, default: null },
 
     // ── Preferences ──────────────────────────────────────────────────────
@@ -63,8 +68,7 @@ const userSchema = new Schema(
           type: [
             new Schema(
               {
-                examCode: { type: String, required: true },
-                rateCents: { type: Number, required: true, min: 0 },
+                ...scopeBaseFields,
                 grantedAt: { type: Date, default: () => new Date() },
                 grantedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
               },

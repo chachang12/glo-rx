@@ -1,13 +1,21 @@
 // ── JSON Schemas for question and test validation ───────────────────────────
 
+import {
+  QUESTION_TYPES,
+  SINGLE_ANSWER_TYPES,
+  DIFFICULTIES,
+  type QuestionType,
+  type Difficulty,
+} from './question-types.js'
+
 export interface QuestionShape {
-  type: 'mcq' | 'sata' | 'ordered' | 'calculation' | 'exhibit' | 'priority' | 'fib'
+  type: QuestionType
   stem: string
   options: Record<string, string> | string[]
   answer: string[]
   explanation?: string
   topics?: string[]
-  difficulty?: 'easy' | 'medium' | 'hard'
+  difficulty?: Difficulty
 }
 
 export interface TestShape {
@@ -22,11 +30,8 @@ export interface BulkQuestionsShape {
 }
 
 // ── Validation ──────────────────────────────────────────────────────────────
-
-const QUESTION_TYPES = ['mcq', 'sata', 'ordered', 'calculation', 'exhibit', 'priority', 'fib'] as const
-// Types that render as A/B/C/D options with exactly 1 correct key.
-const SINGLE_ANSWER_TYPES = new Set(['mcq', 'calculation', 'exhibit', 'priority'])
-const DIFFICULTIES = ['easy', 'medium', 'hard'] as const
+// QUESTION_TYPES, SINGLE_ANSWER_TYPES, and DIFFICULTIES are imported from the
+// canonical config/question-types module above.
 
 export function validateQuestion(q: unknown, index?: number): string | null {
   const prefix = index !== undefined ? `Question ${index + 1}: ` : ''
@@ -97,7 +102,7 @@ export function validateQuestion(q: unknown, index?: number): string | null {
   }
 
   // single-answer types must have exactly 1 answer
-  if (SINGLE_ANSWER_TYPES.has(obj.type as string) && (obj.answer as string[]).length !== 1) {
+  if (SINGLE_ANSWER_TYPES.has(obj.type as QuestionType) && (obj.answer as string[]).length !== 1) {
     return `${prefix}${obj.type} questions must have exactly 1 answer`
   }
 

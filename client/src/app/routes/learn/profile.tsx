@@ -15,6 +15,7 @@ export const Profile = () => {
   const { data: appUser } = useGetMe()
   const deleteMeMutation = useDeleteMe()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const isAdmin = appUser?.role === 'admin'
   const isContributor = appUser?.role === 'contributor' && !!appUser.contributor
@@ -25,8 +26,19 @@ export const Profile = () => {
   }
 
   const handleDeleteAccount = async () => {
-    await deleteMeMutation.mutateAsync()
-    await authClient.signOut()
+    setDeleteError(null)
+    try {
+      await deleteMeMutation.mutateAsync()
+    } catch {
+      setDeleteError('Could not delete your account. Please try again.')
+      return
+    }
+    try {
+      await authClient.signOut()
+    } catch {
+      // Account is already deleted server-side; force the user back to a
+      // signed-out state rather than leaving stale auth in place.
+    }
     navigate(paths.home.getHref())
   }
 
@@ -198,9 +210,13 @@ export const Profile = () => {
             ) : (
               <div style={{ display: 'flex', gap: 8 }}>
                 <button
-                  onClick={() => setShowDeleteConfirm(false)}
+                  onClick={() => {
+                    setShowDeleteConfirm(false)
+                    setDeleteError(null)
+                  }}
                   className="row-action"
                   type="button"
+                  disabled={deleteMeMutation.isPending}
                 >
                   Cancel
                 </button>
@@ -208,12 +224,18 @@ export const Profile = () => {
                   onClick={handleDeleteAccount}
                   className="danger-confirm"
                   type="button"
+                  disabled={deleteMeMutation.isPending}
                 >
-                  Confirm delete
+                  {deleteMeMutation.isPending ? 'Deleting…' : 'Confirm delete'}
                 </button>
               </div>
             )}
           </div>
+          {deleteError && (
+            <p className="danger-error" role="alert">
+              {deleteError}
+            </p>
+          )}
         </div>
       </div>
     </div>

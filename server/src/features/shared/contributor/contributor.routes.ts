@@ -81,20 +81,20 @@ contributorRoutes.get('/queue', async (c) => {
     .lean()
   const excludeIds = votedIds.map((v) => v.questionId)
 
-  const items = await QuestionBankModel.find({
+  // Never let a reviewer review their own generated questions.
+  const queueFilter = {
     status: 'pending',
+    createdByAuthId: { $ne: authUser.id },
     ...examFilter,
     ...(excludeIds.length > 0 ? { _id: { $nin: excludeIds } } : {}),
-  })
+  }
+
+  const items = await QuestionBankModel.find(queueFilter)
     .sort({ createdAt: 1 })
     .limit(limit)
     .lean()
 
-  const remaining = await QuestionBankModel.countDocuments({
-    status: 'pending',
-    ...examFilter,
-    ...(excludeIds.length > 0 ? { _id: { $nin: excludeIds } } : {}),
-  })
+  const remaining = await QuestionBankModel.countDocuments(queueFilter)
 
   return c.json({ items, remaining })
 })

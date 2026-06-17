@@ -181,3 +181,13 @@ export const paths = {
     },
   },
 } as const
+
+/**
+ * Returns true when a pathname lives under the authed Collect shell
+ * (`/app/collect`). Use this instead of hardcoding the prefix so product
+ * detection stays in sync with the route table above.
+ */
+export const isCollectPath = (pathname: string): boolean =>
+  pathname === paths.app.collect.root.getHref() ||
+  pathname.startsWith(`${paths.app.collect.root.getHref()}/`) ||
+  pathname.startsWith(`${paths.app.collect.root.getHref()}?`)

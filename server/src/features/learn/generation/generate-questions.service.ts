@@ -2,12 +2,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import type { Types } from 'mongoose'
 import { TopicModel } from '../custom-plan/topic.model.js'
 import { PlanModel } from '../plan/plan.model.js'
-import {
-  ExamModel,
-  QuestionBankModel,
-  QUESTION_TYPES,
-  DEFAULT_ALLOWED_TYPES,
-} from '../exam/exam.model.js'
+import { ExamModel, QuestionBankModel } from '../exam/exam.model.js'
+import { QUESTION_TYPES, DEFAULT_ALLOWED_TYPES } from '../../../config/question-types.js'
 import { validateQuestion, type QuestionShape } from '../../../config/schemas.js'
 import { DEFAULT_GENERATION_REFERENCE } from './default-reference.js'
 
@@ -40,6 +36,9 @@ export interface GenerateQuestionsInput {
   difficulty?: 'easy' | 'medium' | 'hard' | 'mixed'
   customInstructions?: string
   force?: boolean
+  /** authId of the generating user — recorded so they can preview their own
+   * questions while pending review (standard plans). */
+  createdByAuthId?: string
 }
 
 export interface GenerateQuestionsResult {
@@ -372,6 +371,12 @@ export async function generateQuestionsForTopic(
       chunkIndex: e.chunkIndex,
     }))
 
+    // Standard-plan questions enter SME review (pending) and become shared
+    // across all members of the exam once approved. Custom plans generate from
+    // the user's own uploaded materials, so they publish immediately and stay
+    // private to that plan.
+    const status = plan.type === 'custom' ? 'published' : 'pending'
+
     const docs = await QuestionBankModel.insertMany(
       valid.map((q) => ({
         examCode: plan.examCode,
@@ -384,8 +389,10 @@ export async function generateQuestionsForTopic(
         difficulty: q.difficulty ?? null,
         topicId: topic._id,
         planId: topic.planId,
+        createdByAuthId: input.createdByAuthId ?? null,
         generatedBy: 'ai',
         generatedAt: new Date(),
+        status,
         sourceCitations,
       }))
     )

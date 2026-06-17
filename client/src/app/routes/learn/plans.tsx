@@ -8,18 +8,18 @@ import { PageLoader } from '@/features/shared/ui/PageLoader'
 import './plans.css'
 
 const CATEGORY_COLORS: Record<string, string> = {
-  nursing: '#6e9cc7',
-  medical: '#5bf08a',
-  law: '#a78bfa',
-  accounting: '#ff4858',
+  nursing: 'var(--teal)',
+  medical: 'var(--blue)',
+  law: 'var(--violet)',
+  accounting: 'var(--amber)',
 }
-const FALLBACK_COLOR = '#6aa8ff'
+const FALLBACK_COLOR = 'var(--blue)'
 
 const CATEGORY_GLOWS: Record<string, string> = {
   nursing: 'radial-gradient(400px 200px at 80% -20%, rgba(110,156,199,0.18), transparent 60%)',
-  medical: 'radial-gradient(400px 200px at 80% -20%, rgba(91,240,138,0.14), transparent 60%)',
+  medical: 'radial-gradient(400px 200px at 80% -20%, rgba(106,168,255,0.14), transparent 60%)',
   law: 'radial-gradient(400px 200px at 80% -20%, rgba(167,139,250,0.16), transparent 60%)',
-  accounting: 'radial-gradient(400px 200px at 80% -20%, rgba(255,72,88,0.14), transparent 60%)',
+  accounting: 'radial-gradient(400px 200px at 80% -20%, rgba(255,180,90,0.14), transparent 60%)',
 }
 const FALLBACK_GLOW = 'radial-gradient(400px 200px at 80% -20%, rgba(106,168,255,0.14), transparent 60%)'
 

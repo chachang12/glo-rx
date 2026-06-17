@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { authClient } from '@/lib/auth-client'
+import { paths } from '@/config/paths'
 
 export const LoginForm = () => {
   const [searchParams] = useSearchParams()
   // No `redirectTo` → /app, which renders <PostLoginRedirect /> and sends
   // contributors to their queue and everyone else to the dashboard.
-  const redirectTo = searchParams.get('redirectTo') ?? '/app'
+  const redirectTo = searchParams.get('redirectTo') ?? paths.app.root.getHref()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
