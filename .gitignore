@@ -17,6 +17,10 @@ dist-ssr
 !.env.example
 client_secret*.json
 
+# Agent pipeline handoff artifacts (per-run; only the README is tracked)
+.pipeline/*
+!.pipeline/README.md
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -99,6 +99,10 @@ git push
 - **Feature placement:** anything in `features/shared/` affects both products — get a `@LEAD` review. Product code goes under `features/learn/` or `features/collect/`.
 - **Secrets** never get committed. `.env` files are gitignored; use `.env.example` to document required variables.
 
+## Agent pipeline (`/ship`)
+
+A 4-agent feature pipeline lives in `.claude/agents/` (planner → coder → tester → reviewer) with a `/ship` orchestrator command. On a feature branch, run e.g. `/ship add a CSV export to the leaderboard`; it writes a spec, implements it, runs the verification gate (`tsc` + `lint` + `build` — this repo has no unit-test runner), and leaves a SHIP / NEEDS WORK / BLOCK verdict in `.pipeline/review.md`. It never merges or pushes — you're still the final gate. See [.pipeline/README.md](.pipeline/README.md) for the full handoff protocol.
+
 ## First-PR checklist
 
 - [ ] Branch named `feature/<scope>-<name>` / `fix/<scope>-<name>` / `chore/<name>`
