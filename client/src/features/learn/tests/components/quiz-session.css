@@ -1,0 +1,124 @@
+/* Practice-session atmosphere + motion.
+   The session UI is otherwise styled entirely with inline Tailwind; this file
+   holds only what utilities can't express cleanly — layered gradients, masked
+   grid lines, staggered entrances, and keyframe animations. Scoped under the
+   .quiz-session root so nothing leaks into the rest of the app. */
+
+.quiz-session {
+  position: relative;
+  min-height: 100%;
+}
+
+/* ── Atmosphere ─────────────────────────────────────────────────────────── */
+.quiz-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 600px at 15% -5%, rgba(110, 156, 199, 0.1), transparent 60%),
+    radial-gradient(700px 500px at 85% 5%, rgba(255, 72, 88, 0.05), transparent 60%),
+    radial-gradient(1000px 700px at 50% 100%, rgba(106, 168, 255, 0.05), transparent 65%);
+  transition: background 0.6s ease;
+}
+.quiz-backdrop[data-state='correct'] {
+  background:
+    radial-gradient(900px 600px at 50% 25%, rgba(110, 156, 199, 0.16), transparent 60%),
+    radial-gradient(500px 400px at 80% 80%, rgba(110, 156, 199, 0.07), transparent 60%);
+}
+.quiz-backdrop[data-state='incorrect'] {
+  background:
+    radial-gradient(900px 600px at 50% 25%, rgba(255, 72, 88, 0.11), transparent 60%),
+    radial-gradient(400px 300px at 20% 80%, rgba(255, 72, 88, 0.05), transparent 60%);
+}
+
+.quiz-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.22;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 72px 72px;
+  -webkit-mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 30%, transparent 100%);
+  mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 30%, transparent 100%);
+}
+
+/* ── Answer entrance (staggered) ────────────────────────────────────────── */
+@keyframes quiz-answer-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.quiz-answer-enter { animation: quiz-answer-in 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.quiz-answer-enter:nth-child(1) { animation-delay: 0.04s; }
+.quiz-answer-enter:nth-child(2) { animation-delay: 0.09s; }
+.quiz-answer-enter:nth-child(3) { animation-delay: 0.14s; }
+.quiz-answer-enter:nth-child(4) { animation-delay: 0.19s; }
+.quiz-answer-enter:nth-child(5) { animation-delay: 0.24s; }
+.quiz-answer-enter:nth-child(6) { animation-delay: 0.29s; }
+
+/* ── Reveal reactions ───────────────────────────────────────────────────── */
+@keyframes quiz-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.025); }
+  100% { transform: scale(1); }
+}
+.quiz-pop { animation: quiz-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+@keyframes quiz-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+.quiz-shake { animation: quiz-shake 0.42s ease; }
+
+/* ── Panels ─────────────────────────────────────────────────────────────── */
+@keyframes quiz-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.quiz-fade-up { animation: quiz-fade-up 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+/* ── Completion ─────────────────────────────────────────────────────────── */
+@keyframes quiz-bloom {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+.quiz-bloom { animation: quiz-bloom 0.7s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+@keyframes quiz-ring {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.1); opacity: 0; }
+}
+.quiz-ring::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  border: 1px solid rgba(110, 156, 199, 0.12);
+  animation: quiz-ring 2.5s ease-in-out infinite;
+}
+
+/* ── Streak toast ───────────────────────────────────────────────────────── */
+@keyframes quiz-toast {
+  0% { opacity: 0; transform: translate(-50%, -8px); }
+  12% { opacity: 1; transform: translate(-50%, 0); }
+  88% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -8px); }
+}
+.quiz-toast { animation: quiz-toast 2.2s ease forwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .quiz-answer-enter,
+  .quiz-pop,
+  .quiz-shake,
+  .quiz-fade-up,
+  .quiz-bloom,
+  .quiz-toast { animation: none !important; }
+  .quiz-ring::after { animation: none !important; }
+  .quiz-backdrop { transition: none; }
+}

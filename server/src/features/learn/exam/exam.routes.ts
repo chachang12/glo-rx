@@ -1,8 +1,10 @@
 import { Hono } from 'hono'
 import { requireAuth } from '../../../middleware/auth.js'
+import { requireUsage } from '../../../middleware/usage.js'
 import type { AuthEnv } from '../../../types.js'
 import { ExamModel, OfficialTestModel, QuestionBankModel, QuestionExposureModel } from './exam.model.js'
 import { publishedQuestionFilter } from './question-visibility.js'
+import { generateTutorExplanation } from './tutor.service.js'
 
 const examRoutes = new Hono<AuthEnv>()
 
@@ -221,6 +223,41 @@ examRoutes.post('/official-tests/:testId/questions/:questionId/report', requireA
   await test.save()
 
   return c.json({ reportCount: question.reportCount })
+})
+
+// ── AI Tutor (auth + usage quota) ───────────────────────────────────────────
+
+// POST /api/exams/tutor — on-demand deep explanation for a missed question.
+// Gated by the daily AI usage quota (Free 50 / Pro 500) like the other AI tools.
+// `examCode` (optional) lets requireUsage attribute the spend to the right plan;
+// without it the quota counts against the caller's most recent plan.
+examRoutes.post('/tutor', requireAuth, requireUsage, async (c) => {
+  const body = c.get('parsedBody') as {
+    examCode?: string
+    stem?: string
+    optionsText?: string
+    correctAnswer?: string
+    userAnswer?: string
+    explanation?: string
+  }
+
+  if (!body.stem?.trim() || !body.correctAnswer?.trim()) {
+    return c.json({ error: 'stem and correctAnswer are required' }, 400)
+  }
+
+  try {
+    const explanation = await generateTutorExplanation({
+      stem: body.stem,
+      optionsText: body.optionsText ?? '',
+      correctAnswer: body.correctAnswer,
+      userAnswer: body.userAnswer ?? '',
+      explanation: body.explanation,
+    })
+    return c.json(explanation)
+  } catch (err) {
+    console.error('Tutor generation error:', err)
+    return c.json({ error: 'Failed to generate explanation' }, 500)
+  }
 })
 
 export default examRoutes

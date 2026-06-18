@@ -1,639 +1,424 @@
-import { useState, useCallback, useRef, useMemo } from 'react'
-import { isCorrect } from '@/lib/utils'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { SINGLE_ANSWER_TYPES, type GradingMode, type SessionQuestion, type SessionResults } from '../types/session'
+import { useQuizSession } from '../hooks/use-quiz-session'
+import { useQuestionTimer } from '../hooks/use-question-timer'
+import { useTutorExplanation, type TutorExplanation } from '../api/get-tutor'
+import { SessionHud } from './SessionHud'
+import { QuestionTimer } from './QuestionTimer'
+import { AnswerSurface } from './AnswerSurface'
+import { FeedbackPanel } from './FeedbackPanel'
+import { AiTutorPanel } from './AiTutorPanel'
+import { SessionComplete } from './SessionComplete'
+import { SessionReview } from './SessionReview'
+import './quiz-session.css'
 
-// ── Types ────────────────────────────────────────────────────────────────────
+export type { SessionResults } from '../types/session'
 
-interface SessionQuestion {
-  _id: string
-  type: 'mcq' | 'sata' | 'ordered' | 'calculation' | 'exhibit' | 'priority' | 'fib'
-  stem: string
-  options: Record<string, string> | string[]
-  answer: string[]
-  explanation?: string
-  topics?: string[]
-  difficulty?: string
-  pendingReview?: boolean
-}
-
-const SINGLE_ANSWER_TYPES = new Set(['mcq', 'calculation', 'exhibit', 'priority'])
+const QUESTION_SECONDS = 90
+const CORRECT_MSGS = ['Correct.', 'Exactly right.', 'Well done.', 'Spot on.', "That's it."]
+const INCORRECT_MSGS = ['Not quite.', 'Close, but not right.', 'Almost — keep going.']
 
 interface PracticeSessionProps {
   questions: SessionQuestion[]
   title: string
-  gradingMode: 'instant' | 'end'
+  gradingMode: GradingMode
+  /** Exam this session belongs to — attributes AI-tutor usage to the right plan. */
+  examCode?: string
   onComplete: (results: SessionResults) => void
+  onRestart: () => void
   onExit: () => void
 }
 
-export interface SessionResults {
-  totalQuestions: number
-  correctCount: number
-  answers: { questionId: string; selected: string[]; correct: boolean; timeMs: number }[]
-  durationMs: number
+function toEntries(options: SessionQuestion['options']): [string, string][] {
+  if (!options) return []
+  if (Array.isArray(options)) return options.map((v, i) => [String(i), v])
+  return Object.entries(options)
 }
 
-type AnswerMap = Record<string, string[]>
-type RevealMap = Record<string, boolean>
-
-// ── Component ────────────────────────────────────────────────────────────────
+function rand<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)]
+}
 
 export const PracticeSession = ({
   questions,
   title,
   gradingMode,
+  examCode,
   onComplete,
+  onRestart,
   onExit,
 }: PracticeSessionProps) => {
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [answers, setAnswers] = useState<AnswerMap>({})
-  const [revealed, setRevealed] = useState<RevealMap>({})
-  const [submitted, setSubmitted] = useState(false) // for 'end' mode final submit
-  const questionStartTime = useRef(Date.now())
-  const sessionStartTime = useRef(Date.now())
-  const timings = useRef<Record<string, number>>({})
+  const session = useQuizSession({ questions, onComplete })
+  const {
+    question,
+    qId,
+    selected,
+    isRevealed,
+    isLast,
+    index,
+    total,
+    phase,
+    streak,
+    bestStreak,
+    answeredCount,
+    liveCorrect,
+    outcomes,
+    answers,
+    results,
+    topicBreakdown,
+  } = session
 
-  const question = questions[currentIndex]
-  const qId = question._id
-  const selected = answers[qId] ?? []
-  const isRevealed = revealed[qId] ?? false
-  const isLast = currentIndex === questions.length - 1
-  // FIB stores options as {} server-side; Mongoose Schema.Types.Mixed can drop
-  // an empty object before it reaches the client, so guard against null/undefined.
-  const optionEntries: [string, string][] = !question.options
-    ? []
-    : Array.isArray(question.options)
-    ? question.options.map((v, i) => [String(i), v] as [string, string])
-    : Object.entries(question.options)
+  const isMulti = !SINGLE_ANSWER_TYPES.has(question.type)
+  const topic = question.topics?.[0] ?? title
+  const outcome = isRevealed ? (outcomes[qId] ? 'correct' : 'incorrect') : null
 
-  // Adapt to isCorrect utility shape
-  const questionForGrading = useMemo(() => ({
-    id: 0,
-    type: question.type,
-    stem: question.stem,
-    options: question.options as Record<string, string>,
-    answer: question.answer,
-  }), [question])
+  // ── Timed-out tracking (for the ⏱ feedback icon) ─────────────────────────
+  const [timedOut, setTimedOut] = useState<Record<string, boolean>>({})
+  const handleTimeout = useCallback(() => {
+    setTimedOut((p) => ({ ...p, [qId]: true }))
+    session.markTimeout()
+  }, [qId, session])
 
-  const handleSelect = useCallback((option: string) => {
-    if (isRevealed) return
+  const timerActive = gradingMode === 'instant' && phase === 'active' && !isRevealed
+  const { timeLeft, totalSeconds } = useQuestionTimer({
+    seconds: QUESTION_SECONDS,
+    active: timerActive,
+    resetKey: qId,
+    onExpire: handleTimeout,
+  })
 
-    setAnswers((prev) => {
-      const current = prev[qId] ?? []
-
-      if (SINGLE_ANSWER_TYPES.has(question.type)) {
-        return { ...prev, [qId]: [option] }
-      }
-
-      if (question.type === 'ordered') {
-        // Append in click order; clicking an already-sequenced item removes it
-        // (and everything after, so the sequence stays contiguous-from-the-top).
-        const idx = current.indexOf(option)
-        if (idx >= 0) {
-          return { ...prev, [qId]: current.slice(0, idx) }
-        }
-        return { ...prev, [qId]: [...current, option] }
-      }
-
-      // sata — toggle
-      if (current.includes(option)) {
-        return { ...prev, [qId]: current.filter((o) => o !== option) }
-      }
-      return { ...prev, [qId]: [...current, option] }
-    })
-  }, [qId, question.type, isRevealed])
-
-  const handleFibChange = useCallback((value: string) => {
-    if (isRevealed) return
-    setAnswers((prev) => ({ ...prev, [qId]: [value] }))
-  }, [qId, isRevealed])
-
-  const handleSubmitAnswer = useCallback(() => {
-    const elapsed = Date.now() - questionStartTime.current
-    timings.current[qId] = elapsed
-
-    if (gradingMode === 'instant') {
-      setRevealed((prev) => ({ ...prev, [qId]: true }))
+  // ── Streak toast ─────────────────────────────────────────────────────────
+  const [toast, setToast] = useState<number | null>(null)
+  useEffect(() => {
+    if (streak > 0 && streak % 3 === 0) {
+      setToast(streak)
+      const id = setTimeout(() => setToast(null), 2200)
+      return () => clearTimeout(id)
     }
-  }, [qId, gradingMode])
+  }, [streak])
 
-  const handleNext = useCallback(() => {
-    // If instant mode and not yet submitted, submit first
-    if (gradingMode === 'instant' && !isRevealed && selected.length > 0) {
-      handleSubmitAnswer()
-      return
-    }
+  // ── Answer readable strings (feedback + tutor) ───────────────────────────
+  const { correctAnswerText, userAnswerText, optionsText } = useMemo(() => {
+    const entries = toEntries(question.options)
+    const byKey = Object.fromEntries(entries) as Record<string, string>
+    const toText = (keys: string[], joiner: string) =>
+      keys.map((k) => byKey[k] ?? k).join(joiner)
 
-    if (!isLast) {
-      setCurrentIndex((i) => i + 1)
-      questionStartTime.current = Date.now()
-    }
-  }, [gradingMode, isRevealed, selected, isLast, handleSubmitAnswer])
-
-  const handleFinish = useCallback(() => {
-    // Submit current answer if not yet
-    if (selected.length > 0 && !timings.current[qId]) {
-      timings.current[qId] = Date.now() - questionStartTime.current
-    }
-
-    if (gradingMode === 'end') {
-      // Reveal all answers
-      const allRevealed: RevealMap = {}
-      for (const q of questions) allRevealed[q._id] = true
-      setRevealed(allRevealed)
-      setSubmitted(true)
-      return
-    }
-
-    // Compile results
-    const results = buildResults()
-    onComplete(results)
-  }, [qId, selected, gradingMode, questions, onComplete])
-
-  const handleViewResults = useCallback(() => {
-    const results = buildResults()
-    onComplete(results)
-  }, [onComplete])
-
-  const buildResults = useCallback((): SessionResults => {
-    const resultAnswers = questions.map((q) => {
-      const sel = answers[q._id] ?? []
-      const qForGrade = {
-        id: 0,
-        type: q.type as 'mcq' | 'sata' | 'ordered' | 'calculation' | 'exhibit',
-        stem: q.stem,
-        options: q.options as Record<string, string>,
-        answer: q.answer,
-      }
+    if (question.type === 'fib') {
       return {
-        questionId: q._id,
-        selected: sel,
-        correct: isCorrect(qForGrade, sel),
-        timeMs: timings.current[q._id] ?? 0,
+        correctAnswerText: question.answer.join(', '),
+        userAnswerText: selected[0] ?? '',
+        optionsText: '',
       }
-    })
-
-    return {
-      totalQuestions: questions.length,
-      correctCount: resultAnswers.filter((a) => a.correct).length,
-      answers: resultAnswers,
-      durationMs: Date.now() - sessionStartTime.current,
     }
-  }, [questions, answers])
+    if (question.type === 'ordered') {
+      return {
+        correctAnswerText: question.answer.join(' → '),
+        userAnswerText: toText(selected, ' → '),
+        optionsText: entries.map(([, v], i) => `${i + 1}. ${v}`).join('\n'),
+      }
+    }
+    return {
+      correctAnswerText: toText(question.answer, ', '),
+      userAnswerText: toText(selected, ', '),
+      optionsText: entries.map(([k, v]) => `${k.toUpperCase()}. ${v}`).join('\n'),
+    }
+  }, [question, selected])
 
-  // End mode — show review after final submit
-  if (gradingMode === 'end' && submitted) {
-    const results = buildResults()
-    const score = Math.round((results.correctCount / results.totalQuestions) * 100)
+  // ── AI tutor ─────────────────────────────────────────────────────────────
+  const tutor = useTutorExplanation()
+  const [tutorOpen, setTutorOpen] = useState(false)
+  const [tutorCache, setTutorCache] = useState<Record<string, TutorExplanation>>({})
 
+  const requestTutor = useCallback(() => {
+    tutor.mutate(
+      {
+        examCode,
+        stem: question.stem,
+        optionsText,
+        correctAnswer: correctAnswerText,
+        userAnswer: userAnswerText,
+        explanation: question.explanation,
+      },
+      { onSuccess: (data) => setTutorCache((p) => ({ ...p, [qId]: data })) },
+    )
+  }, [tutor, examCode, question, optionsText, correctAnswerText, userAnswerText, qId])
+
+  const openTutor = useCallback(() => {
+    setTutorOpen(true)
+    if (!tutorCache[qId]) requestTutor()
+  }, [tutorCache, qId, requestTutor])
+
+  // ── Title for the feedback panel ─────────────────────────────────────────
+  const feedbackTitle = useMemo(() => {
+    if (!isRevealed) return ''
+    if (timedOut[qId]) return "Time's up."
+    return outcomes[qId] ? rand(CORRECT_MSGS) : rand(INCORRECT_MSGS)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qId, isRevealed, outcomes[qId], timedOut[qId]])
+
+  // ── Selection ────────────────────────────────────────────────────────────
+  const handleSelect = useCallback(
+    (key: string) => {
+      if (isRevealed) return
+      if (gradingMode === 'instant' && !isMulti) {
+        session.answerSingle(key)
+      } else {
+        session.select(key)
+      }
+    },
+    [isRevealed, gradingMode, isMulti, session],
+  )
+
+  // ── Primary button ───────────────────────────────────────────────────────
+  const advance = useCallback(() => {
+    if (gradingMode === 'instant') {
+      if (isLast) session.finish()
+      else session.goNext()
+      return
+    }
+    // end mode
+    if (isLast) session.revealAllForReview()
+    else session.goNext()
+  }, [gradingMode, isLast, session])
+
+  // ── Keyboard ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (phase !== 'active') return
+    const onKey = (e: KeyboardEvent) => {
+      if (tutorOpen) return
+      const entries = toEntries(question.options)
+      const keyMap: Record<string, number> = { a: 0, b: 1, c: 2, d: 3, e: 4, '1': 0, '2': 1, '3': 2, '4': 3, '5': 4 }
+      const k = e.key.toLowerCase()
+
+      if (k in keyMap && !isRevealed && question.type !== 'fib' && question.type !== 'ordered') {
+        const di = keyMap[k]
+        if (di < entries.length) {
+          e.preventDefault()
+          handleSelect(entries[di][0])
+        }
+        return
+      }
+      if ((e.key === ' ' || e.key === 'Enter')) {
+        // Continue / Next when an answer is locked (instant), or advance in end mode.
+        if (isRevealed || (gradingMode === 'end' && selected.length > 0)) {
+          e.preventDefault()
+          advance()
+        } else if (gradingMode === 'instant' && isMulti && selected.length > 0) {
+          e.preventDefault()
+          session.reveal()
+        }
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [phase, tutorOpen, question, isRevealed, gradingMode, isMulti, selected, handleSelect, advance, session])
+
+  // ── Render: completion / review / active ─────────────────────────────────
+
+  if (phase === 'complete' && results) {
     return (
-      <div className="p-8">
-        <div className="max-w-3xl mx-auto space-y-8">
-          {/* Score header */}
-          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-8 text-center space-y-3">
-            <p className="text-5xl font-bold tabular-nums" style={{ color: score >= 80 ? '#10b981' : score >= 60 ? '#eab308' : '#ef4444' }}>
-              {score}%
-            </p>
-            <p className="text-sm text-[#888]">
-              {results.correctCount} of {results.totalQuestions} correct
-            </p>
-          </div>
-
-          {/* Question review */}
-          <div className="space-y-4">
-            <h2 className="text-sm font-semibold text-[#bbb]">Review</h2>
-            {questions.map((q, i) => {
-              const sel = answers[q._id] ?? []
-              const qForGrade = {
-                id: 0, type: q.type,
-                stem: q.stem, options: q.options as Record<string, string>, answer: q.answer,
-              }
-              const correct = isCorrect(qForGrade, sel)
-              const entries: [string, string][] = !q.options
-                ? []
-                : Array.isArray(q.options)
-                ? q.options.map((v, j) => [String(j), v] as [string, string])
-                : Object.entries(q.options)
-
-              return (
-                <div key={q._id} className={`rounded-xl border p-4 space-y-3 ${correct ? 'border-[#10b981]/20 bg-[#10b981]/[0.03]' : 'border-[#ef4444]/20 bg-[#ef4444]/[0.03]'}`}>
-                  <div className="flex items-start gap-3">
-                    <span className={`text-xs font-bold mt-0.5 ${correct ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
-                      {correct ? '✓' : '✗'}
-                    </span>
-                    <div className="flex-1 space-y-2">
-                      <p className="text-sm text-[#ddd] whitespace-pre-line">{i + 1}. {q.stem}</p>
-                      <div className="space-y-1">
-                        {q.type === 'fib' ? (
-                          <div className="text-xs space-y-1">
-                            <div className={`flex items-center gap-2 ${correct ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
-                              <span className="font-mono w-12 opacity-60">your:</span>
-                              <span>{sel[0] || <em className="opacity-60">(no answer)</em>}</span>
-                            </div>
-                            {!correct && (
-                              <div className="flex items-center gap-2 text-[#10b981]">
-                                <span className="font-mono w-12 opacity-60">correct:</span>
-                                <span>{q.answer.join(', ')}</span>
-                              </div>
-                            )}
-                          </div>
-                        ) : q.type === 'ordered' ? (
-                          (() => {
-                            const optionsByKey = Object.fromEntries(entries) as Record<string, string>
-                            const userSeq = sel.map((k) => optionsByKey[k]).filter(Boolean)
-                            return (
-                              <div className="text-xs space-y-1">
-                                <div className={`flex items-start gap-2 ${correct ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
-                                  <span className="font-mono w-12 opacity-60">your:</span>
-                                  <span>{userSeq.length ? userSeq.join(' → ') : <em className="opacity-60">(no order)</em>}</span>
-                                </div>
-                                {!correct && (
-                                  <div className="flex items-start gap-2 text-[#10b981]">
-                                    <span className="font-mono w-12 opacity-60">correct:</span>
-                                    <span>{q.answer.join(' → ')}</span>
-                                  </div>
-                                )}
-                              </div>
-                            )
-                          })()
-                        ) : (
-                          entries.map(([key, text]) => {
-                            const isSelected = sel.includes(key)
-                            const isAnswer = q.answer.includes(key)
-                            return (
-                              <div key={key} className={`flex items-center gap-2 text-xs px-2 py-1 rounded ${
-                                isAnswer ? 'text-[#10b981]' : isSelected ? 'text-[#ef4444]' : 'text-[#555]'
-                              }`}>
-                                <span className="font-mono w-4">{key}.</span>
-                                <span>{text}</span>
-                                {isAnswer && <span className="text-[10px]">✓</span>}
-                                {isSelected && !isAnswer && <span className="text-[10px]">✗</span>}
-                              </div>
-                            )
-                          })
-                        )}
-                      </div>
-                      {q.explanation && (
-                        <p className="text-xs text-[#888] border-t border-white/[0.04] pt-2 mt-2">{q.explanation}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          <button
-            onClick={handleViewResults}
-            className="w-full py-3 rounded-xl bg-[#4f8ef7] text-[#0f0f1a] text-sm font-semibold hover:bg-[#4f8ef7]/90 transition-all"
-          >
-            Done
-          </button>
+      <div className="quiz-session">
+        <div className="quiz-backdrop" data-state="correct" />
+        <div className="quiz-grid" />
+        <div className="relative z-[1]">
+          <SessionComplete
+            results={results}
+            bestStreak={bestStreak}
+            topics={topicBreakdown}
+            onRestart={onRestart}
+            onExit={onExit}
+          />
         </div>
       </div>
     )
   }
 
-  // ── Main question view ──────────────────────────────────────────────────
-
-  const answeredCorrectly = isRevealed && isCorrect(questionForGrading, selected)
-
-  return (
-    <div className="p-8">
-      <div className="max-w-3xl mx-auto space-y-6">
-        {/* Header bar */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onExit}
-              className="text-xs text-[#555] hover:text-[#888] transition-colors"
-            >
-              &larr; Exit
-            </button>
-            <span className="text-xs text-[#555]">|</span>
-            <span className="text-xs text-[#888] truncate max-w-48">{title}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-mono text-[#555]">
-              {currentIndex + 1} / {questions.length}
-            </span>
-          </div>
-        </div>
-
-        {/* Progress bar */}
-        <div className="h-1 rounded-full bg-white/[0.05]">
-          <div
-            className="h-full rounded-full bg-[#4f8ef7] transition-all"
-            style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
+  if (phase === 'review' && results) {
+    return (
+      <div className="quiz-session">
+        <div className="quiz-backdrop" />
+        <div className="quiz-grid" />
+        <div className="relative z-[1] px-4 pt-6">
+          <SessionReview
+            questions={questions}
+            answers={answers}
+            outcomes={outcomes}
+            correctCount={results.correctCount}
+            onDone={session.finish}
           />
         </div>
+      </div>
+    )
+  }
 
-        {/* Question */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-6 space-y-6">
-          {/* Meta */}
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-[#555]">
-              {question.type === 'fib' ? 'FILL-IN' : question.type === 'priority' ? 'PRIORITY' : question.type}
-            </span>
-            {question.difficulty && (
-              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
-                question.difficulty === 'hard' ? 'bg-[#ef4444]/10 text-[#ef4444]' :
-                question.difficulty === 'medium' ? 'bg-[#eab308]/10 text-[#eab308]' :
-                'bg-[#10b981]/10 text-[#10b981]'
-              }`}>
-                {question.difficulty}
-              </span>
-            )}
-            {question.type === 'sata' && (
-              <span className="text-[10px] text-[#888]">Select all that apply</span>
-            )}
-            {question.type === 'priority' && (
-              <span className="text-[10px] text-[#888]">Pick the highest priority</span>
-            )}
-            {question.type === 'ordered' && (
-              <span className="text-[10px] text-[#888]">Click in correct order</span>
-            )}
-            {question.type === 'fib' && (
-              <span className="text-[10px] text-[#888]">Type your answer</span>
-            )}
+  const liveAccuracy =
+    gradingMode === 'instant' && answeredCount > 0
+      ? Math.round((liveCorrect / answeredCount) * 100)
+      : null
+
+  const tutorData = tutorCache[qId] ?? null
+
+  return (
+    <div className="quiz-session">
+      <div className="quiz-backdrop" data-state={outcome ?? undefined} />
+      <div className="quiz-grid" />
+
+      {toast !== null && (
+        <div className="pointer-events-none fixed left-1/2 top-[72px] z-[201] -translate-x-1/2">
+          <div className="quiz-toast flex items-center gap-2 whitespace-nowrap rounded-full border border-[#6e9cc7]/25 bg-[#6e9cc7]/10 px-4 py-1.5 text-[12.5px] font-medium text-[#6e9cc7]">
+            <span>✦</span> {toast} in a row
+          </div>
+        </div>
+      )}
+
+      <div className="relative z-[1] mx-auto flex min-h-full max-w-[540px] flex-col px-5 pb-10">
+        <SessionHud
+          index={index}
+          total={total}
+          topic={topic}
+          streak={streak}
+          accuracy={liveAccuracy}
+          onExit={onExit}
+        />
+
+        {gradingMode === 'instant' && <QuestionTimer timeLeft={timeLeft} totalSeconds={totalSeconds} />}
+
+        <div className="flex flex-col gap-3">
+          {/* Topic eyebrow */}
+          <div className="inline-flex items-center gap-1.5 self-start rounded-full border border-white/[0.07] bg-white/[0.04] py-[3px] pl-1.5 pr-2.5 font-mono text-[10.5px] tracking-wide text-[#5b6173]">
+            <span className="h-[5px] w-[5px] rounded-full bg-[#6e9cc7]" style={{ boxShadow: '0 0 6px rgba(110,156,199,0.7)' }} />
+            <span className="uppercase">{topic}</span>
           </div>
 
-          {/* Pending-review badge — the user's own generated question that
-              hasn't cleared SME review yet (visible only to them). */}
-          {question.pendingReview && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[#ffb45a]/10 px-2 py-0.5 text-[10px] font-medium text-[#ffb45a]">
-              Pending review
-            </span>
-          )}
-
-          {/* Stem */}
-          <p className="text-[#e8e6f0] leading-relaxed whitespace-pre-line">{question.stem}</p>
-
-          {/* Render the answer surface per type */}
-          {question.type === 'ordered' ? (
-            <OrderedSequence
-              optionEntries={optionEntries}
-              selected={selected}
-              answer={question.answer}
-              isRevealed={isRevealed}
-              onPick={handleSelect}
-            />
-          ) : question.type === 'fib' ? (
-            <FibInput
-              value={selected[0] ?? ''}
-              onChange={handleFibChange}
-              acceptedAnswers={question.answer}
-              isRevealed={isRevealed}
-              isCorrect={isCorrect(questionForGrading, selected)}
-            />
-          ) : (
-            <div className="space-y-2">
-              {optionEntries.map(([key, text]) => {
-                const isSelected = selected.includes(key)
-                const isAnswer = question.answer.includes(key)
-
-                let style = 'border-white/[0.06] bg-white/[0.02] hover:border-white/[0.15] text-[#ddd]'
-                if (isSelected && !isRevealed) {
-                  style = 'border-[#4f8ef7]/40 bg-[#4f8ef7]/10 text-[#e8e6f0]'
-                }
-                if (isRevealed) {
-                  if (isAnswer) {
-                    style = 'border-[#10b981]/40 bg-[#10b981]/10 text-[#10b981]'
-                  } else if (isSelected) {
-                    style = 'border-[#ef4444]/40 bg-[#ef4444]/10 text-[#ef4444]'
-                  } else {
-                    style = 'border-white/[0.04] bg-transparent text-[#555]'
-                  }
-                }
-
-                return (
-                  <button
-                    key={key}
-                    onClick={() => handleSelect(key)}
-                    disabled={isRevealed}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${style} disabled:cursor-default`}
-                  >
-                    <span className="w-6 h-6 rounded-md border border-current/20 flex items-center justify-center text-xs font-mono flex-shrink-0">
-                      {isRevealed && isAnswer ? '✓' : isRevealed && isSelected ? '✗' : key.toUpperCase()}
-                    </span>
-                    <span className="text-sm">{text}</span>
-                  </button>
-                )
-              })}
-            </div>
-          )}
-
-          {/* Feedback (instant mode) */}
-          {isRevealed && (
-            <div className={`rounded-lg p-3 ${answeredCorrectly ? 'bg-[#10b981]/10 border border-[#10b981]/20' : 'bg-[#ef4444]/10 border border-[#ef4444]/20'}`}>
-              <p className={`text-xs font-semibold ${answeredCorrectly ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
-                {answeredCorrectly ? '✓ Correct!' : '✗ Incorrect'}
-              </p>
-              {question.explanation && (
-                <p className="text-xs text-[#888] mt-2">{question.explanation}</p>
+          {/* Question card */}
+          <div className="relative overflow-hidden rounded-[12px] border border-white/[0.13] bg-white/[0.03] p-7">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-[#5b6173]">
+                {question.type === 'fib' ? 'FILL-IN' : question.type}
+              </span>
+              {question.difficulty && (
+                <span
+                  className="rounded-[6px] px-1.5 py-0.5 text-[10px] font-semibold"
+                  style={{
+                    background:
+                      question.difficulty === 'hard'
+                        ? 'rgba(255,72,88,0.1)'
+                        : question.difficulty === 'medium'
+                          ? 'rgba(234,179,8,0.1)'
+                          : 'rgba(110,156,199,0.12)',
+                    color:
+                      question.difficulty === 'hard'
+                        ? '#ff4858'
+                        : question.difficulty === 'medium'
+                          ? '#eab308'
+                          : '#6e9cc7',
+                  }}
+                >
+                  {question.difficulty}
+                </span>
+              )}
+              {question.type === 'sata' && <span className="text-[10px] text-[#a7adbd]">Select all that apply</span>}
+              {question.type === 'priority' && <span className="text-[10px] text-[#a7adbd]">Pick the highest priority</span>}
+              {question.type === 'ordered' && <span className="text-[10px] text-[#a7adbd]">Tap in the correct order</span>}
+              {question.pendingReview && (
+                <span className="rounded-full bg-[#ffb45a]/10 px-2 py-0.5 text-[10px] font-medium text-[#ffb45a]">
+                  Pending review
+                </span>
               )}
             </div>
-          )}
-        </div>
 
-        {/* Actions */}
-        <div className="flex items-center justify-between">
-          <div className="text-xs text-[#555]">
-            {question.topics && question.topics.length > 0 && (
-              <span>{question.topics.join(', ')}</span>
-            )}
+            <p className="mt-5 whitespace-pre-line text-[17px] font-medium leading-relaxed tracking-[-0.01em] text-[#f3f5f9]">
+              {question.stem}
+            </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            {gradingMode === 'instant' && !isRevealed && (
+          {/* Answers */}
+          <AnswerSurface
+            key={qId}
+            question={question}
+            selected={selected}
+            isRevealed={isRevealed}
+            onSelect={handleSelect}
+            onFib={session.setFib}
+          />
+
+          {/* Feedback (instant, after reveal) */}
+          {isRevealed && (
+            <FeedbackPanel
+              isCorrect={!!outcomes[qId]}
+              timedOut={!!timedOut[qId]}
+              title={feedbackTitle}
+              explanation={question.explanation}
+              correctAnswerText={correctAnswerText}
+              showTutorButton={!outcomes[qId]}
+              onOpenTutor={openTutor}
+            />
+          )}
+
+          {/* Primary action */}
+          <div className="mt-1">
+            {gradingMode === 'instant' && isMulti && !isRevealed && (
               <button
-                onClick={handleSubmitAnswer}
+                onClick={session.reveal}
                 disabled={selected.length === 0}
-                className="px-5 py-2.5 rounded-xl bg-[#4f8ef7] text-[#0f0f1a] text-sm font-semibold hover:bg-[#4f8ef7]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full rounded-[12px] bg-[#6e9cc7] py-3.5 text-[15px] font-medium text-[#05060a] transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Submit
               </button>
             )}
 
-            {gradingMode === 'instant' && isRevealed && !isLast && (
+            {gradingMode === 'instant' && isRevealed && (
               <button
-                onClick={handleNext}
-                className="px-5 py-2.5 rounded-xl bg-[#4f8ef7] text-[#0f0f1a] text-sm font-semibold hover:bg-[#4f8ef7]/90 transition-all"
+                onClick={advance}
+                className="flex w-full items-center justify-center gap-2 rounded-[12px] py-3.5 text-[15px] font-medium transition-all hover:-translate-y-0.5"
+                style={
+                  outcomes[qId]
+                    ? { background: '#6e9cc7', color: '#05060a', boxShadow: '0 6px 28px rgba(110,156,199,0.22)' }
+                    : { background: 'rgba(255,72,88,0.1)', color: '#ff4858', border: '1.5px solid rgba(255,72,88,0.28)' }
+                }
               >
-                Next
+                {isLast ? 'Finish' : 'Continue'} <span>→</span>
               </button>
             )}
 
-            {gradingMode === 'instant' && isRevealed && isLast && (
+            {gradingMode === 'end' && (
               <button
-                onClick={handleFinish}
-                className="px-5 py-2.5 rounded-xl bg-[#10b981] text-[#0f0f1a] text-sm font-semibold hover:bg-[#10b981]/90 transition-all"
-              >
-                Finish
-              </button>
-            )}
-
-            {gradingMode === 'end' && !isLast && (
-              <button
-                onClick={() => {
-                  if (selected.length > 0 && !timings.current[qId]) {
-                    timings.current[qId] = Date.now() - questionStartTime.current
-                  }
-                  setCurrentIndex((i) => i + 1)
-                  questionStartTime.current = Date.now()
-                }}
+                onClick={advance}
                 disabled={selected.length === 0}
-                className="px-5 py-2.5 rounded-xl bg-[#4f8ef7] text-[#0f0f1a] text-sm font-semibold hover:bg-[#4f8ef7]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full rounded-[12px] bg-[#6e9cc7] py-3.5 text-[15px] font-medium text-[#05060a] transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Next
-              </button>
-            )}
-
-            {gradingMode === 'end' && isLast && (
-              <button
-                onClick={handleFinish}
-                disabled={selected.length === 0}
-                className="px-5 py-2.5 rounded-xl bg-[#10b981] text-[#0f0f1a] text-sm font-semibold hover:bg-[#10b981]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Submit All
+                {isLast ? 'Submit all' : 'Next'}
               </button>
             )}
           </div>
+
+          {/* Keyboard hint — pointer-fine devices only */}
+          {gradingMode === 'instant' && !isMulti && !isRevealed && (
+            <div className="hidden text-center font-mono text-[10.5px] tracking-wide text-[#5b6173] [@media(hover:hover)]:block">
+              Press <Kbd>A</Kbd>
+              <Kbd>B</Kbd>
+              <Kbd>C</Kbd>
+              <Kbd>D</Kbd> to answer
+            </div>
+          )}
         </div>
       </div>
+
+      <AiTutorPanel
+        open={tutorOpen}
+        loading={tutor.isPending && !tutorData}
+        error={tutor.isError && !tutorData}
+        data={tutorData}
+        onClose={() => setTutorOpen(false)}
+        onRetry={requestTutor}
+      />
     </div>
   )
 }
 
-// ── Ordered sequence builder ─────────────────────────────────────────────────
-
-interface OrderedSequenceProps {
-  optionEntries: [string, string][]
-  selected: string[]
-  answer: string[]
-  isRevealed: boolean
-  onPick: (key: string) => void
-}
-
-const OrderedSequence = ({ optionEntries, selected, answer, isRevealed, onPick }: OrderedSequenceProps) => {
-  const optionsByKey = Object.fromEntries(optionEntries) as Record<string, string>
-  const available = optionEntries.filter(([k]) => !selected.includes(k))
-  const total = optionEntries.length
-
-  // Resolve correct sequence as keys for per-step reveal feedback.
-  const correctKeysInOrder = answer
-    .map((value) => optionEntries.find(([, text]) => text === value)?.[0])
-    .filter((k): k is string => !!k)
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <p className="text-[10px] font-mono text-[#555] uppercase tracking-widest mb-2">
-          Your order {selected.length > 0 && `(${selected.length}/${total})`}
-        </p>
-        {selected.length === 0 ? (
-          <div className="border border-dashed border-white/[0.08] rounded-xl px-4 py-3 text-xs text-[#555]">
-            Click options below to build your sequence.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {selected.map((key, i) => {
-              const isCorrectPosition = isRevealed && correctKeysInOrder[i] === key
-              const isWrongPosition = isRevealed && !isCorrectPosition
-
-              const style = !isRevealed
-                ? 'border-[#4f8ef7]/40 bg-[#4f8ef7]/10 text-[#e8e6f0]'
-                : isCorrectPosition
-                ? 'border-[#10b981]/40 bg-[#10b981]/10 text-[#10b981]'
-                : 'border-[#ef4444]/40 bg-[#ef4444]/10 text-[#ef4444]'
-
-              return (
-                <button
-                  key={`sel-${key}-${i}`}
-                  onClick={() => onPick(key)}
-                  disabled={isRevealed}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${style} disabled:cursor-default`}
-                >
-                  <span className="w-6 h-6 rounded-full border border-current/40 flex items-center justify-center text-[11px] font-mono flex-shrink-0">
-                    {i + 1}
-                  </span>
-                  <span className="text-sm flex-1">{optionsByKey[key]}</span>
-                  {isRevealed && isWrongPosition && correctKeysInOrder[i] && (
-                    <span className="text-[10px] font-mono opacity-70">
-                      should be: {optionsByKey[correctKeysInOrder[i]]}
-                    </span>
-                  )}
-                  {!isRevealed && (
-                    <span className="text-[10px] font-mono text-[#555]">remove</span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      {!isRevealed && available.length > 0 && (
-        <div>
-          <p className="text-[10px] font-mono text-[#555] uppercase tracking-widest mb-2">
-            Available
-          </p>
-          <div className="space-y-2">
-            {available.map(([key, text]) => (
-              <button
-                key={`av-${key}`}
-                onClick={() => onPick(key)}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:border-white/[0.15] text-[#ddd] text-left transition-all"
-              >
-                <span className="w-6 h-6 rounded-md border border-white/10 flex items-center justify-center text-[11px] font-mono flex-shrink-0">
-                  +
-                </span>
-                <span className="text-sm flex-1">{text}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ── Fill-in-the-blank input ──────────────────────────────────────────────────
-
-interface FibInputProps {
-  value: string
-  onChange: (next: string) => void
-  acceptedAnswers: string[]
-  isRevealed: boolean
-  isCorrect: boolean
-}
-
-const FibInput = ({ value, onChange, acceptedAnswers, isRevealed, isCorrect }: FibInputProps) => {
-  const borderClass = !isRevealed
-    ? 'border-white/[0.08] focus-within:border-[#4f8ef7]/50'
-    : isCorrect
-    ? 'border-[#10b981]/50 bg-[#10b981]/5'
-    : 'border-[#ef4444]/50 bg-[#ef4444]/5'
-
-  return (
-    <div className="space-y-2">
-      <div className={`rounded-xl border bg-white/[0.02] transition-colors ${borderClass}`}>
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          disabled={isRevealed}
-          placeholder="Type your answer"
-          autoFocus
-          className="w-full px-4 py-3 bg-transparent text-[#e8e6f0] placeholder-[#555] text-sm outline-none disabled:cursor-default"
-        />
-      </div>
-
-      {isRevealed && !isCorrect && (
-        <p className="text-xs text-[#888]">
-          Accepted answer{acceptedAnswers.length > 1 ? 's' : ''}:{' '}
-          <span className="text-[#10b981]">{acceptedAnswers.join(', ')}</span>
-        </p>
-      )}
-    </div>
-  )
-}
+const Kbd = ({ children }: { children: React.ReactNode }) => (
+  <span className="mx-0.5 inline-block rounded border border-white/[0.13] bg-white/[0.07] px-1.5 py-px text-[9.5px] text-[#5b6173]">
+    {children}
+  </span>
+)
