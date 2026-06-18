@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams, useNavigate } from 'react-router'
-import { paths } from '@/config/paths'
 import { PageLoader } from '@/features/shared/ui/PageLoader'
 import {
   PracticeSession,
@@ -9,22 +8,12 @@ import {
   getTest,
   getTopicQuestions,
   type SessionResults,
+  type SessionQuestion,
+  type GradingMode,
 } from '@/features/learn/tests'
 import { getOfficialTest, getExamQuestions } from '@/features/learn/exams'
 
-interface SessionQuestion {
-  _id: string
-  type: 'mcq' | 'sata' | 'ordered' | 'calculation' | 'exhibit'
-  stem: string
-  options: Record<string, string> | string[]
-  answer: string[]
-  explanation?: string
-  topics?: string[]
-  difficulty?: string
-  pendingReview?: boolean
-}
-
-type SessionMode = 'setup' | 'active' | 'results'
+type SessionMode = 'setup' | 'active'
 
 export const Test = () => {
   const [searchParams] = useSearchParams()
@@ -32,18 +21,21 @@ export const Test = () => {
 
   const testId = searchParams.get('testId')
   const isOfficial = searchParams.get('official') === 'true'
-  const examCode = searchParams.get('examCode')
+  const examCodeParam = searchParams.get('examCode')
   const mode = searchParams.get('mode') // 'bank'
   const topicsParam = searchParams.get('topics')
   const topicId = searchParams.get('topicId')
   const customPlanId = searchParams.get('customPlanId') // present for custom-plan topic practice
 
-  const [questions, setQuestions] = useState<SessionQuestion[]>([])
+  // `pool` is everything we loaded; `activeQuestions` is the shuffled slice for
+  // the current run (kept separate so "Start another session" can re-draw).
+  const [pool, setPool] = useState<SessionQuestion[]>([])
+  const [activeQuestions, setActiveQuestions] = useState<SessionQuestion[]>([])
   const [sessionTitle, setSessionTitle] = useState('')
-  const [gradingMode, setGradingMode] = useState<'instant' | 'end'>('instant')
+  const [sessionExamCode, setSessionExamCode] = useState<string | undefined>(undefined)
+  const [gradingMode, setGradingMode] = useState<GradingMode>('instant')
   const [questionCount, setQuestionCount] = useState(20)
   const [sessionMode, setSessionMode] = useState<SessionMode>('setup')
-  const [results, setResults] = useState<SessionResults | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -53,10 +45,8 @@ export const Test = () => {
       try {
         if (testId) {
           // Official test or community test
-          const data = isOfficial
-            ? await getOfficialTest(testId)
-            : await getTest(testId)
-          setQuestions(
+          const data = isOfficial ? await getOfficialTest(testId) : await getTest(testId)
+          setPool(
             (data.questions ?? []).map((q) => ({
               _id: q._id,
               type: q.type as SessionQuestion['type'],
@@ -66,32 +56,39 @@ export const Test = () => {
               explanation: q.explanation,
               topics: q.topics,
               difficulty: q.difficulty ?? undefined,
-            }))
+            })),
           )
           setSessionTitle(data.title ?? 'Practice Test')
+          setSessionExamCode(data.examCode ?? undefined)
           setGradingMode('end') // full tests default to end grading
-        } else if (topicId && (customPlanId || examCode)) {
+        } else if (topicId && (customPlanId || examCodeParam)) {
           // Topic-anchored practice — questions generated for a specific topic
-          const data = await getTopicQuestions({ topicId, examCode: examCode ?? undefined, customPlanId: customPlanId ?? undefined })
-          const adapted: SessionQuestion[] = data.questions.map((q) => ({
-            _id: q.id,
-            type: q.type as SessionQuestion['type'],
-            stem: q.stem,
-            // FIB stores options as {} server-side; Mongoose Mixed can drop the
-            // empty object before it reaches the client, so coalesce.
-            options: q.options ?? (q.type === 'ordered' ? [] : {}),
-            answer: q.answer,
-            explanation: q.explanation,
-            difficulty: q.difficulty ?? undefined,
-            pendingReview: q.pendingReview,
-          }))
-          setQuestions(adapted)
+          const data = await getTopicQuestions({
+            topicId,
+            examCode: examCodeParam ?? undefined,
+            customPlanId: customPlanId ?? undefined,
+          })
+          setPool(
+            data.questions.map((q) => ({
+              _id: q.id,
+              type: q.type as SessionQuestion['type'],
+              stem: q.stem,
+              // FIB stores options as {} server-side; Mongoose Mixed can drop the
+              // empty object before it reaches the client, so coalesce.
+              options: q.options ?? (q.type === 'ordered' ? [] : {}),
+              answer: q.answer,
+              explanation: q.explanation,
+              difficulty: q.difficulty ?? undefined,
+              pendingReview: q.pendingReview,
+            })),
+          )
           setSessionTitle(data.topicLabel ?? 'Topic Practice')
+          setSessionExamCode(examCodeParam ?? undefined)
           setGradingMode('instant')
-        } else if (examCode) {
+        } else if (examCodeParam) {
           // Question bank or topic-based practice
-          const data = await getExamQuestions(examCode, { limit: 100 })
-          setQuestions(
+          const data = await getExamQuestions(examCodeParam, { limit: 100 })
+          setPool(
             data.map((q) => ({
               _id: q._id,
               type: q.type as SessionQuestion['type'],
@@ -101,9 +98,10 @@ export const Test = () => {
               explanation: q.explanation,
               topics: q.topics,
               difficulty: q.difficulty ?? undefined,
-            }))
+            })),
           )
           setSessionTitle(mode === 'bank' ? 'Question Bank' : 'Practice Session')
+          setSessionExamCode(examCodeParam)
           setGradingMode('instant') // bank defaults to instant
         }
       } catch {
@@ -114,27 +112,23 @@ export const Test = () => {
     }
 
     loadQuestions()
-  }, [testId, isOfficial, examCode, mode, topicsParam, topicId, customPlanId])
+  }, [testId, isOfficial, examCodeParam, mode, topicsParam, topicId, customPlanId])
 
   const handleStartSession = useCallback(() => {
-    // Slice questions to desired count and shuffle
-    const shuffled = [...questions].sort(() => Math.random() - 0.5)
-    const sessionQuestions = shuffled.slice(0, questionCount)
-    setQuestions(sessionQuestions)
+    const shuffled = [...pool].sort(() => Math.random() - 0.5)
+    const sessionQuestions = testId ? shuffled : shuffled.slice(0, questionCount)
+    setActiveQuestions(sessionQuestions)
     setSessionMode('active')
 
-    // Record exposure
     const ids = sessionQuestions.map((q) => q._id).filter(Boolean)
     if (ids.length > 0) {
       recordExposure(ids).catch(() => {})
     }
-  }, [questions, questionCount])
+  }, [pool, questionCount, testId])
 
+  // Persist per-question outcomes for exposure tracking. Fired once by the
+  // session when it completes.
   const handleComplete = useCallback((sessionResults: SessionResults) => {
-    setResults(sessionResults)
-    setSessionMode('results')
-
-    // Record answers for exposure tracking
     for (const answer of sessionResults.answers) {
       if (answer.questionId) {
         recordAnswer({ questionId: answer.questionId, correct: answer.correct }).catch(() => {})
@@ -142,122 +136,107 @@ export const Test = () => {
     }
   }, [])
 
-  const handleExit = useCallback(() => {
-    navigate(-1)
-  }, [navigate])
+  const handleRestart = useCallback(() => setSessionMode('setup'), [])
+  const handleExit = useCallback(() => navigate(-1), [navigate])
 
   if (loading) return <PageLoader />
 
   if (error) {
     return (
       <div className="p-8">
-        <div className="max-w-2xl mx-auto text-center space-y-4 py-16">
-          <p className="text-sm text-[#888]">{error}</p>
-          <button onClick={() => navigate(-1)} className="text-xs text-[#4f8ef7] hover:underline">Go back</button>
+        <div className="mx-auto max-w-2xl space-y-4 py-16 text-center">
+          <p className="text-sm text-[#a7adbd]">{error}</p>
+          <button onClick={() => navigate(-1)} className="text-xs text-[#6aa8ff] hover:underline">
+            Go back
+          </button>
         </div>
       </div>
     )
   }
 
-  // ── Setup Screen ──────────────────────────────────────────────────────────
+  // ── Active session ────────────────────────────────────────────────────────
 
-  if (sessionMode === 'setup') {
-    const maxQuestions = questions.length
+  if (sessionMode === 'active') {
+    return (
+      <PracticeSession
+        questions={activeQuestions}
+        title={sessionTitle}
+        examCode={sessionExamCode}
+        gradingMode={gradingMode}
+        onComplete={handleComplete}
+        onRestart={handleRestart}
+        onExit={handleExit}
+      />
+    )
+  }
 
-    if (maxQuestions === 0) {
-      return (
-        <div className="p-8">
-          <div className="max-w-2xl mx-auto text-center space-y-4 py-16">
-            <p className="text-sm text-[#888]">No questions available</p>
-            <button onClick={() => navigate(-1)} className="text-xs text-[#4f8ef7] hover:underline">Go back</button>
-          </div>
-        </div>
-      )
-    }
+  // ── Setup ─────────────────────────────────────────────────────────────────
 
-    // For full tests, skip setup and go directly
-    if (testId) {
-      return (
-        <div className="p-8">
-          <div className="max-w-lg mx-auto space-y-8">
-            <div className="space-y-2 text-center">
-              <h1 className="text-2xl font-bold tracking-tight text-[#e8e6f0]">{sessionTitle}</h1>
-              <p className="text-sm text-[#888]">{maxQuestions} questions</p>
-            </div>
+  const maxQuestions = pool.length
 
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-6 space-y-5">
-              <div className="space-y-3">
-                <p className="text-xs font-semibold text-[#bbb]">Grading Mode</p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setGradingMode('instant')}
-                    className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all ${
-                      gradingMode === 'instant'
-                        ? 'border border-[#4f8ef7]/30 bg-[#4f8ef7]/10 text-[#4f8ef7]'
-                        : 'border border-white/[0.08] bg-white/[0.03] text-[#555] hover:text-[#888]'
-                    }`}
-                  >
-                    Instant Feedback
-                  </button>
-                  <button
-                    onClick={() => setGradingMode('end')}
-                    className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all ${
-                      gradingMode === 'end'
-                        ? 'border border-[#4f8ef7]/30 bg-[#4f8ef7]/10 text-[#4f8ef7]'
-                        : 'border border-white/[0.08] bg-white/[0.03] text-[#555] hover:text-[#888]'
-                    }`}
-                  >
-                    Grade at End
-                  </button>
-                </div>
-                <p className="text-[10px] text-[#555]">
-                  {gradingMode === 'instant'
-                    ? 'See if you got each question right immediately after submitting'
-                    : 'Answer all questions first, then review your results'}
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={handleStartSession}
-              className="w-full py-3 rounded-xl bg-[#4f8ef7] text-[#0f0f1a] text-sm font-semibold hover:bg-[#4f8ef7]/90 transition-all"
-            >
-              Start Test
-            </button>
-
-            <button
-              onClick={() => navigate(-1)}
-              className="w-full py-2 text-xs text-[#555] hover:text-[#888] transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )
-    }
-
-    // Question bank / practice session setup
+  if (maxQuestions === 0) {
     return (
       <div className="p-8">
-        <div className="max-w-lg mx-auto space-y-8">
-          <div className="space-y-2 text-center">
-            <h1 className="text-2xl font-bold tracking-tight text-[#e8e6f0]">{sessionTitle}</h1>
-            <p className="text-sm text-[#888]">{maxQuestions} questions available</p>
-          </div>
+        <div className="mx-auto max-w-2xl space-y-4 py-16 text-center">
+          <p className="text-sm text-[#a7adbd]">No questions available</p>
+          <button onClick={() => navigate(-1)} className="text-xs text-[#6aa8ff] hover:underline">
+            Go back
+          </button>
+        </div>
+      </div>
+    )
+  }
 
-          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-6 space-y-5">
-            {/* Question count */}
+  const gradingToggle = (
+    <div className="space-y-3">
+      <p className="text-xs font-semibold text-[#cfd4df]">Grading Mode</p>
+      <div className="flex gap-2">
+        {(['instant', 'end'] as const).map((m) => (
+          <button
+            key={m}
+            onClick={() => setGradingMode(m)}
+            className={`flex-1 rounded-[10px] py-2.5 text-xs font-semibold transition-all ${
+              gradingMode === m
+                ? 'border border-[#6aa8ff]/30 bg-[#6aa8ff]/10 text-[#6aa8ff]'
+                : 'border border-white/[0.08] bg-white/[0.03] text-[#5b6173] hover:text-[#a7adbd]'
+            }`}
+          >
+            {m === 'instant' ? 'Instant Feedback' : 'Grade at End'}
+          </button>
+        ))}
+      </div>
+      <p className="text-[10px] text-[#5b6173]">
+        {gradingMode === 'instant'
+          ? 'See if you got each question right immediately after answering'
+          : 'Answer all questions first, then review your results'}
+      </p>
+    </div>
+  )
+
+  return (
+    <div className="p-8">
+      <div className="mx-auto max-w-lg space-y-8">
+        <div className="space-y-2 text-center">
+          <h1 className="text-2xl font-bold tracking-tight text-[#f3f5f9]">{sessionTitle}</h1>
+          <p className="text-sm text-[#a7adbd]">
+            {maxQuestions} question{maxQuestions === 1 ? '' : 's'}
+            {testId ? '' : ' available'}
+          </p>
+        </div>
+
+        <div className="space-y-5 rounded-[12px] border border-white/[0.07] bg-white/[0.03] p-6">
+          {!testId && (
             <div className="space-y-3">
-              <p className="text-xs font-semibold text-[#bbb]">Number of Questions</p>
-              <div className="flex items-center gap-3">
+              <p className="text-xs font-semibold text-[#cfd4df]">Number of Questions</p>
+              <div className="flex flex-wrap items-center gap-3">
                 {[10, 20, 30, 50].filter((n) => n <= maxQuestions).map((n) => (
                   <button
                     key={n}
                     onClick={() => setQuestionCount(n)}
-                    className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+                    className={`rounded-[10px] px-4 py-2 text-xs font-semibold transition-all ${
                       questionCount === n
-                        ? 'border border-[#4f8ef7]/30 bg-[#4f8ef7]/10 text-[#4f8ef7]'
-                        : 'border border-white/[0.08] bg-white/[0.03] text-[#555] hover:text-[#888]'
+                        ? 'border border-[#6aa8ff]/30 bg-[#6aa8ff]/10 text-[#6aa8ff]'
+                        : 'border border-white/[0.08] bg-white/[0.03] text-[#5b6173] hover:text-[#a7adbd]'
                     }`}
                   >
                     {n}
@@ -266,10 +245,10 @@ export const Test = () => {
                 {maxQuestions > 50 && (
                   <button
                     onClick={() => setQuestionCount(maxQuestions)}
-                    className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+                    className={`rounded-[10px] px-4 py-2 text-xs font-semibold transition-all ${
                       questionCount === maxQuestions
-                        ? 'border border-[#4f8ef7]/30 bg-[#4f8ef7]/10 text-[#4f8ef7]'
-                        : 'border border-white/[0.08] bg-white/[0.03] text-[#555] hover:text-[#888]'
+                        ? 'border border-[#6aa8ff]/30 bg-[#6aa8ff]/10 text-[#6aa8ff]'
+                        : 'border border-white/[0.08] bg-white/[0.03] text-[#5b6173] hover:text-[#a7adbd]'
                     }`}
                   >
                     All ({maxQuestions})
@@ -277,121 +256,25 @@ export const Test = () => {
                 )}
               </div>
             </div>
+          )}
 
-            {/* Grading mode */}
-            <div className="space-y-3">
-              <p className="text-xs font-semibold text-[#bbb]">Grading Mode</p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setGradingMode('instant')}
-                  className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all ${
-                    gradingMode === 'instant'
-                      ? 'border border-[#4f8ef7]/30 bg-[#4f8ef7]/10 text-[#4f8ef7]'
-                      : 'border border-white/[0.08] bg-white/[0.03] text-[#555] hover:text-[#888]'
-                  }`}
-                >
-                  Instant Feedback
-                </button>
-                <button
-                  onClick={() => setGradingMode('end')}
-                  className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all ${
-                    gradingMode === 'end'
-                      ? 'border border-[#4f8ef7]/30 bg-[#4f8ef7]/10 text-[#4f8ef7]'
-                      : 'border border-white/[0.08] bg-white/[0.03] text-[#555] hover:text-[#888]'
-                  }`}
-                >
-                  Grade at End
-                </button>
-              </div>
-              <p className="text-[10px] text-[#555]">
-                {gradingMode === 'instant'
-                  ? 'See if you got each question right immediately after submitting'
-                  : 'Answer all questions first, then review your results'}
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={handleStartSession}
-            className="w-full py-3 rounded-xl bg-[#4f8ef7] text-[#0f0f1a] text-sm font-semibold hover:bg-[#4f8ef7]/90 transition-all"
-          >
-            Start with {Math.min(questionCount, maxQuestions)} Questions
-          </button>
-
-          <button
-            onClick={() => navigate(-1)}
-            className="w-full py-2 text-xs text-[#555] hover:text-[#888] transition-colors"
-          >
-            Cancel
-          </button>
+          {gradingToggle}
         </div>
+
+        <button
+          onClick={handleStartSession}
+          className="w-full rounded-[12px] bg-[#6aa8ff] py-3 text-sm font-semibold text-[#0f0f1a] transition-all hover:bg-[#6aa8ff]/90"
+        >
+          {testId ? 'Start Test' : `Start with ${Math.min(questionCount, maxQuestions)} Questions`}
+        </button>
+
+        <button
+          onClick={() => navigate(-1)}
+          className="w-full py-2 text-xs text-[#5b6173] transition-colors hover:text-[#a7adbd]"
+        >
+          Cancel
+        </button>
       </div>
-    )
-  }
-
-  // ── Active Session ──────────────────────────────────────────────────────
-
-  if (sessionMode === 'active') {
-    return (
-      <PracticeSession
-        questions={questions}
-        title={sessionTitle}
-        gradingMode={gradingMode}
-        onComplete={handleComplete}
-        onExit={handleExit}
-      />
-    )
-  }
-
-  // ── Results ─────────────────────────────────────────────────────────────
-
-  if (sessionMode === 'results' && results) {
-    const score = Math.round((results.correctCount / results.totalQuestions) * 100)
-    const avgTime = results.answers.length > 0
-      ? Math.round(results.answers.reduce((sum, a) => sum + a.timeMs, 0) / results.answers.length / 1000)
-      : 0
-
-    return (
-      <div className="p-8">
-        <div className="max-w-lg mx-auto space-y-8">
-          {/* Score */}
-          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-8 text-center space-y-4">
-            <p className="text-6xl font-bold tabular-nums" style={{
-              color: score >= 80 ? '#10b981' : score >= 60 ? '#eab308' : '#ef4444'
-            }}>
-              {score}%
-            </p>
-            <p className="text-sm text-[#888]">
-              {results.correctCount} of {results.totalQuestions} correct
-            </p>
-            <div className="flex items-center justify-center gap-6 text-xs text-[#555]">
-              <span>{Math.round(results.durationMs / 1000)}s total</span>
-              <span>{avgTime}s avg per question</span>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="space-y-2">
-            <button
-              onClick={() => {
-                setSessionMode('setup')
-                setResults(null)
-              }}
-              className="w-full py-3 rounded-xl bg-[#4f8ef7] text-[#0f0f1a] text-sm font-semibold hover:bg-[#4f8ef7]/90 transition-all"
-            >
-              Practice Again
-            </button>
-            <button
-              onClick={() => navigate(-1)}
-              className="w-full py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm font-semibold text-[#888] hover:text-[#ddd] transition-all"
-            >
-              Back to Plan
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  return <PageLoader />
+    </div>
+  )
 }
