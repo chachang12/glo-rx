@@ -1,0 +1,8 @@
+.ds-sync/
+ds-bundle/
+dist-dssync/
+.design-sync/dist-lib/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/styles/axeous-compiled.css
+.design-sync/styles/axeous-bundle.css
