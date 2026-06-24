@@ -14,3 +14,13 @@ export function getOfficialPlanProgramPhase(): number {
 export function isOfficialPlanProgramPhaseAtLeast(phase: number): boolean {
   return getOfficialPlanProgramPhase() >= phase
 }
+
+// Soft navbar: drop the capsule background and align the bar to the dashboard
+// panel width. On by default; set VITE_SOFT_NAVBAR=false to revert to the old
+// full-capsule navbar.
+export function isSoftNavbarEnabled(): boolean {
+  const raw = import.meta.env.VITE_SOFT_NAVBAR
+  if (raw == null || raw === '') return true
+  const v = String(raw).toLowerCase()
+  return v !== 'false' && v !== '0' && v !== 'off'
+}

@@ -1,116 +1,336 @@
 /* ============================================================
-   Axeous Dashboard — scoped under .axeous-dashboard
-   Theme-aware (uses shared CSS custom properties from :root).
+   Axeous Dashboard — "Soft" bento redesign.
+   Scoped under .axeous-dashboard. Theme-aware: base tokens are
+   the dark palette (app default); a light override follows.
+
+   NOTE on radii: the Soft language is deliberately pillowy and
+   uses larger card radii than the global --radius-* scale (which
+   tops out at 12px for app cards). These live as local --s-r-*
+   tokens, the same way landing.css keeps its own visual language.
    ============================================================ */
 
 .axeous-dashboard {
-  font-family: 'Geist', ui-sans-serif, system-ui, -apple-system, sans-serif;
-  font-feature-settings: 'ss01', 'cv11';
+  /* soft surfaces (dark default) */
+  --s-card: #1a1d23;
+  --s-track: #0f1216;
+  --s-inset: #15181e;
+  --s-inset-sh: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+  --s-inset-sh-soft: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+  --s-ghost1: #272b33;
+  --s-ghost2: #22262d;
+  --s-ghost3: #1e2128;
+  --s-soft: 0 24px 48px -22px rgba(0, 0, 0, 0.7), 0 6px 16px -10px rgba(0, 0, 0, 0.5);
+  --s-soft-sm: 0 8px 18px -10px rgba(0, 0, 0, 0.6);
+  --s-pill: #eef0f4;
+  --s-pill-fg: #14171c;
+  --s-pill-sh: 0 14px 26px -12px rgba(0, 0, 0, 0.6);
+  --s-fade: linear-gradient(180deg, color-mix(in srgb, var(--s-card) 45%, transparent), var(--s-card) 78%);
+  --s-accent-soft: color-mix(in srgb, var(--teal) 18%, transparent);
+
+  /* outer panel that frames the whole dashboard */
+  --s-panel-grad: linear-gradient(170deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.012));
+  --s-panel-border: rgba(255, 255, 255, 0.06);
+  --s-panel-sh: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 30px 60px -40px rgba(0, 0, 0, 0.7);
+  --s-page-top: var(--bg); /* colour behind the panel, for the notch cutout */
+
+  /* local radius scale for the soft language */
+  --s-r-lg: 26px;
+  --s-r-md: 24px;
+  --s-r-inner: 18px;
+  --s-r-btn: 16px;
+
   color: var(--ink);
+  font-feature-settings: 'ss01', 'cv11';
 }
 
-.axeous-dashboard .wrap { max-width: 1240px; margin: 0 auto; padding: 0 32px; }
+:root[data-theme='light'] .axeous-dashboard {
+  --s-card: #ffffff;
+  --s-track: #e6e9ef;
+  --s-inset: #f5f6f9;
+  --s-inset-sh: inset 0 1px 2px rgba(23, 26, 32, 0.1);
+  --s-inset-sh-soft: inset 0 1px 2px rgba(23, 26, 32, 0.05);
+  --s-ghost1: #e2e5eb;
+  --s-ghost2: #dde0e7;
+  --s-ghost3: #e6e8ee;
+  --s-soft: 0 22px 46px -24px rgba(23, 26, 32, 0.22), 0 6px 16px -10px rgba(23, 26, 32, 0.12);
+  --s-soft-sm: 0 8px 18px -9px rgba(23, 26, 32, 0.22);
+  --s-pill: #0e1116;
+  --s-pill-fg: #ffffff;
+  --s-pill-sh: 0 14px 26px -12px rgba(14, 17, 22, 0.5);
+  --s-accent-soft: color-mix(in srgb, var(--teal) 14%, transparent);
 
-/* HEADER */
-.axeous-dashboard .dash-header { padding: 36px 0 0; }
-.axeous-dashboard .dash-header h1 { font-size: 32px; font-weight: 500; letter-spacing: -0.02em; margin: 0 0 4px; color: var(--ink); }
-.axeous-dashboard .dash-header p { font-size: 15px; color: var(--ink-dim); margin: 0; }
-
-/* CARD */
-.axeous-dashboard .card {
-  border-radius: var(--radius-lg);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--ink) 4%, transparent),
-    color-mix(in oklab, var(--ink) 1.5%, transparent)
-  );
-  border: 1px solid var(--line);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  overflow: hidden;
-  transition: border-color .2s;
-}
-.axeous-dashboard .card:hover { border-color: var(--line-strong); }
-
-/* METRICS */
-.axeous-dashboard .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 28px; }
-.axeous-dashboard .metric-card { padding: 22px 24px; }
-.axeous-dashboard .metric-label {
-  font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em;
-  color: var(--ink-faint); margin-bottom: 10px;
-  display: flex; align-items: center; gap: 8px;
-}
-.axeous-dashboard .metric-val {
-  font-size: 36px; font-weight: 500; letter-spacing: -0.03em;
-  line-height: 1; margin-bottom: 6px; color: var(--ink);
-}
-.axeous-dashboard .metric-val .unit { font-size: 20px; color: var(--ink-faint); }
-.axeous-dashboard .metric-sub {
-  font-size: 12.5px; color: var(--ink-dim);
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  --s-panel-grad: linear-gradient(170deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.15));
+  --s-panel-border: rgba(255, 255, 255, 0.6);
+  --s-panel-sh: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 30px 60px -44px rgba(23, 26, 32, 0.4);
 }
 
-/* BOTTOM ROW */
-.axeous-dashboard .bottom-row {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 16px; margin-top: 28px; padding-bottom: 48px;
+.axeous-dashboard .wrap { max-width: none; margin: 0 auto; padding: 8px 28px 48px; }
+
+/* ---- outer panel ---- */
+.axeous-dashboard .soft-panel {
+  position: relative;
+  background: var(--s-panel-grad);
+  border: 1px solid var(--s-panel-border);
+  border-radius: 32px;
+  padding: 20px;
+  box-shadow: var(--s-panel-sh);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
 }
 
-.axeous-dashboard .plans-head {
-  display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
+/* ---- notch the dock nests into ---- */
+.axeous-dashboard .panel-notch {
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  pointer-events: none;
 }
-.axeous-dashboard .plans-head h3 { font-size: 14px; font-weight: 500; margin: 0; color: var(--ink); }
-.axeous-dashboard .view-all { font-size: 12.5px; color: var(--teal); }
-.axeous-dashboard .view-all:hover { text-decoration: underline; }
 
-.axeous-dashboard .plan-item {
-  display: flex; align-items: center; gap: 14px;
-  padding: 14px; border-radius: var(--radius-md);
-  background: var(--glass); border: 1px solid var(--line);
-  transition: background .2s, border-color .2s;
-  margin-bottom: 8px; text-decoration: none; color: inherit;
+/* ---- floating dock (magnify on hover) ---- */
+.axeous-dashboard .floating-dock {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: flex-end;
+  gap: 11px;
+  z-index: 6;
 }
-.axeous-dashboard .plan-item:last-child { margin-bottom: 0; }
-.axeous-dashboard .plan-item:hover { background: var(--glass-strong); border-color: var(--line-strong); }
-.axeous-dashboard .plan-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.axeous-dashboard .plan-info { flex: 1; min-width: 0; }
-.axeous-dashboard .plan-name { font-size: 14px; font-weight: 500; margin-bottom: 2px; color: var(--ink); }
-.axeous-dashboard .plan-sub { font-size: 12px; color: var(--ink-faint); }
-
-.axeous-dashboard .plans-empty {
-  display: block;
-  padding: 20px; border-radius: var(--radius-md);
-  border: 1px dashed var(--line);
-  background: var(--glass);
-  text-align: center;
-  font-size: 13px; color: var(--ink-dim);
+.axeous-dashboard .dock-item {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--s-card);
+  box-shadow: var(--s-soft-sm);
+  display: grid;
+  place-items: center;
+  color: var(--ink-dim);
+  cursor: pointer;
   text-decoration: none;
-  transition: background .2s, border-color .2s;
+  transition: transform 0.16s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.16s ease;
+  transform-origin: bottom center;
+  will-change: transform;
 }
-.axeous-dashboard .plans-empty:hover { background: var(--glass-strong); border-color: var(--line-strong); }
+.axeous-dashboard .dock-item:hover { color: var(--teal); }
+.axeous-dashboard .dock-item.primary { color: var(--teal); }
 
-.axeous-dashboard .activity-empty {
-  display: flex; flex-direction: column; align-items: flex-start;
-  padding: 16px 4px;
+/* ---- header ---- */
+.axeous-dashboard .dash-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  /* pull up so the title + CTA share the dock's vertical band (notch) */
+  margin-top: -8px;
+  padding: 0 4px 26px;
 }
-.axeous-dashboard .activity-empty-num {
-  font-size: 32px; font-weight: 500; letter-spacing: -0.02em;
-  line-height: 1; color: var(--ink);
-}
-.axeous-dashboard .activity-empty-label {
-  font-size: 13px; color: var(--ink-dim); margin-top: 6px;
-}
-.axeous-dashboard .activity-empty-sub {
-  font-size: 12.5px; color: var(--ink-faint); margin-top: 10px;
+.axeous-dashboard .dash-header h1 {
+  margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.025em; line-height: 1.1; color: var(--ink);
 }
 
-/* Responsive */
-@media (max-width: 900px) {
-  .axeous-dashboard .bottom-row { grid-template-columns: 1fr; }
+/* ---- pills / buttons ---- */
+.axeous-dashboard .soft-pill {
+  flex: none; display: inline-flex; align-items: center; gap: 9px;
+  background: var(--s-pill); color: var(--s-pill-fg);
+  border: none; border-radius: var(--radius-full);
+  padding: 14px 24px; font-size: 14px; font-weight: 600; cursor: pointer;
+  text-decoration: none; box-shadow: var(--s-pill-sh);
+  transition: transform 0.16s ease;
 }
-@media (max-width: 780px) {
-  .axeous-dashboard .metrics { grid-template-columns: repeat(2, 1fr); }
-  .axeous-dashboard .wrap { padding: 0 20px; }
-  .axeous-dashboard .dash-header h1 { font-size: 26px; }
-  .axeous-dashboard .dash-header { padding: 24px 0 0; }
+.axeous-dashboard .soft-pill.sm { padding: 12px 22px; font-size: 13px; }
+.axeous-dashboard .soft-pill:hover { transform: translateY(-1px); }
+
+.axeous-dashboard .soft-chip {
+  flex: none; display: inline-flex; align-items: center; gap: 6px;
+  background: var(--s-accent-soft); color: var(--teal);
+  border: none; border-radius: var(--radius-full);
+  padding: 11px 20px; font-size: 13px; font-weight: 600; cursor: pointer;
+  text-decoration: none; transition: background 0.16s ease, color 0.16s ease;
+}
+.axeous-dashboard .soft-chip:hover { background: var(--teal); color: #fff; }
+
+.axeous-dashboard .ghost-btn {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 13px; border: none; border-radius: var(--s-r-btn);
+  background: var(--s-inset); color: var(--ink-dim);
+  font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none;
+  box-shadow: var(--s-inset-sh-soft); transition: color 0.16s ease;
+}
+.axeous-dashboard .ghost-btn:hover { color: var(--teal); }
+.axeous-dashboard .ghost-btn .plus { font-size: 15px; line-height: 1; }
+
+.axeous-dashboard .icon-btn {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--s-card); box-shadow: var(--s-soft-sm);
+  display: grid; place-items: center; color: var(--ink-dim);
+  cursor: pointer; text-decoration: none; transition: color 0.16s ease;
+}
+.axeous-dashboard .icon-btn:hover { color: var(--teal); }
+
+.axeous-dashboard .stat-link {
+  font-size: 12.5px; font-weight: 600; color: var(--teal);
+  text-decoration: none; cursor: pointer;
+}
+.axeous-dashboard .stat-link:hover { text-decoration: underline; }
+
+/* ---- bento grid ---- */
+.axeous-dashboard .bento {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 18px; grid-auto-rows: minmax(168px, auto);
+}
+.axeous-dashboard .span-2 { grid-column: span 2; }
+.axeous-dashboard .row-2 { grid-row: span 2; }
+
+.axeous-dashboard .soft-card {
+  background: var(--s-card); border-radius: var(--s-r-md);
+  box-shadow: var(--s-soft); padding: 20px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.axeous-dashboard .span-2.row-2 { border-radius: var(--s-r-lg); padding: 24px; }
+
+.axeous-dashboard .card-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.axeous-dashboard .card-title { font-size: 17px; font-weight: 700; color: var(--ink); }
+.axeous-dashboard .card-meta { font-size: 12px; font-weight: 500; color: var(--ink-faint); }
+
+/* ---- shared track ---- */
+.axeous-dashboard .track {
+  height: 7px; border-radius: var(--radius-full); background: var(--s-track);
+  overflow: hidden; box-shadow: var(--s-inset-sh);
+}
+.axeous-dashboard .track-fill { height: 100%; background: var(--teal); border-radius: var(--radius-full); }
+
+/* ---- plans (featured) ---- */
+.axeous-dashboard .plans-card { gap: 18px; }
+.axeous-dashboard .ring-row { display: flex; align-items: center; gap: 24px; }
+.axeous-dashboard .dial { position: relative; width: 122px; height: 122px; flex: none; }
+.axeous-dashboard .ring-center {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.axeous-dashboard .ring-num { font-size: 32px; font-weight: 800; line-height: 1; color: var(--ink); }
+.axeous-dashboard .ring-pct { font-size: 17px; font-weight: 700; color: var(--ink-faint); }
+.axeous-dashboard .ring-cap {
+  font-size: 9.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-faint); margin-top: 3px;
+}
+.axeous-dashboard .ring-copy { min-width: 0; }
+.axeous-dashboard .eyebrow {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-faint);
+}
+.axeous-dashboard .ring-headline { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; margin: 6px 0 5px; color: var(--ink); }
+.axeous-dashboard .ring-sub { font-size: 13px; font-weight: 500; color: var(--ink-dim); line-height: 1.45; }
+
+.axeous-dashboard .plan-row {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+  border-radius: var(--s-r-inner); background: var(--s-inset);
+  box-shadow: var(--s-inset-sh-soft); text-decoration: none; color: inherit;
+  transition: background 0.16s ease;
+}
+.axeous-dashboard .plan-row:hover { background: color-mix(in srgb, var(--s-inset) 70%, var(--teal) 8%); }
+.axeous-dashboard .plan-badge {
+  width: 42px; height: 42px; border-radius: 50%; flex: none;
+  background: var(--s-accent-soft); color: var(--teal);
+  display: grid; place-items: center; font-weight: 700; font-size: 13px;
+}
+.axeous-dashboard .plan-row-body { flex: 1; min-width: 0; }
+.axeous-dashboard .plan-row-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.axeous-dashboard .plan-row-name { font-size: 14.5px; font-weight: 700; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.axeous-dashboard .plan-row-count { font-size: 12px; font-weight: 600; color: var(--ink-dim); flex: none; }
+.axeous-dashboard .plan-row .track { margin-top: 10px; }
+
+.axeous-dashboard .plans-card .ghost-btn { margin-top: auto; }
+
+.axeous-dashboard .plans-empty-wrap {
+  flex: 1; display: flex; flex-direction: column; align-items: flex-start;
+  justify-content: center; gap: 10px;
+}
+
+/* ---- small stat cards ---- */
+.axeous-dashboard .stat-card { padding: 20px; }
+.axeous-dashboard .stat-top { display: flex; align-items: center; gap: 10px; }
+.axeous-dashboard .stat-icon {
+  width: 36px; height: 36px; border-radius: 50%; flex: none;
+  background: var(--s-card); box-shadow: var(--s-soft-sm); color: var(--teal);
+  display: grid; place-items: center;
+}
+.axeous-dashboard .stat-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--ink-faint); white-space: nowrap;
+}
+.axeous-dashboard .stat-num {
+  display: flex; align-items: baseline; gap: 2px;
+  font-size: 34px; font-weight: 800; line-height: 1; color: var(--ink);
+}
+.axeous-dashboard .stat-num.muted-num { font-size: 20px; font-weight: 700; color: var(--ink-dim); }
+.axeous-dashboard .stat-unit { font-size: 18px; font-weight: 700; color: var(--ink-faint); }
+.axeous-dashboard .stat-foot { margin-top: auto; display: flex; flex-direction: column; gap: 9px; }
+.axeous-dashboard .stat-sub { font-size: 12.5px; font-weight: 500; color: var(--ink-dim); }
+.axeous-dashboard .mt-auto { margin-top: auto; }
+
+.axeous-dashboard .pips { display: flex; gap: 5px; }
+.axeous-dashboard .pip {
+  flex: 1; height: 8px; border-radius: var(--radius-full);
+  background: var(--s-track); box-shadow: var(--s-inset-sh);
+}
+.axeous-dashboard .pip.on { background: var(--teal); box-shadow: none; }
+
+/* ---- recent activity ---- */
+.axeous-dashboard .activity-card { gap: 16px; }
+.axeous-dashboard .activity-real { flex: 1; display: flex; flex-direction: column; gap: 18px; }
+.axeous-dashboard .activity-stat { display: flex; flex-direction: column; gap: 4px; }
+.axeous-dashboard .activity-stat-num {
+  display: flex; align-items: baseline; gap: 2px;
+  font-size: 30px; font-weight: 800; line-height: 1; color: var(--ink);
+}
+.axeous-dashboard .activity-stat-label { font-size: 13px; font-weight: 500; color: var(--ink-dim); }
+
+.axeous-dashboard .activity-empty { position: relative; flex: 1; }
+.axeous-dashboard .ghost-rows { display: flex; flex-direction: column; gap: 12px; opacity: 0.5; }
+.axeous-dashboard .ghost-row {
+  display: flex; align-items: center; gap: 13px; padding: 14px;
+  border-radius: var(--s-r-inner); background: var(--s-inset);
+}
+.axeous-dashboard .ghost-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--s-ghost1); flex: none; }
+.axeous-dashboard .ghost-lines { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+.axeous-dashboard .ghost-line { height: 9px; border-radius: 5px; background: var(--s-ghost2); }
+.axeous-dashboard .ghost-line.short { height: 8px; width: 28%; background: var(--s-ghost3); }
+.axeous-dashboard .ghost-tag { height: 9px; width: 52px; border-radius: 5px; background: var(--s-ghost2); }
+.axeous-dashboard .activity-overlay {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px; text-align: center;
+  background: var(--s-fade);
+}
+.axeous-dashboard .empty-title { font-size: 15.5px; font-weight: 700; color: var(--ink); }
+.axeous-dashboard .empty-sub { font-size: 13px; font-weight: 500; color: var(--ink-dim); margin-top: 4px; max-width: 300px; }
+
+/* ---- wide cards (goal + leaderboard) ---- */
+.axeous-dashboard .wide-card { justify-content: center; gap: 14px; }
+.axeous-dashboard .wide-body { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.axeous-dashboard .wide-num { display: flex; align-items: baseline; gap: 8px; font-size: 30px; font-weight: 800; line-height: 1; color: var(--ink); }
+.axeous-dashboard .wide-unit { font-size: 14px; font-weight: 600; color: var(--ink-faint); }
+
+.axeous-dashboard .lb-copy { min-width: 0; }
+.axeous-dashboard .lb-title { font-size: 18px; font-weight: 700; color: var(--ink); }
+.axeous-dashboard .lb-sub { font-size: 13px; font-weight: 500; color: var(--ink-dim); margin-top: 3px; }
+.axeous-dashboard .lb-bars { display: flex; align-items: flex-end; gap: 6px; height: 48px; flex: none; }
+.axeous-dashboard .lb-bar { width: 16px; border-radius: 5px 5px 0 0; background: var(--s-accent-soft); }
+.axeous-dashboard .lb-bar.tall { background: var(--teal); }
+
+/* ---- responsive ---- */
+@media (max-width: 980px) {
+  .axeous-dashboard .bento { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 160px; }
+  .axeous-dashboard .span-2 { grid-column: span 2; }
+  .axeous-dashboard .row-2 { grid-row: span 2; }
+  .axeous-dashboard .floating-dock { display: none; }
+}
+@media (max-width: 600px) {
+  .axeous-dashboard .wrap { padding: 4px 10px 40px; }
+  .axeous-dashboard .soft-panel { border-radius: 22px; padding: 14px; }
+  .axeous-dashboard .dash-header { flex-direction: column; align-items: flex-start; gap: 14px; margin-top: 0; padding: 12px 2px 22px; }
+  .axeous-dashboard .dash-header h1 { font-size: 22px; }
+  .axeous-dashboard .bento { grid-template-columns: 1fr; grid-auto-rows: auto; }
+  .axeous-dashboard .span-2, .axeous-dashboard .row-2 { grid-column: auto; grid-row: auto; }
+  .axeous-dashboard .ring-row { flex-direction: column; align-items: flex-start; gap: 16px; }
 }

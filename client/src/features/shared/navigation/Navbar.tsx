@@ -4,7 +4,7 @@ import { paths } from '@/config/paths'
 import { useUser, UserAvatar } from '@/features/shared/auth'
 import { useGetIncomingFriendRequests } from '@/features/shared/friends'
 import { useGetMe } from '@/features/shared/user'
-import { isOfficialPlanProgramPhaseAtLeast } from '@/config/feature-flags'
+import { isOfficialPlanProgramPhaseAtLeast, isSoftNavbarEnabled } from '@/config/feature-flags'
 import AxeousLogo from '@/components/ui/AxeousLogo'
 
 type NavItem = { label: string; href: string; matchPrefix?: string; hasBadge?: boolean }
@@ -32,6 +32,8 @@ export const Navbar = () => {
   })
   const requestCount = incomingRequests.length
   const [mobileOpen, setMobileOpen] = useState(false)
+  const soft = isSoftNavbarEnabled()
+  const barMax = soft ? 'max-w-none' : 'max-w-[1240px]'
 
   const showContribute =
     isOfficialPlanProgramPhaseAtLeast(2) &&
@@ -95,14 +97,18 @@ export const Navbar = () => {
   }, [mobileOpen])
 
   return (
-    <div ref={mobileWrapRef} className="sticky top-3 z-50 px-6">
+    <div ref={mobileWrapRef} className={`sticky top-3 z-50 ${soft ? 'px-7' : 'px-6'}`}>
       <nav
-        className="relative mx-auto flex max-w-[1240px] items-center justify-between gap-4 rounded-full border border-line bg-glass px-4 py-2.5 backdrop-blur-xl"
-        style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)' }}
+        className={`relative mx-auto flex ${barMax} items-center justify-between gap-4 ${
+          soft
+            ? 'px-0 py-1'
+            : 'rounded-full border border-line bg-glass px-4 py-2.5 backdrop-blur-xl'
+        }`}
+        style={soft ? undefined : { boxShadow: '0 10px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)' }}
       >
         <Link
           to={paths.app.dashboard.getHref()}
-          className="flex items-center gap-2.5 font-semibold text-ink"
+          className={`flex items-center gap-2.5 font-semibold text-ink ${soft ? 'flex-1' : ''}`}
         >
           <AxeousLogo size={22} color="currentColor" />
           <span className="text-[15px]">Axeous</span>
@@ -145,7 +151,7 @@ export const Navbar = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className={`flex items-center gap-2 ${soft ? 'flex-1 justify-end' : ''}`}>
           <button
             type="button"
             aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
@@ -179,7 +185,7 @@ export const Navbar = () => {
 
       {mobileOpen && (
         <div
-          className="mx-auto mt-2 max-w-[1240px] overflow-hidden rounded-2xl border border-line bg-glass backdrop-blur-xl sm:hidden"
+          className={`mx-auto mt-2 ${barMax} overflow-hidden rounded-2xl border border-line bg-glass backdrop-blur-xl sm:hidden`}
           style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)' }}
         >
           {navItems.map((item) => {
