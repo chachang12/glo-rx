@@ -52,6 +52,31 @@ const userSchema = new Schema(
       default: { aiGeneration: false, customPlans: false },
     },
 
+    // ── Subscription (Stripe) ────────────────────────────────────────────
+    // Single source of truth for the user's Pro status. Written only by the
+    // Stripe webhook (server/src/features/billing). Tier and capabilities are
+    // derived from this via user.tier.ts; `licenses.*` above remain only as
+    // optional admin-grant overrides.
+    subscription: {
+      type: {
+        status: {
+          type: String,
+          enum: ['none', 'active', 'past_due', 'canceled'],
+          default: 'none',
+        },
+        cadence: {
+          type: String,
+          enum: ['monthly', 'annual', 'lifetime'],
+          default: null,
+        },
+        stripeCustomerId: { type: String, default: null, index: true, sparse: true },
+        stripeSubscriptionId: { type: String, default: null }, // null for lifetime
+        currentPeriodEnd: { type: Date, default: null }, // null for lifetime
+        cancelAtPeriodEnd: { type: Boolean, default: false },
+      },
+      default: { status: 'none' },
+    },
+
     // ── Account ──────────────────────────────────────────────────────────
     role: {
       type: String,

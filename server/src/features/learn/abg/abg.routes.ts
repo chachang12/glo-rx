@@ -1,7 +1,6 @@
 import { Hono } from 'hono'
 import Anthropic from '@anthropic-ai/sdk'
 import { requireAuth } from '../../../middleware/auth.js'
-import { requireLicense } from '../../../middleware/license.js'
 import { requireUsage } from '../../../middleware/usage.js'
 import type { AuthEnv } from '../../../types.js'
 
@@ -11,9 +10,9 @@ abgRoutes.use(requireAuth)
 const anthropic = new Anthropic() // reads ANTHROPIC_API_KEY from env
 
 // The ABG driller is exam-agnostic (no examCode in the request), so requireUsage
-// counts each vignette against the caller's most recent plan. Like the other AI
-// endpoints, it's gated by license + daily usage quota.
-abgRoutes.post('/vignette', requireLicense('aiGeneration'), requireUsage, async (c) => {
+// counts each vignette against the caller's most recent plan. Metered-free:
+// gated by the daily usage quota only (no hard license gate).
+abgRoutes.post('/vignette', requireUsage, async (c) => {
   const { values, imbalance, compensation } = c.get('parsedBody') as {
     values: { pH: number; PaCO2: number; HCO3: number; PaO2: number }
     imbalance: string

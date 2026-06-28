@@ -95,6 +95,10 @@ export const paths = {
       path: 'settings',
       getHref: () => '/app/settings',
     },
+    billing: {
+      path: 'billing',
+      getHref: () => '/app/billing',
+    },
     admin: {
       path: 'admin',
       getHref: () => '/app/admin',

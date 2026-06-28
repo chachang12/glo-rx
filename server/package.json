@@ -8,6 +8,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "load-corpus": "tsx src/scripts/load-corpus.ts",
+    "setup:stripe": "tsx src/scripts/setup-stripe.ts",
     "migrate:opp": "tsx src/scripts/migrate-official-plan-program.ts",
     "backfill:app-users": "tsx src/scripts/backfill-app-users.ts"
   },
@@ -22,7 +23,8 @@
     "mammoth": "^1.12.0",
     "mongodb": "^6.16.0",
     "mongoose": "^8.14.0",
-    "pdf-parse": "^1.1.1"
+    "pdf-parse": "^1.1.1",
+    "stripe": "^22.3.0"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.8",

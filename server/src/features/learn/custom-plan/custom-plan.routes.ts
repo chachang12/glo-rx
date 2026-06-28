@@ -2,8 +2,9 @@ import crypto from 'node:crypto'
 import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
 import { requireAuth } from '../../../middleware/auth.js'
-import { requireLicense } from '../../../middleware/license.js'
 import { requireUsage } from '../../../middleware/usage.js'
+import { requireCustomPlanQuota } from '../../../middleware/capability.js'
+import { capabilitiesForUser } from '../../shared/user/user.tier.js'
 import type { AuthEnv } from '../../../types.js'
 import { PlanModel } from '../plan/plan.model.js'
 import { TopicModel } from './topic.model.js'
@@ -68,7 +69,7 @@ async function getOwnedPlan(authId: string, planId: string) {
 
 // ── POST / — Create a custom plan ───────────────────────────────────────────
 
-customPlanRoutes.post('/', requireLicense('customPlans'), async (c) => {
+customPlanRoutes.post('/', requireCustomPlanQuota, async (c) => {
   const authUser = c.get('user')
   const body = await c.req.json()
 
@@ -94,7 +95,6 @@ customPlanRoutes.post('/', requireLicense('customPlans'), async (c) => {
 
 customPlanRoutes.post(
   '/:planId/upload',
-  requireLicense('customPlans'),
   bodyLimit({ maxSize: MAX_UPLOAD_FILE_SIZE }),
   async (c) => {
     const authUser = c.get('user')
@@ -102,6 +102,20 @@ customPlanRoutes.post(
 
     const plan = await getOwnedPlan(authUser.id, planId)
     if (!plan) return c.json({ error: 'Plan not found' }, 404)
+
+    // Enforce the per-plan file-count quota (tier-based).
+    const { maxFilesPerPlan } = capabilitiesForUser(c.get('appUser'))
+    const fileCount = await PlanDocumentModel.countDocuments({ planId: plan._id })
+    if (fileCount >= maxFilesPerPlan) {
+      return c.json(
+        {
+          error: `File limit reached for this plan (${maxFilesPerPlan}). Upgrade to Axeous Pro for more uploads.`,
+          reason: 'tier_limit',
+          capability: 'maxFilesPerPlan',
+        },
+        402
+      )
+    }
 
     // Check cumulative size limit
     if (plan.totalDocumentSize >= MAX_PLAN_DOCS_SIZE) {
@@ -193,7 +207,7 @@ customPlanRoutes.get('/:planId/documents', async (c) => {
 
 // ── POST /:planId/extract-topics — AI topic extraction ──────────────────────
 
-customPlanRoutes.post('/:planId/extract-topics', requireLicense('customPlans'), requireUsage, async (c) => {
+customPlanRoutes.post('/:planId/extract-topics', requireUsage, async (c) => {
   const authUser = c.get('user')
   const { planId } = c.req.param()
 
@@ -259,7 +273,7 @@ customPlanRoutes.post('/:planId/extract-topics', requireLicense('customPlans'), 
 
 // ── POST /:planId/confirm-topics — Save reviewed topics ─────────────────────
 
-customPlanRoutes.post('/:planId/confirm-topics', requireLicense('customPlans'), async (c) => {
+customPlanRoutes.post('/:planId/confirm-topics', async (c) => {
   const authUser = c.get('user')
   const { planId } = c.req.param()
 
@@ -375,7 +389,6 @@ customPlanRoutes.patch('/:planId/topics/:topicId/record', async (c) => {
 
 customPlanRoutes.post(
   '/:planId/topics/:topicId/generate-questions',
-  requireLicense('customPlans'),
   requireUsage,
   async (c) => {
     const authUser = c.get('user')
@@ -471,7 +484,7 @@ customPlanRoutes.post('/:planId/unpublish', async (c) => {
 
 // ── POST /shared/:shareCode/clone — Clone a shared plan into your account ───
 
-customPlanRoutes.post('/shared/:shareCode/clone', requireLicense('customPlans'), async (c) => {
+customPlanRoutes.post('/shared/:shareCode/clone', requireCustomPlanQuota, async (c) => {
   const authUser = c.get('user')
   const { shareCode } = c.req.param()
 

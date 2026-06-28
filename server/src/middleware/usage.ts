@@ -1,7 +1,8 @@
 import { createMiddleware } from 'hono/factory'
 import type { AuthEnv } from '../types.js'
 import { PlanModel } from '../features/learn/plan/plan.model.js'
-import { getLimitsForTier, getNextDailyReset } from '../config/usage.js'
+import { getNextDailyReset } from '../config/usage.js'
+import { capabilitiesForUser } from '../features/shared/user/user.tier.js'
 
 /**
  * Gates AI endpoints on the caller's daily usage quota and increments it.
@@ -64,17 +65,22 @@ export const requireUsage = createMiddleware<AuthEnv>(async (c, next) => {
   )
 
   // Atomic check-and-increment: only increments while strictly under the cap,
-  // so the limit holds even under concurrent requests.
-  const limits = getLimitsForTier(plan.tier ?? 'free')
+  // so the limit holds even under concurrent requests. The cap comes from the
+  // caller's subscription tier (account-level), not the per-plan record.
+  const { dailyAiCalls } = capabilitiesForUser(c.get('appUser'))
   const updated = await PlanModel.findOneAndUpdate(
-    { _id: plan._id, usageCount: { $lt: limits.dailyAiCalls } },
+    { _id: plan._id, usageCount: { $lt: dailyAiCalls } },
     { $inc: { usageCount: 1 } },
     { new: true }
   )
 
   if (!updated) {
     return c.json(
-      { error: 'Daily AI usage limit reached. Try again tomorrow.' },
+      {
+        error: 'Daily AI usage limit reached. Try again tomorrow.',
+        reason: 'tier_limit',
+        capability: 'dailyAiCalls',
+      },
       429
     )
   }

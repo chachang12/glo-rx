@@ -1,7 +1,10 @@
 import { useState, useRef } from 'react'
+import { Link } from 'react-router'
 import * as pdfjsLib from 'pdfjs-dist'
 import { useGenerateFlashcards } from '../api/generate-flashcards'
 import { ApiError } from '@/lib/api/client'
+import { isTierLimitError } from '@/features/shared/billing'
+import { paths } from '@/config/paths'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`
 
@@ -39,6 +42,7 @@ export const FlashcardGenerator = ({ examCode }: FlashcardGeneratorProps) => {
   const [format, setFormat] = useState<Format>('remnote')
   const [output, setOutput] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [showUpgrade, setShowUpgrade] = useState(false)
   const generateMutation = useGenerateFlashcards()
   const loading = generateMutation.isPending
 
@@ -80,6 +84,7 @@ export const FlashcardGenerator = ({ examCode }: FlashcardGeneratorProps) => {
   const handleGenerate = async () => {
     if (!activeText.trim()) return
     setError(null)
+    setShowUpgrade(false)
     setOutput(null)
 
     try {
@@ -90,10 +95,12 @@ export const FlashcardGenerator = ({ examCode }: FlashcardGeneratorProps) => {
       })
       setOutput(data.flashcards)
     } catch (err) {
-      if (err instanceof ApiError) {
-        if (err.status === 429) {
-          setError('Daily usage limit reached. Try again tomorrow.')
-        } else if (err.status === 403) {
+      if (isTierLimitError(err)) {
+        // Daily AI cap (429) or a quota (402): show the server message + upgrade CTA.
+        setError(err.message)
+        setShowUpgrade(true)
+      } else if (err instanceof ApiError) {
+        if (err.status === 403) {
           setError('You need an active plan for this exam to generate flashcards.')
         } else {
           setError(err.message)
@@ -222,6 +229,14 @@ export const FlashcardGenerator = ({ examCode }: FlashcardGeneratorProps) => {
       {error && (
         <div className="rounded-lg border border-[#ef4444]/30 bg-[#ef4444]/5 px-4 py-3">
           <p className="text-xs text-[#ef4444]">{error}</p>
+          {showUpgrade && (
+            <Link
+              to={paths.app.billing.getHref()}
+              className="mt-2 inline-block px-3 py-1.5 rounded-lg bg-[#4ac68a] text-[#04120f] text-xs font-semibold hover:opacity-90 transition-all"
+            >
+              Upgrade to Pro →
+            </Link>
+          )}
         </div>
       )}
 

@@ -12,6 +12,7 @@ import { friendshipRoutes } from './features/shared/friendship/index.js'
 import { adminRoutes } from './features/shared/admin/index.js'
 import { contributorFeatureRoutes } from './features/shared/contributor/index.js'
 import { researcherRoutes } from './features/shared/researcher/index.js'
+import { billingRoutes } from './features/billing/index.js'
 import { recomputeAllReliabilityScores } from './features/shared/contributor/reliability-score.service.js'
 
 // Learn
@@ -54,6 +55,7 @@ if (isOfficialPlanProgramPhaseAtLeast(2)) {
   app.route('/api/contributor', contributorFeatureRoutes)
 }
 app.route('/api/researcher', researcherRoutes)
+app.route('/api/billing', billingRoutes)
 
 // Learn routes
 app.route('/api/abg', abgRoutes)
@@ -95,10 +97,28 @@ function warnIfMissingTelegramCreds() {
   }
 }
 
+function warnIfMissingStripeCreds() {
+  const missing = (
+    [
+      'STRIPE_SECRET_KEY',
+      'STRIPE_WEBHOOK_SECRET',
+      'STRIPE_PRICE_PRO_MONTHLY',
+      'STRIPE_PRICE_PRO_ANNUAL',
+      'STRIPE_PRICE_PRO_LIFETIME',
+    ] as const
+  ).filter((k) => !process.env[k])
+  if (missing.length > 0) {
+    console.warn(
+      `[billing/stripe] ${missing.join(', ')} not set — /api/billing/* will fail until configured.`
+    )
+  }
+}
+
 connectDB().then(async () => {
   await seedExams()
   warnIfMissingEbayCreds()
   warnIfMissingTelegramCreds()
+  warnIfMissingStripeCreds()
   await loadCallStatsFromDB()
   setAbandonHandler(notifyHandoff)
   if (process.env.EBAY_APP_ID && process.env.EBAY_CERT_ID) {

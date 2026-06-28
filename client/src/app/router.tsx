@@ -171,6 +171,13 @@ export const createAppRouter = () =>
                   })),
               },
               {
+                path: paths.app.billing.path,
+                lazy: () =>
+                  import('./routes/learn/billing').then((m) => ({
+                    Component: m.Billing,
+                  })),
+              },
+              {
                 element: <AdminRoute />,
                 children: [
                   {

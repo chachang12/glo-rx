@@ -4,6 +4,7 @@ import { authClient } from '@/lib/auth-client'
 import { useUser } from '@/features/shared/auth'
 import { paths } from '@/config/paths'
 import { useGetMe, useGetMyStats, useDeleteMe } from '@/features/shared/user'
+import { useGetSubscription } from '@/features/shared/billing'
 import { useTheme } from '@/components/theme-provider'
 import './profile.css'
 
@@ -13,12 +14,14 @@ export const Profile = () => {
   const { theme } = useTheme()
   const { data: stats = null } = useGetMyStats()
   const { data: appUser } = useGetMe()
+  const { data: subscription } = useGetSubscription()
   const deleteMeMutation = useDeleteMe()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const isAdmin = appUser?.role === 'admin'
   const isContributor = appUser?.role === 'contributor' && !!appUser.contributor
+  const isPro = subscription?.tier === 'pro'
 
   const handleSignOut = async () => {
     await authClient.signOut()
@@ -106,6 +109,31 @@ export const Profile = () => {
             <div className="stat-mini-val" style={{ color: 'var(--violet)' }}>—</div>
             <div className="stat-mini-label">Rank</div>
           </div>
+        </div>
+
+        {/* SUBSCRIPTION */}
+        <h3 className="section-title">Subscription</h3>
+        <div className="card section-card">
+          <Link to={paths.app.billing.getHref()} className="row-item">
+            <div
+              className="row-icon"
+              style={{
+                background: 'rgba(74,198,138,0.12)',
+                border: '1px solid rgba(74,198,138,0.2)',
+              }}
+            >
+              <BoltIcon color="var(--green)" />
+            </div>
+            <div className="row-info">
+              <div className="row-title">{isPro ? 'Axeous Pro' : 'Free plan'}</div>
+              <div className="row-sub">
+                {isPro
+                  ? 'Pro is active — manage your subscription'
+                  : 'Upgrade to lift your daily AI limit and unlock more'}
+              </div>
+            </div>
+            <span className="row-action">{isPro ? 'Manage' : 'Upgrade'} →</span>
+          </Link>
         </div>
 
         {isAdmin && (
@@ -256,6 +284,12 @@ function getInitials(name: string | null | undefined): string {
 // ============================================================
 // Icons
 // ============================================================
+
+const BoltIcon = ({ color }: { color: string }) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z" />
+  </svg>
+)
 
 const GearIcon = ({ color }: { color: string }) => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
